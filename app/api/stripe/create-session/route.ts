@@ -41,15 +41,6 @@ export async function POST(request: Request) {
     // Initialiser Stripe à l'exécution
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-    // Vérifier que l'URL de l'application est configurée
-    if (!process.env.NEXT_PUBLIC_APP_URL) {
-      console.error('NEXT_PUBLIC_APP_URL is not defined');
-      return NextResponse.json(
-        { error: 'Configuration de l\'URL de l\'application manquante' },
-        { status: 500, headers: responseHeaders }
-      );
-    }
-
     // Log du corps de la requête
     console.log('Lecture du body de la requête');
     const body = await request.json();
@@ -69,19 +60,14 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('Creating Stripe session with:', {
-      serviceId, 
-      serviceTitle, 
-      price, 
-      userId,
-      serviceSlug,
-      appUrl: process.env.NEXT_PUBLIC_APP_URL
-    });
-
+    // Forcer l'URL absolue - Utiliser une valeur par défaut si NEXT_PUBLIC_APP_URL n'est pas défini
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://klyra-hub.vercel.app';
+    console.log('Using app URL:', appUrl);
+    
     // Forcer l'URL absolue avec le port correct
     const baseUrl = process.env.NODE_ENV === 'development' 
       ? 'http://localhost:3000'
-      : process.env.NEXT_PUBLIC_APP_URL;
+      : appUrl;
 
     // URL de succès simplifiée - Correction du chemin de redirection
     const successUrl = `${baseUrl}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}&service_id=${serviceId}&title=${encodeURIComponent(serviceTitle)}&price=${price}`;
