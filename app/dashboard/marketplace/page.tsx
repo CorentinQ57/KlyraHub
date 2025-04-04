@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
-import { getAllServices, type Service } from '@/lib/supabase'
+import { getAllServices, createStripeSession, type Service } from '@/lib/supabase'
 
 // Make slug from title
 const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
@@ -13,10 +14,12 @@ const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
 export default function MarketplacePage() {
   const router = useRouter()
   const { user, isLoading } = useAuth()
+  const { toast } = useToast()
   const [services, setServices] = useState<Service[]>([])
   const [isLoadingServices, setIsLoadingServices] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('Tous')
   const [selectedPrice, setSelectedPrice] = useState('Tous')
+  const [processingPayment, setProcessingPayment] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -52,6 +55,51 @@ export default function MarketplacePage() {
   // Extraire les catégories uniques des services
   const uniqueCategories = Array.from(new Set(services.map(service => service.category || 'Autre')))
   const categories = ['Tous', ...uniqueCategories]
+
+  const handleBuyNow = async (service: Service, event: React.MouseEvent) => {
+    event.preventDefault()
+    
+    if (!user) {
+      toast({
+        title: "Connectez-vous",
+        description: "Vous devez être connecté pour acheter un service.",
+        variant: "destructive"
+      })
+      router.push('/login')
+      return
+    }
+    
+    try {
+      setProcessingPayment(service.id)
+      
+      // Créer une session de paiement Stripe
+      const stripeSession = await createStripeSession(
+        user.id,
+        service.id,
+        service.name,
+        service.price
+      )
+      
+      if (stripeSession && stripeSession.url) {
+        // Rediriger vers la page de paiement Stripe
+        window.location.href = stripeSession.url
+      } else {
+        throw new Error('Impossible de créer une session de paiement')
+      }
+
+    } catch (error: any) {
+      console.error('Erreur:', error)
+      const errorMessage = error?.message || 'Une erreur est survenue lors de la création de la session de paiement.'
+      toast({
+        title: "Erreur",
+        description: errorMessage,
+        duration: 5000,
+        variant: "destructive"
+      })
+    } finally {
+      setProcessingPayment(null)
+    }
+  }
 
   if (isLoading || isLoadingServices) {
     return (
@@ -188,7 +236,14 @@ export default function MarketplacePage() {
                         <Link href={`/dashboard/marketplace/${getSlug(service.name)}`}>
                           <Button className="w-full">Voir les détails</Button>
                         </Link>
-                        <Button variant="outline" className="w-full">Acheter maintenant</Button>
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={(e) => handleBuyNow(service, e)}
+                          disabled={processingPayment === service.id}
+                        >
+                          {processingPayment === service.id ? 'Traitement...' : 'Acheter maintenant'}
+                        </Button>
                       </div>
                       <div className="absolute top-2 right-2 bg-klyra-100 text-klyra-700 text-xs px-2 py-1 rounded-full">
                         {service.category}

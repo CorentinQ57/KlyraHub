@@ -1188,4 +1188,41 @@ export async function submitUploadRequest(
     console.error('Exception in submitUploadRequest:', error);
     return false;
   }
+}
+
+/**
+ * Crée une session de paiement Stripe pour un service
+ */
+export async function createStripeSession(
+  userId: string,
+  serviceId: string,
+  serviceTitle: string,
+  price: number
+): Promise<{ url: string; sessionId: string } | null> {
+  try {
+    const response = await fetch('/api/stripe/create-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        serviceId,
+        serviceTitle,
+        price,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Erreur lors de la création de la session Stripe:', error);
+      throw new Error(error.message || 'Erreur lors de la création de la session de paiement');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Exception dans createStripeSession:', error);
+    throw error;
+  }
 } 

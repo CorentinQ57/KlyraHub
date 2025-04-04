@@ -6,7 +6,7 @@ import { useRouter, notFound } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
-import { createProject, getServiceBySlug, type Service } from '@/lib/supabase'
+import { createProject, getServiceBySlug, type Service, createStripeSession } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 
 // This would come from Supabase in the real implementation
@@ -303,28 +303,24 @@ export default function ServicePage({ params }: Props) {
       setIsProcessingPayment(true)
       setPaymentError(null)
       
-      // Créer le projet dans Supabase
-      const project = await createProject(
+      // Créer une session de paiement Stripe
+      const stripeSession = await createStripeSession(
         user.id,
         service.id,
         service.name,
         service.price
       )
-
-      toast({
-        title: "Projet créé avec succès !",
-        description: "Vous pouvez maintenant suivre l'avancement de votre projet dans votre dashboard.",
-        duration: 5000,
-      })
-
-      // Redirection vers le dashboard après 2 secondes
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 2000)
+      
+      if (stripeSession && stripeSession.url) {
+        // Rediriger vers la page de paiement Stripe
+        window.location.href = stripeSession.url
+      } else {
+        throw new Error('Impossible de créer une session de paiement')
+      }
 
     } catch (error: any) {
       console.error('Erreur:', error)
-      const errorMessage = error?.message || 'Une erreur est survenue lors de la création du projet.'
+      const errorMessage = error?.message || 'Une erreur est survenue lors de la création de la session de paiement.'
       setPaymentError(errorMessage)
       toast({
         title: "Erreur",
