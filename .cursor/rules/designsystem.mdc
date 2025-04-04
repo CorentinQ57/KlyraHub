@@ -1,0 +1,118 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Design System
+Typographie
+
+Police principale : Poppins
+Variantes : 300 (Light), 400 (Regular), 500 (Medium), 600 (SemiBold), 700 (Bold)
+Espacements lettres :
+
+H1 : -0.07em (espacement réduit)
+H2 : -0.05em
+H3 : -0.03em
+H4 : -0.02em
+
+
+
+Hiérarchie typographique
+
+H1 : 2.5rem, 600 (SemiBold), espacement -0.07em
+H2 : 2rem, 600 (SemiBold), espacement -0.05em
+H3 : 1.5rem, 600 (SemiBold), espacement -0.03em
+H4 : 1.25rem, 600 (SemiBold), espacement -0.02em
+Texte courant : 1rem, 400 (Regular)
+Petit texte : 0.875rem, 400 (Regular)
+
+Palette de couleurs
+
+Couleur principale : #467FF7 (bleu)
+Variations de la couleur principale :
+
+Bleu principal : #467FF7
+Bleu clair : #7FA3F9
+Bleu plus clair : #B8CBFC
+Bleu très clair : #E6EDFD
+
+
+Dégradés pastels :
+
+Dégradé bleu-rose : #B8CBFC → #F7A6C1
+Dégradé bleu-jaune : #B8CBFC → #FFE9A3
+Dégradé bleu-vert : #B8CBFC → #A6F0C6
+
+
+Couleurs neutres :
+
+Texte foncé : #1A2B3C
+Texte moyen : #4A5568
+Texte clair : #718096
+Fond : #F7FAFC
+Blanc : #FFFFFF
+
+
+
+Espacements
+
+XS : 0.25rem (4px)
+SM : 0.5rem (8px)
+MD : 1rem (16px)
+LG : 1.5rem (24px)
+XL : 2rem (32px)
+XXL : 3rem (48px)
+
+Arrondis (Border Radius)
+
+Petit : 0.25rem (4px)
+Moyen : 0.5rem (8px)
+Grand : 1rem (16px)
+Complet : 9999px (pour éléments circulaires)
+
+Composants
+Boutons
+
+Bouton principal :
+
+Fond : #467FF7
+Texte : blanc
+Padding : 8px 24px
+Border-radius : 8px
+Police : Poppins Medium (500)
+Hover : #3A6FE0 avec ombre légère
+
+
+Bouton secondaire :
+
+Fond : blanc
+Texte : #467FF7
+Bordure : 1px solid #467FF7
+Hover : fond #E6EDFD
+
+
+Variantes de taille :
+
+Petit : 0.875rem, padding 4px 16px
+Standard : 1rem, padding 8px 24px
+Large : 1.125rem, padding 16px 32px
+
+
+
+Cartes
+
+Fond : blanc
+Border-radius : 8px
+Padding : 24px
+Ombre : 0 2px 8px rgba(0, 0, 0, 0.05)
+
+Badges
+
+Padding : 4px 8px
+Border-radius : complet (9999px)
+Taille de police : 0.75rem
+Poids : 600 (SemiBold)
+Texte en majuscules
+Espacement lettres : 0.05em
+
+Ce design system offre une base solide avec la police Poppins et la couleur principale #467FF7, complétées par des dégradés pastel et une hiérarchie typographique claire avec l'espacement négatif des lettres que vous souhaitiez.

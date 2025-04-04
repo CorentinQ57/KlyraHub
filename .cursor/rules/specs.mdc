@@ -1,0 +1,103 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 📘 Cahier des Charges - Web App KLYRA
+
+## 🧠 Contexte
+
+Klyra est une agence spécialisée en design, branding et stratégie digitale à destination des TPE/PME tech ambitieuses. L'objectif est de créer une web app qui centralise l'expérience client autour d'une **marketplace de services packagés** proposés uniquement par Klyra.
+
+---
+
+## 🎯 Objectifs
+
+- Permettre à n'importe quel utilisateur de créer un compte gratuitement
+- Proposer une **marketplace de services** (landing page, branding, consulting, web app, etc.)
+- Offrir un **espace client** privé pour suivre ses projets
+- Mettre en place une **gestion admin manuelle** après chaque achat
+- Supprimer toute dépendance à Notion
+- Intégrer des éléments de **gamification**, de **commentaires projet**, et une **messagerie asynchrone**
+- Ne pas utiliser de système d'abonnement, uniquement des achats ponctuels
+
+---
+
+## 🔐 Accès & Rôles
+
+- **Utilisateur non connecté** : accès à la marketplace uniquement
+- **Utilisateur connecté** :
+  - Peut acheter des services
+  - Accès à un dashboard avec ses projets et livrables
+- **Administrateur** :
+  - Valide chaque projet après achat
+  - Attribue à l'équipe
+  - Gère les services et utilisateurs
+
+---
+
+## 🧱 Fonctionnalités principales
+
+### 🛒 Marketplace
+- Liste de services avec fiches packagées
+- Filtres par prix / domaine / délai
+- Upsell & cross-sell sur les fiches
+- Paiement immédiat (Stripe ou autre)
+- Création auto d'un projet après achat (à valider manuellement)
+
+### 📊 Dashboard utilisateur
+- Vue synthétique de ses projets
+- Suivi en Kanban par projet
+- Affichage des 5 étapes Klyra
+- Notifications (commentaires, livrables)
+- Gamification (badges, progression)
+- Accès aux livrables et dépôts
+
+### 📁 Page projet
+- Suivi d'un seul projet
+- Bloc commentaires (Klyra <> client)
+- Historique des actions
+- Messagerie asynchrone
+- Section fichiers
+
+### 👤 Compte utilisateur
+- Infos personnelles, sécurité
+- Historique d'achats et factures
+- Moyens de paiement
+
+### ⚙️ Espace Admin
+- Vue projets à valider
+- Attribution manuelle
+- Suivi de tous les projets
+- Gestion des services proposés
+
+---
+
+## ⚙️ Stack & Tech
+
+- **React + TypeScript**
+- **Tailwind CSS** pour le style
+- **Shadcn/UI** pour les composants
+- **Supabase** pour l'auth, la DB et le storage
+- Aucune dépendance à SSR
+- Architecture modulaire (routing type /app)
+
+---
+
+## 🧩 Modules à venir
+- Statistiques backoffice
+- Historique notifications
+- Automatisation partielle (ex : alertes pour livrables ajoutés)
+
+---
+
+## ✅ Priorités MVP
+
+1. Auth sécurisée + rôles
+2. Marketplace fonctionnelle + paiement
+3. Création projet post-achat
+4. Dashboard client + 1 page projet
+5. Admin minimal pour valider projets
+
+---
+

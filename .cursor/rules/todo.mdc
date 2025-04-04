@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# ✅ TODO - Développement Web App Klyra
+
+## AUTH
+- [ ] Inscription / Connexion
+- [ ] Middleware admin / client
+
+## MARKETPLACE
+- [ ] Listing services
+- [ ] Page service avec CTA
+- [ ] Cross-sell dynamique
+- [ ] Filtres frontend
+
+## PROJETS
+- [ ] Création auto après achat
+- [ ] Kanban projets
+- [ ] 5 étapes Klyra
+- [ ] Fichiers livrables (upload/download)
+- [ ] Historique par projet
+
+## MESSAGERIE
+- [ ] Module de messagerie asynchrone
+- [ ] Notifications par projet
+
+## ADMIN
+- [ ] Validation projets
+- [ ] Attribution manuelle
+- [ ] Gestion des services
+- [ ] Vue messages
+
+## GAMIFICATION
+- [ ] Système de badges
+- [ ] Affichage progression
+
+## COMPTE
+- [ ] Page infos / sécurité
+- [ ] Historique achats
+- [ ] Méthodes de paiement
