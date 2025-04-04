@@ -49,7 +49,7 @@ export default function PaymentSuccessPage() {
           // Créer le projet dans Supabase
           const project = await createProject(
             user.id,
-            parseInt(serviceId),
+            serviceId,
             title,
             parseInt(price)
           )
