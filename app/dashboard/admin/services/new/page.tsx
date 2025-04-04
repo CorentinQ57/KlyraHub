@@ -51,7 +51,7 @@ const serviceFormSchema = z.object({
   duration: z.coerce.number().int().min(1, {
     message: "La durée doit être d'au moins 1 jour.",
   }),
-  active: z.boolean().default(true),
+  active: z.boolean(),
   features: z.string(),
   phases: z.string()
 })
