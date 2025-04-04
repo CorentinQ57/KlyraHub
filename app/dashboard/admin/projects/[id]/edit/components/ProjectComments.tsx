@@ -6,15 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/components/ui/use-toast'
-import { addComment, fetchComments } from '@/lib/supabase'
+import { addComment, fetchComments, type Comment as BaseComment } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
 
-type Comment = {
-  id: string
-  project_id: string
-  user_id: string
-  content: string
-  created_at: string
+// Définir un type spécifique pour le component avec les informations utilisateur
+interface EnhancedComment extends BaseComment {
   user?: {
     id: string
     full_name: string
@@ -28,7 +24,7 @@ type ProjectCommentsProps = {
 }
 
 export default function ProjectComments({ project, onCommentsUpdated }: ProjectCommentsProps) {
-  const [comments, setComments] = useState<Comment[]>([])
+  const [comments, setComments] = useState<EnhancedComment[]>([])
   const [newComment, setNewComment] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
@@ -45,24 +41,27 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
       // Si les commentaires sont déjà préchargés dans le projet, les utiliser
       if (project.comments && Array.isArray(project.comments)) {
         console.log('Using preloaded comments:', project.comments.length);
-        const commentsData = project.comments;
+        const commentsData = project.comments as EnhancedComment[];
         
         // Ajout d'informations utilisateur
         const enhancedComments = await Promise.all(
-          commentsData.map(async (comment: any) => {
+          commentsData.map(async (comment) => {
+            // Créer une copie modifiable du commentaire
+            const enhancedComment = { ...comment } as EnhancedComment;
+            
             // Vérifier si le comment a déjà les infos utilisateur
-            if (!comment.user) {
+            if (!enhancedComment.user) {
               // Vérifier si c'est le client
-              if (comment.user_id === project.client_id) {
-                comment.user = {
+              if (enhancedComment.user_id === project.client_id) {
+                enhancedComment.user = {
                   id: project.client.id,
                   full_name: project.client.full_name,
                   avatar_url: project.client.avatar_url
                 };
               } 
               // Vérifier si c'est le designer
-              else if (comment.user_id === project.designer_id && project.designer) {
-                comment.user = {
+              else if (enhancedComment.user_id === project.designer_id && project.designer) {
+                enhancedComment.user = {
                   id: project.designer.id,
                   full_name: project.designer.full_name,
                   avatar_url: project.designer.avatar_url
@@ -70,19 +69,19 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
               } 
               // Sinon, c'est probablement un admin
               else {
-                comment.user = {
-                  id: comment.user_id,
+                enhancedComment.user = {
+                  id: enhancedComment.user_id,
                   full_name: 'Admin',
                   avatar_url: ''
                 };
               }
             }
-            return comment;
+            return enhancedComment;
           })
         );
         
         // Tri par date (plus récent en dernier)
-        const sortedComments = enhancedComments.sort((a: any, b: any) => 
+        const sortedComments = enhancedComments.sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
         
@@ -93,33 +92,33 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
         
         // Ajout d'informations utilisateur
         const enhancedComments = await Promise.all(
-          commentsData.map(async (comment) => {
-            // Récupérer l'utilisateur si on ne l'a pas déjà
-            if (!comment.user) {
-              // Vérifier si c'est le client
-              if (comment.user_id === project.client_id) {
-                comment.user = {
-                  id: project.client.id,
-                  full_name: project.client.full_name,
-                  avatar_url: project.client.avatar_url
-                };
-              } 
-              // Vérifier si c'est le designer
-              else if (comment.user_id === project.designer_id && project.designer) {
-                comment.user = {
-                  id: project.designer.id,
-                  full_name: project.designer.full_name,
-                  avatar_url: project.designer.avatar_url
-                };
-              } 
-              // Sinon, c'est probablement un admin
-              else {
-                comment.user = {
-                  id: comment.user_id,
-                  full_name: 'Admin',
-                  avatar_url: ''
-                };
-              }
+          commentsData.map(async (baseComment) => {
+            // Créer une copie modifiable du commentaire
+            const comment = { ...baseComment } as EnhancedComment;
+            
+            // Vérifier si c'est le client
+            if (comment.user_id === project.client_id) {
+              comment.user = {
+                id: project.client.id,
+                full_name: project.client.full_name,
+                avatar_url: project.client.avatar_url
+              };
+            } 
+            // Vérifier si c'est le designer
+            else if (comment.user_id === project.designer_id && project.designer) {
+              comment.user = {
+                id: project.designer.id,
+                full_name: project.designer.full_name,
+                avatar_url: project.designer.avatar_url
+              };
+            } 
+            // Sinon, c'est probablement un admin
+            else {
+              comment.user = {
+                id: comment.user_id,
+                full_name: 'Admin',
+                avatar_url: ''
+              };
             }
             return comment;
           })
@@ -149,9 +148,9 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
     
     setIsSending(true)
     try {
-      const comment = await addComment(project.id, user.id, newComment)
+      const baseComment = await addComment(project.id, user.id, newComment)
       
-      if (comment) {
+      if (baseComment) {
         // Optimistic update
         const userInfo = {
           id: user.id,
@@ -159,8 +158,8 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
           avatar_url: user.user_metadata?.avatar_url || ''
         }
         
-        const newCommentObject = {
-          ...comment,
+        const newCommentObject: EnhancedComment = {
+          ...baseComment,
           user: userInfo
         }
         
