@@ -5,8 +5,8 @@ import { headers } from 'next/headers';
 // Fonction cohérente de création de slug utilisée dans toute l'application
 const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-');
 
-// Initialiser Stripe avec la clé API secrète
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+// Ne pas initialiser Stripe globalement
+// Nous l'initialiserons dans la fonction POST
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +18,9 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // Initialiser Stripe à l'exécution
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Vérifier que l'URL de l'application est configurée
     if (!process.env.NEXT_PUBLIC_APP_URL) {
