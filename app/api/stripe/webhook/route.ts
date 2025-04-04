@@ -85,7 +85,7 @@ export async function POST(request: Request) {
 
         const project = await createProject(
           userId,
-          parseInt(serviceId),
+          serviceId,
           serviceTitle,
           parseInt(price)
         );
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 
         console.log('Webhook - Projet créé avec succès:', {
           projectId: project.id,
-          userId: project.user_id,
+          userId: project.client_id,
           serviceId: project.service_id,
         });
 
