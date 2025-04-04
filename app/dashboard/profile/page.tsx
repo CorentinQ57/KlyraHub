@@ -29,6 +29,13 @@ export default function ProfilePage() {
     async function loadProfile() {
       setIsLoading(true)
       try {
+        // Vérifier que user existe
+        if (!user) {
+          console.log("Utilisateur non connecté");
+          router.push('/login');
+          return;
+        }
+        
         // Set email from auth data
         setEmail(user.email || '')
 
