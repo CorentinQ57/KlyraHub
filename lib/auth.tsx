@@ -143,6 +143,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { data: null, error }
       }
 
+      console.log('Sign up response:', { user: data?.user?.id })
+      
+      // Si l'inscription a réussi mais que la session n'est pas encore active (confirmation par email)
+      if (data.user) {
+        try {
+          // Import dynamique pour éviter les problèmes de dépendance circulaire
+          const { createProfile } = await import('./supabase')
+          
+          // Créer un profil dans la table profiles
+          console.log('Creating profile for new user...')
+          const profileResult = await createProfile(data.user.id, {
+            full_name: fullName,
+            email: email,
+            role: 'client',
+          })
+          
+          if (profileResult.error) {
+            console.error('Error creating profile after signup:', profileResult.error)
+          } else {
+            console.log('Profile created successfully after signup')
+          }
+        } catch (profileError) {
+          console.error('Exception when creating profile after signup:', profileError)
+          // Non-critical error, continue
+        }
+      }
+
       return { data, error: null }
     } catch (error) {
       console.error('Exception in signUp:', error)
@@ -160,6 +187,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password
       })
 
+      console.log('Sign in response:', { data, error })
+
       if (error) {
         console.error('Error signing in:', error)
         return { data: null, error }
@@ -167,26 +196,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If successful, update local state immediately
       if (data.user) {
+        console.log('Setting user and session data:', data.user.id)
         setSession(data.session)
         setUser(data.user)
         
         // Check user role
+        console.log('Checking user role...')
         const role = await checkUserRole(data.user.id)
+        console.log('User role:', role)
         setIsAdmin(role === 'admin')
         
         // Update last_sign_in_at in profiles table
         try {
+          console.log('Updating last sign in time...')
           // Ne pas inclure l'ID dans l'objet mis à jour pour éviter l'erreur 400
-          await supabase
+          const { data: updateData, error: updateError } = await supabase
             .from('profiles')
             .update({ last_sign_in_at: new Date().toISOString() })
             .eq('id', data.user.id)
+            
+          if (updateError) {
+            console.error('Error updating last sign in time:', updateError)
+          } else {
+            console.log('Last sign in time updated successfully')
+          }
         } catch (updateError) {
-          console.error('Error updating last sign in time:', updateError)
+          console.error('Exception in updating last sign in time:', updateError)
           // Non-critical error, don't return it
         }
       }
 
+      console.log('Sign in completed successfully')
       return { data, error: null }
     } catch (error) {
       console.error('Exception in signIn:', error)

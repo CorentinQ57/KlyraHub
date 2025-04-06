@@ -97,20 +97,19 @@ export default function LoginPage() {
         return
       }
       
+      console.log("Login successful, user data:", data?.user?.id)
+      
       toast({
         title: "Succès",
         description: 'Connexion réussie',
         variant: "default",
-        duration: 5000,
+        duration: 3000,
       })
       
-      // Réinitialiser isLoading avant la redirection
+      // Forcer la redirection immédiatement
+      console.log("Redirecting to dashboard...")
       setIsLoading(false)
-      
-      // Add a small delay before redirecting to ensure auth state is fully updated
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1000)
+      router.push('/dashboard')
     } catch (error) {
       console.error("Unexpected login error:", error)
       toast({

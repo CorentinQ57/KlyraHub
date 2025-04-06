@@ -85,8 +85,10 @@ export default function SignUpPage() {
 
     try {
       setIsLoading(true)
+      console.log("Signup attempt with email:", email)
       
       const { data, error } = await signUp(email, password, fullName)
+      console.log("Signup response:", { data: !!data, error })
       
       if (error) {
         console.error("Signup error:", error)
@@ -111,11 +113,15 @@ export default function SignUpPage() {
         return
       }
       
+      console.log("Signup successful, redirecting to login page")
       toast({
         title: "Succès",
         description: 'Compte créé avec succès ! Veuillez vérifier votre email pour confirmer votre compte.',
         duration: 5000,
       })
+      
+      setIsLoading(false)
+      // Redirection explicite vers la page de connexion
       router.push('/login')
     } catch (error) {
       console.error("Unexpected signup error:", error)
@@ -125,7 +131,6 @@ export default function SignUpPage() {
         variant: "destructive",
         duration: 5000,
       })
-    } finally {
       setIsLoading(false)
     }
   }

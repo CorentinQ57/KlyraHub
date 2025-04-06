@@ -1,5 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 
+// Types for database entities
+export interface User {
+  id: string
+  email: string
+  full_name?: string
+  avatar_url?: string
+  role?: string
+  last_sign_in_at?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface Profile extends User {
+  // Ajout de champs spécifiques au profil si nécessaire
+}
+
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
 }
@@ -25,15 +41,6 @@ export const supabase = createClient(
 );
 
 // Database types
-export type User = {
-  id: string
-  email: string
-  created_at: string
-  full_name?: string
-  avatar_url?: string
-  role: 'client' | 'designer' | 'admin'
-}
-
 export type Service = {
   id: string
   name: string
@@ -128,6 +135,35 @@ export async function getProfileData(userId: string) {
   }
   
   return data
+}
+
+export const createProfile = async (user_id: string, userData: Partial<Profile>) => {
+  console.log('Creating profile for user:', user_id, 'with data:', userData);
+  
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([
+        { 
+          id: user_id,
+          ...userData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ])
+      .select()
+    
+    if (error) {
+      console.error('Error creating profile:', error);
+      return { data: null, error };
+    }
+    
+    console.log('Profile created successfully:', data);
+    return { data, error: null };
+  } catch (error) {
+    console.error('Exception in createProfile:', error);
+    return { data: null, error: error as Error };
+  }
 }
 
 export async function updateProfile(userId: string, updates: Partial<User>) {
