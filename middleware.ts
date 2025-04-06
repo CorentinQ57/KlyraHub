@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
+
+// Env variables for Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export async function middleware(request: NextRequest) {
-  // Clone the request headers
+  // Clone the request headers and add pathname
   const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', request.nextUrl.pathname);
   
-  // Set CORS headers
+  // Create response with the modified headers
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -25,32 +29,39 @@ export async function middleware(request: NextRequest) {
   );
   
   // Check if the request is for a protected route
-  const url = request.nextUrl.clone();
-  const isDashboardRoute = url.pathname.startsWith('/dashboard');
-  const isAdminRoute = url.pathname.startsWith('/admin');
-  const isAuthRoute = url.pathname.startsWith('/login') || 
-                      url.pathname.startsWith('/signup') ||
-                      url.pathname.startsWith('/forgot-password') ||
-                      url.pathname.startsWith('/reset-password');
+  const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
+  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || 
+                    request.nextUrl.pathname.startsWith('/signup') ||
+                    request.nextUrl.pathname.startsWith('/forgot-password') ||
+                    request.nextUrl.pathname.startsWith('/reset-password');
   
   // If it's not a protected route, return the response
   if (!isDashboardRoute && !isAdminRoute && !isAuthRoute) {
     return response;
   }
   
-  // Create Supabase client
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  // Create a Supabase client with the request cookies
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    global: {
+      headers: {
+        cookie: request.headers.get('cookie') || '',
+      },
+    },
+  });
   
   try {
-    // Get session from Supabase
-    const { data: { session } } = await supabase.auth.getSession();
+    // Try to get the user using the cookie sent from the browser
+    const { data: { user } } = await supabase.auth.getUser();
     
     // Handle authentication for dashboard routes
     if (isDashboardRoute) {
-      if (!session) {
-        url.pathname = '/login';
-        return NextResponse.redirect(url);
+      if (!user) {
+        return NextResponse.redirect(new URL('/login', request.url));
       }
       
       return response;
@@ -58,30 +69,27 @@ export async function middleware(request: NextRequest) {
     
     // Handle authentication for admin routes
     if (isAdminRoute) {
-      if (!session) {
-        url.pathname = '/login';
-        return NextResponse.redirect(url);
+      if (!user) {
+        return NextResponse.redirect(new URL('/login', request.url));
       }
       
       // Check if user has admin role
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single();
       
       if (!profile || profile.role !== 'admin') {
-        url.pathname = '/dashboard';
-        return NextResponse.redirect(url);
+        return NextResponse.redirect(new URL('/dashboard', request.url));
       }
       
       return response;
     }
     
     // Handle authentication for auth routes (login, signup, etc.)
-    if (isAuthRoute && session) {
-      url.pathname = '/dashboard';
-      return NextResponse.redirect(url);
+    if (isAuthRoute && user) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     
     return response;
@@ -90,8 +98,7 @@ export async function middleware(request: NextRequest) {
     
     // If there's an error, redirect to login for protected routes
     if (isDashboardRoute || isAdminRoute) {
-      url.pathname = '/login';
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL('/login', request.url));
     }
     
     return response;
