@@ -1,71 +1,101 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Env variables for Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function middleware(request: NextRequest) {
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-pathname', request.nextUrl.pathname)
-
-  // Create response
-  const res = NextResponse.next({
+  // Clone the request headers
+  const requestHeaders = new Headers(request.headers);
+  
+  // Set CORS headers
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
-  })
+  });
   
-  // Get auth cookies
-  const supabaseCookie = request.cookies.get('sb-auth-token')?.value
+  // Add CORS headers
+  response.headers.set("Access-Control-Allow-Origin", "*");
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
   
-  // Check if we have a session
-  const hasSession = !!supabaseCookie
+  // Check if the request is for a protected route
+  const url = request.nextUrl.clone();
+  const isDashboardRoute = url.pathname.startsWith('/dashboard');
+  const isAdminRoute = url.pathname.startsWith('/admin');
+  const isAuthRoute = url.pathname.startsWith('/login') || 
+                      url.pathname.startsWith('/signup') ||
+                      url.pathname.startsWith('/forgot-password') ||
+                      url.pathname.startsWith('/reset-password');
   
-  // Auth protection for dashboard routes
-  if (request.nextUrl.pathname.startsWith('/dashboard') && !hasSession) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // If it's not a protected route, return the response
+  if (!isDashboardRoute && !isAdminRoute && !isAuthRoute) {
+    return response;
   }
-
-  // Auth protection for admin routes
-  if (request.nextUrl.pathname.startsWith('/admin') && hasSession) {
-    // Create a client to check the role
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
+  
+  // Create Supabase client
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  
+  try {
+    // Get session from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Handle authentication for dashboard routes
+    if (isDashboardRoute) {
+      if (!session) {
+        url.pathname = '/login';
+        return NextResponse.redirect(url);
       }
-    })
+      
+      return response;
+    }
     
-    // Set the auth cookie
-    supabase.auth.setSession({
-      access_token: supabaseCookie,
-      refresh_token: ''
-    })
-    
-    // Check user role
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (user) {
+    // Handle authentication for admin routes
+    if (isAdminRoute) {
+      if (!session) {
+        url.pathname = '/login';
+        return NextResponse.redirect(url);
+      }
+      
+      // Check if user has admin role
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', user.id)
-        .single()
+        .eq('id', session.user.id)
+        .single();
       
       if (!profile || profile.role !== 'admin') {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
+        url.pathname = '/dashboard';
+        return NextResponse.redirect(url);
       }
+      
+      return response;
     }
+    
+    // Handle authentication for auth routes (login, signup, etc.)
+    if (isAuthRoute && session) {
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Middleware auth error:', error);
+    
+    // If there's an error, redirect to login for protected routes
+    if (isDashboardRoute || isAdminRoute) {
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+    
+    return response;
   }
-
-  // Add CORS headers
-  res.headers.set('Access-Control-Allow-Origin', '*')
-  res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-
-  return res
 }
 
 export const config = {

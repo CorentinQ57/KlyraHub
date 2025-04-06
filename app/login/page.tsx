@@ -97,6 +97,12 @@ export default function LoginPage() {
         return
       }
       
+      // Debug - Log session and cookies
+      console.log("Session data:", data?.session)
+      console.log("Session token:", data?.session?.access_token)
+      console.log("All cookies:", document.cookie)
+      console.log("Cookies split:", document.cookie.split(';').map(c => c.trim()))
+      
       toast({
         title: "Succès",
         description: 'Connexion réussie',
