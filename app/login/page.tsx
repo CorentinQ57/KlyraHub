@@ -9,6 +9,23 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { motion } from "framer-motion"
+import { Logo } from "@/components/Logo"
+
+// Background Mesh Component
+const BackgroundMesh = () => {
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#E6EDFD] via-[#B8CBFC] to-[#7FA3F9] opacity-30" />
+      <div className="absolute w-full h-full">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-[#467FF7] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-[#F7A6C1] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-[#A6F0C6] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
+      </div>
+      <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px]" />
+    </div>
+  )
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -108,14 +125,12 @@ export default function LoginPage() {
   if (!mounted) {
     return (
       <div className="flex min-h-screen flex-col">
-        <header className="px-4 lg:px-6 h-16 flex items-center">
-          <Link className="flex items-center justify-center" href="/">
-            <span className="text-2xl font-bold">Klyra Design</span>
-          </Link>
+        <BackgroundMesh />
+        <header className="px-4 lg:px-6 h-16 flex items-center relative z-10">
+          <Logo />
         </header>
         <div className="flex-1 flex items-center justify-center">
-          {/* Loading placeholder */}
-          <Card className="w-full max-w-md mx-auto">
+          <Card className="w-full max-w-md mx-auto backdrop-blur-sm bg-white/80">
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
               <CardDescription>Chargement...</CardDescription>
@@ -128,10 +143,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="px-4 lg:px-6 h-16 flex items-center">
-        <Link className="flex items-center justify-center" href="/">
-          <span className="text-2xl font-bold">Klyra Design</span>
-        </Link>
+      <BackgroundMesh />
+      <header className="px-4 lg:px-6 h-16 flex items-center relative z-10">
+        <Logo />
       </header>
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md mx-auto">

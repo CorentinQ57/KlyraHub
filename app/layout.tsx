@@ -12,7 +12,7 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'Klyra Design',
+  title: 'Klyra',
   description: 'Plateforme de services de design',
 }
 
