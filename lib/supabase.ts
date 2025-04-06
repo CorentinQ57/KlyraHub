@@ -131,9 +131,12 @@ export async function getProfileData(userId: string) {
 }
 
 export async function updateProfile(userId: string, updates: Partial<User>) {
+  // Créer une copie des mises à jour et retirer l'id pour éviter l'erreur 400
+  const { id, ...updatesWithoutId } = updates;
+  
   const { data, error } = await supabase
     .from('profiles')
-    .update(updates)
+    .update(updatesWithoutId)
     .eq('id', userId)
   
   if (error) {

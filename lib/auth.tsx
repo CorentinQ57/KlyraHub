@@ -96,10 +96,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Update last_sign_in_at in profiles table
           if (event === 'SIGNED_IN') {
-            await supabase
-              .from('profiles')
-              .update({ last_sign_in_at: new Date().toISOString() })
-              .eq('id', session.user.id)
+            try {
+              // Ne pas inclure l'ID dans l'objet mis à jour pour éviter l'erreur 400
+              await supabase
+                .from('profiles')
+                .update({ last_sign_in_at: new Date().toISOString() })
+                .eq('id', session.user.id)
+            } catch (updateError) {
+              console.error('Error updating last sign in time:', updateError)
+            }
           }
         } else {
           setSession(null)
@@ -171,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Update last_sign_in_at in profiles table
         try {
+          // Ne pas inclure l'ID dans l'objet mis à jour pour éviter l'erreur 400
           await supabase
             .from('profiles')
             .update({ last_sign_in_at: new Date().toISOString() })

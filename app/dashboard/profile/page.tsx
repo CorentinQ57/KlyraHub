@@ -69,7 +69,6 @@ export default function ProfilePage() {
     
     try {
       const updates = {
-        id: user.id,
         full_name: fullName,
         avatar_url: avatarUrl,
         updated_at: new Date().toISOString()
