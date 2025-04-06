@@ -62,9 +62,6 @@ export type Project = {
   status: 'pending' | 'validated' | 'in_progress' | 'delivered' | 'completed'
   current_phase?: string
   price: number
-  start_date?: string
-  deadline_date?: string
-  estimated_delivery_date?: string
   created_at: string
   updated_at: string
 }

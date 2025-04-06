@@ -316,27 +316,6 @@ export default function AdminProjectPage({
                         </Badge>
                       </div>
                     </div>
-
-                    {project.start_date && (
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Date de début</h3>
-                        <p className="mt-1">{new Date(project.start_date).toLocaleDateString()}</p>
-                      </div>
-                    )}
-                    
-                    {project.deadline_date && (
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Date d'échéance</h3>
-                        <p className="mt-1 font-medium text-orange-600">{new Date(project.deadline_date).toLocaleDateString()}</p>
-                      </div>
-                    )}
-                    
-                    {project.estimated_delivery_date && (
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Livraison estimée</h3>
-                        <p className="mt-1 font-medium">{new Date(project.estimated_delivery_date).toLocaleDateString()}</p>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
