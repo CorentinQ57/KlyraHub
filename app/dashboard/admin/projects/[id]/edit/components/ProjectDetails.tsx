@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/select"
 import { useToast } from '@/components/ui/use-toast'
 import { updateProject, supabase } from '@/lib/supabase'
-import { format, parseISO, isValid } from 'date-fns'
+import { format } from 'date-fns/format'
+import { parseISO } from 'date-fns/parseISO'
+import { isValid } from 'date-fns/isValid'
 
 type ProjectDetailsProps = {
   project: any
