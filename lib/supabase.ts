@@ -7,7 +7,6 @@ export interface User {
   full_name?: string
   avatar_url?: string
   role?: string
-  last_sign_in_at?: string
   created_at?: string
   updated_at?: string
 }

@@ -94,6 +94,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const role = await checkUserRole(session.user.id)
           setIsAdmin(role === 'admin')
           
+          // Désactiver temporairement la mise à jour du last_sign_in_at
+          // car la colonne n'existe pas dans le schéma de la base de données
+          /*
           // Update last_sign_in_at in profiles table
           if (event === 'SIGNED_IN') {
             try {
@@ -106,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error('Error updating last sign in time:', updateError)
             }
           }
+          */
         } else {
           setSession(null)
           setUser(null)
@@ -206,6 +210,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('User role:', role)
         setIsAdmin(role === 'admin')
         
+        // Désactiver temporairement la mise à jour du last_sign_in_at
+        // car la colonne n'existe pas dans le schéma de la base de données
+        /* 
         // Update last_sign_in_at in profiles table
         try {
           console.log('Updating last sign in time...')
@@ -224,6 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Exception in updating last sign in time:', updateError)
           // Non-critical error, don't return it
         }
+        */
       }
 
       console.log('Sign in completed successfully')
