@@ -65,16 +65,7 @@ export default function LoginPage() {
       setIsLoading(true)
       console.log("Login attempt with email:", email)
       
-      // Ajouter un timeout pour éviter un blocage indéfini
-      const loginPromise = signIn(email, password);
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('La connexion a pris trop de temps'));
-        }, 15000); // 15 secondes max
-      });
-      
-      // Race entre la connexion et le timeout
-      const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as any;
+      const { data, error } = await signIn(email, password)
       
       if (error) {
         console.error("Login error:", error)
@@ -94,13 +85,6 @@ export default function LoginPage() {
             variant: "destructive",
             duration: 5000,
           })
-        } else if (error.message.includes('trop de temps')) {
-          toast({
-            title: "Erreur",
-            description: 'La connexion a pris trop de temps. Veuillez réessayer.',
-            variant: "destructive",
-            duration: 5000,
-          })
         } else {
           toast({
             title: "Erreur",
@@ -113,41 +97,20 @@ export default function LoginPage() {
         return
       }
       
-      console.log("Login successful, user data:", data?.user?.id)
-      
       toast({
         title: "Succès",
         description: 'Connexion réussie',
         variant: "default",
-        duration: 3000,
+        duration: 5000,
       })
       
-      // Ajouter un délai pour s'assurer que les cookies sont bien enregistrés
-      console.log("Waiting for cookies to be set before redirecting...")
+      // Réinitialiser isLoading avant la redirection
+      setIsLoading(false)
       
-      // Vérifier périodiquement si l'utilisateur est bien défini dans le contexte d'authentification
-      const maxWaitTime = 3000; // 3 secondes max d'attente
-      const startTime = Date.now();
-      
-      const checkUserAndRedirect = () => {
-        if (user) {
-          // L'utilisateur est défini, on peut rediriger
-          console.log("User context updated, redirecting to dashboard...");
-          setIsLoading(false);
-          router.push('/dashboard');
-        } else if (Date.now() - startTime < maxWaitTime) {
-          // Pas encore d'utilisateur mais on n'a pas dépassé le temps max, on réessaie
-          setTimeout(checkUserAndRedirect, 300);
-        } else {
-          // Temps max dépassé, on redirige quand même
-          console.log("Max wait time exceeded, redirecting anyway...");
-          setIsLoading(false);
-          router.push('/dashboard');
-        }
-      };
-      
-      // Démarrer la vérification
-      setTimeout(checkUserAndRedirect, 800);
+      // Add a small delay before redirecting to ensure auth state is fully updated
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
     } catch (error) {
       console.error("Unexpected login error:", error)
       toast({

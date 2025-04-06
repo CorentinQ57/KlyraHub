@@ -1,20 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Types for database entities
-export interface User {
-  id: string
-  email: string
-  full_name?: string
-  avatar_url?: string
-  role?: string
-  created_at?: string
-  updated_at?: string
-}
-
-export interface Profile extends User {
-  // Ajout de champs spécifiques au profil si nécessaire
-}
-
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
 }
@@ -30,41 +15,25 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      flowType: 'pkce',
-      storage: {
-        getItem: (key) => {
-          if (typeof window === 'undefined') {
-            return null
-          }
-          
-          const value = document.cookie
-            .split('; ')
-            .find((row) => row.startsWith(`${key}=`))
-            ?.split('=')[1]
-          
-          return value ? decodeURIComponent(value) : null
-        },
-        setItem: (key, value) => {
-          if (typeof window !== 'undefined') {
-            document.cookie = `${key}=${encodeURIComponent(value)}; path=/; max-age=2592000; SameSite=Lax; secure`
-          }
-        },
-        removeItem: (key) => {
-          if (typeof window !== 'undefined') {
-            document.cookie = `${key}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; secure`
-          }
-        },
-      },
     },
     global: {
       headers: {
-        'X-Client-Info': 'supabase-js@2.49.3',
+        'X-Client-Info': 'supabase-js@2.39.7',
       },
     },
   }
 );
 
 // Database types
+export type User = {
+  id: string
+  email: string
+  created_at: string
+  full_name?: string
+  avatar_url?: string
+  role: 'client' | 'designer' | 'admin'
+}
+
 export type Service = {
   id: string
   name: string
@@ -93,10 +62,11 @@ export type Project = {
   status: 'pending' | 'validated' | 'in_progress' | 'delivered' | 'completed'
   current_phase?: string
   price: number
+  start_date?: string
+  deadline_date?: string
+  estimated_delivery_date?: string
   created_at: string
   updated_at: string
-  deadline_date?: string
-  estimated_completion_date?: string
 }
 
 export type Comment = {
@@ -161,42 +131,10 @@ export async function getProfileData(userId: string) {
   return data
 }
 
-export const createProfile = async (user_id: string, userData: Partial<Profile>) => {
-  console.log('Creating profile for user:', user_id, 'with data:', userData);
-  
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([
-        { 
-          id: user_id,
-          ...userData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ])
-      .select()
-    
-    if (error) {
-      console.error('Error creating profile:', error);
-      return { data: null, error };
-    }
-    
-    console.log('Profile created successfully:', data);
-    return { data, error: null };
-  } catch (error) {
-    console.error('Exception in createProfile:', error);
-    return { data: null, error: error as Error };
-  }
-}
-
 export async function updateProfile(userId: string, updates: Partial<User>) {
-  // Créer une copie des mises à jour et retirer l'id pour éviter l'erreur 400
-  const { id, ...updatesWithoutId } = updates;
-  
   const { data, error } = await supabase
     .from('profiles')
-    .update(updatesWithoutId)
+    .update(updates)
     .eq('id', userId)
   
   if (error) {

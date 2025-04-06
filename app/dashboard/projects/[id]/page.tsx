@@ -1,23 +1,14 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth'
-import { 
-  fetchProjectById,
-  fetchComments,
-  fetchDeliverables,
-  addComment,
-  supabase,
-  Project,
-  Comment,
-  Deliverable
-} from '@/lib/supabase'
+import { fetchProjectById, fetchComments, addComment, fetchDeliverables, supabase } from '@/lib/supabase'
+import { Project, Comment, Deliverable } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import ClientUploadRequests from './components/ClientUploadRequests'
-import { toast } from '@/components/ui/use-toast'
 
 // Définition des types étendus
 type ProjectWithRelations = Project & {
@@ -127,120 +118,96 @@ export default function ProjectPage({
   }, [user, authLoading, params.id, router])
 
   const loadProjectData = async () => {
-    setIsLoading(true);
-    
-    // Timeout de 10 secondes pour éviter un chargement infini
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('Chargement du projet a expiré'));
-      }, 10000);
-    });
-    
     try {
-      // Charger le projet de base
-      const loadProject = async () => {
-        try {
-          let projectData;
-          if (isAdmin) {
-            console.log("Admin loading project details");
-            // Pour les admins, on utilise une requête directe à Supabase
-            const { data, error } = await supabase
-              .from('projects')
-              .select(`
-                *,
-                services (
-                  id,
-                  name,
-                  description,
-                  category_id,
-                  price,
-                  duration,
-                  icon
-                ),
-                client:client_id (
-                  id,
-                  full_name,
-                  email
-                ),
-                designer:designer_id (
-                  id,
-                  full_name,
-                  email
-                )
-              `)
-              .eq('id', params.id)
-              .single();
-              
-            if (error) {
-              console.error("Error fetching project as admin:", error);
-              return null;
-            }
-            
-            projectData = data;
-          } else {
-            console.log("Client loading project details");
-            projectData = await fetchProjectById(params.id, user?.id || '');
-          }
-          
-          if (!projectData) {
-            console.error("Project not found");
-            toast({
-              title: "Erreur",
-              description: "Projet non trouvé",
-              variant: "destructive",
-            });
-            router.push('/dashboard');
-            return null;
-          }
-          
-          return projectData;
-        } catch (error) {
-          console.error('Error loading project:', error);
-          return null;
-        }
-      };
+      setIsLoading(true)
       
-      // Promesse qui encapsule le chargement du projet
-      const projectPromise = loadProject();
+      // Fetch project (based on user role - admin can see any project)
+      let projectData
       
-      // Course entre le chargement et le timeout
-      const projectData = await Promise.race([projectPromise, timeoutPromise]) as any;
+      if (isAdmin) {
+        // Admins can see any project
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            services (
+              id,
+              name,
+              description,
+              category_id,
+              price,
+              duration,
+              icon
+            ),
+            client:client_id (
+              id,
+              full_name,
+              email
+            ),
+            designer:designer_id (
+              id,
+              full_name,
+              email
+            )
+          `)
+          .eq('id', params.id)
+          .single()
+          
+        if (error) throw error
+        projectData = data
+      } else if (user) {
+        projectData = await fetchProjectById(params.id, user.id)
+      }
       
       if (!projectData) {
-        setIsLoading(false);
-        return;
+        console.error('Project not found or access denied')
+        router.push('/dashboard')
+        return
       }
       
-      setProject(projectData);
+      setProject(projectData as ProjectWithRelations)
       
-      // Chargement des commentaires
-      if (!isAdmin) {
-        try {
-          const commentsData = await fetchComments(params.id);
-          setComments(commentsData);
-        } catch (error) {
-          console.error('Error loading comments:', error);
-        }
-        
-        // Chargement des livrables
-        try {
-          const deliverablesData = await fetchDeliverables(params.id);
-          setDeliverables(deliverablesData);
-        } catch (error) {
-          console.error('Error loading deliverables:', error);
-        }
-      }
+      // Fetch comments
+      const commentsData = await fetchComments(projectData.id)
+      
+      // For each comment, fetch the user name if possible
+      const commentsWithUserNames = await Promise.all(
+        commentsData.map(async (comment) => {
+          try {
+            if (comment.user_id) {
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('full_name, email')
+                .eq('id', comment.user_id)
+                .single()
+                
+              if (!error && data) {
+                return {
+                  ...comment,
+                  userName: data.full_name || data.email || 'Utilisateur'
+                }
+              }
+            }
+            return comment
+          } catch (error) {
+            console.error('Error fetching comment user:', error)
+            return comment
+          }
+        })
+      )
+      
+      setComments(commentsWithUserNames)
+      
+      // Fetch deliverables
+      const deliverablesData = await fetchDeliverables(projectData.id)
+      setDeliverables(deliverablesData)
+      
     } catch (error) {
-      console.error('Error in loadProjectData:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les données du projet. Veuillez rafraîchir la page.",
-        variant: "destructive",
-      });
+      console.error('Error loading project data:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
   
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -524,26 +491,26 @@ export default function ProjectPage({
                     <span className="text-muted-foreground">Prix</span>
                     <span className="font-medium">{project.price}€</span>
                   </div>
-                  
+
+                  {/* Affichage des délais */}
                   {project.deadline_date && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date limite</span>
-                      <span className="font-medium">{new Date(project.deadline_date).toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long', 
-                        year: 'numeric'
-                      })}</span>
+                      <span className="text-muted-foreground">Date d'échéance</span>
+                      <span className="font-medium text-orange-600">{new Date(project.deadline_date).toLocaleDateString()}</span>
                     </div>
                   )}
                   
-                  {project.estimated_completion_date && (
+                  {project.estimated_delivery_date && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date estimée de fin</span>
-                      <span className="font-medium">{new Date(project.estimated_completion_date).toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}</span>
+                      <span className="text-muted-foreground">Livraison estimée</span>
+                      <span className="font-medium">{new Date(project.estimated_delivery_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  
+                  {project.start_date && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Début du projet</span>
+                      <span>{new Date(project.start_date).toLocaleDateString()}</span>
                     </div>
                   )}
                   

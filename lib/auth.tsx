@@ -52,34 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true)
 
-      // Check for active session with a timeout for better error handling
-      const sessionPromise = supabase.auth.getSession();
-      
-      // Timeout après 5 secondes pour éviter un blocage indéfini
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Session request timeout'));
-        }, 5000);
-      });
-      
-      // Race entre la promesse de session et le timeout
-      const { data: { session }, error } = await Promise.race([
-        sessionPromise,
-        timeoutPromise
-      ]) as any;
+      // Check for active session
+      const { data: { session }, error } = await supabase.auth.getSession()
       
       if (error) {
         console.error('Error getting session:', error)
-        // En cas d'erreur, on considère qu'il n'y a pas de session
-        setSession(null)
-        setUser(null)
-        setIsAdmin(false)
-        setIsLoading(false)
-        return
       }
 
       if (session) {
-        console.log("Found existing session for user:", session.user.id)
         setSession(session)
         setUser(session.user)
         
@@ -87,17 +67,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const role = await checkUserRole(session.user.id)
         setIsAdmin(role === 'admin')
       } else {
-        console.log("No active session found")
         setSession(null)
         setUser(null)
         setIsAdmin(false)
       }
     } catch (error) {
       console.error('Error in getInitialSession:', error)
-      // En cas d'erreur, on considère qu'il n'y a pas de session
-      setSession(null)
-      setUser(null)
-      setIsAdmin(false)
     } finally {
       setIsLoading(false)
     }
@@ -119,22 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const role = await checkUserRole(session.user.id)
           setIsAdmin(role === 'admin')
           
-          // Désactiver temporairement la mise à jour du last_sign_in_at
-          // car la colonne n'existe pas dans le schéma de la base de données
-          /*
           // Update last_sign_in_at in profiles table
           if (event === 'SIGNED_IN') {
-            try {
-              // Ne pas inclure l'ID dans l'objet mis à jour pour éviter l'erreur 400
-              await supabase
-                .from('profiles')
-                .update({ last_sign_in_at: new Date().toISOString() })
-                .eq('id', session.user.id)
-            } catch (updateError) {
-              console.error('Error updating last sign in time:', updateError)
-            }
+            await supabase
+              .from('profiles')
+              .update({ last_sign_in_at: new Date().toISOString() })
+              .eq('id', session.user.id)
           }
-          */
         } else {
           setSession(null)
           setUser(null)
@@ -172,33 +138,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { data: null, error }
       }
 
-      console.log('Sign up response:', { user: data?.user?.id })
-      
-      // Si l'inscription a réussi mais que la session n'est pas encore active (confirmation par email)
-      if (data.user) {
-        try {
-          // Import dynamique pour éviter les problèmes de dépendance circulaire
-          const { createProfile } = await import('./supabase')
-          
-          // Créer un profil dans la table profiles
-          console.log('Creating profile for new user...')
-          const profileResult = await createProfile(data.user.id, {
-            full_name: fullName,
-            email: email,
-            role: 'client',
-          })
-          
-          if (profileResult.error) {
-            console.error('Error creating profile after signup:', profileResult.error)
-          } else {
-            console.log('Profile created successfully after signup')
-          }
-        } catch (profileError) {
-          console.error('Exception when creating profile after signup:', profileError)
-          // Non-critical error, continue
-        }
-      }
-
       return { data, error: null }
     } catch (error) {
       console.error('Exception in signUp:', error)
@@ -216,8 +155,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password
       })
 
-      console.log('Sign in response:', { data, error })
-
       if (error) {
         console.error('Error signing in:', error)
         return { data: null, error }
@@ -225,27 +162,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If successful, update local state immediately
       if (data.user) {
-        console.log('Setting user and session data:', data.user.id)
         setSession(data.session)
         setUser(data.user)
         
         // Check user role
-        console.log('Checking user role...')
         const role = await checkUserRole(data.user.id)
-        console.log('User role:', role)
         setIsAdmin(role === 'admin')
         
-        // Force refresh of session cookies - this is important to ensure cookies are written
-        console.log('Refreshing session to ensure cookies are written...')
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
-        if (refreshError) {
-          console.error('Error refreshing session:', refreshError)
-        } else {
-          console.log('Session refreshed successfully')
+        // Update last_sign_in_at in profiles table
+        try {
+          await supabase
+            .from('profiles')
+            .update({ last_sign_in_at: new Date().toISOString() })
+            .eq('id', data.user.id)
+        } catch (updateError) {
+          console.error('Error updating last sign in time:', updateError)
+          // Non-critical error, don't return it
         }
       }
 
-      console.log('Sign in completed successfully')
       return { data, error: null }
     } catch (error) {
       console.error('Exception in signIn:', error)

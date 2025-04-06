@@ -12,18 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
 import { useToast } from '@/components/ui/use-toast'
 import { updateProject, supabase } from '@/lib/supabase'
+import { format, parseISO, isValid } from 'date-fns'
 
 type ProjectDetailsProps = {
   project: any
@@ -37,8 +28,9 @@ export default function ProjectDetails({ project, onProjectUpdated }: ProjectDet
     description: project.description || '',
     status: project.status || 'pending',
     designer_id: project.designer_id || 'none',
+    start_date: project.start_date || '',
     deadline_date: project.deadline_date || '',
-    estimated_completion_date: project.estimated_completion_date || ''
+    estimated_delivery_date: project.estimated_delivery_date || ''
   })
   const [availableDesigners, setAvailableDesigners] = useState<any[]>([])
   const [isLoadingDesigners, setIsLoadingDesigners] = useState(true)
@@ -102,10 +94,11 @@ export default function ProjectDetails({ project, onProjectUpdated }: ProjectDet
     }))
   }
 
-  const handleDateChange = (field: string, date: Date | undefined) => {
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [field]: date ? date.toISOString() : ''
+      [name]: value
     }))
   }
 
@@ -117,13 +110,21 @@ export default function ProjectDetails({ project, onProjectUpdated }: ProjectDet
       // Traiter la valeur "none" comme undefined
       const designerId = formData.designer_id === "none" ? undefined : formData.designer_id || undefined
       
+      // Préparer les dates pour l'API
+      const formatDateForAPI = (dateString: string) => {
+        if (!dateString) return undefined
+        const date = new Date(dateString)
+        return isValid(date) ? date.toISOString() : undefined
+      }
+      
       const updatedProject = await updateProject(project.id, {
         title: formData.title,
         description: formData.description,
         status: formData.status as any,
         designer_id: designerId,
-        deadline_date: formData.deadline_date || undefined,
-        estimated_completion_date: formData.estimated_completion_date || undefined
+        start_date: formatDateForAPI(formData.start_date),
+        deadline_date: formatDateForAPI(formData.deadline_date),
+        estimated_delivery_date: formatDateForAPI(formData.estimated_delivery_date)
       })
 
       if (updatedProject) {
@@ -147,12 +148,23 @@ export default function ProjectDetails({ project, onProjectUpdated }: ProjectDet
     }
   }
 
+  // Format date for display
+  const formatDateForInput = (dateString: string | null | undefined) => {
+    if (!dateString) return ''
+    try {
+      const date = parseISO(dateString)
+      return isValid(date) ? format(date, 'yyyy-MM-dd') : ''
+    } catch (error) {
+      return ''
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Détails du projet</CardTitle>
         <CardDescription>
-          Informations générales du projet, assignation du designer et dates d'échéance
+          Informations générales du projet, assignation du designer et délais
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -240,69 +252,45 @@ export default function ProjectDetails({ project, onProjectUpdated }: ProjectDet
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Date limite de livraison
+              <label htmlFor="start_date" className="text-sm font-medium">
+                Date de début
               </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.deadline_date && "text-muted-foreground"
-                    )}
-                    disabled={isSaving}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.deadline_date ? (
-                      format(new Date(formData.deadline_date), "PPP", { locale: fr })
-                    ) : (
-                      <span>Sélectionner une date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.deadline_date ? new Date(formData.deadline_date) : undefined}
-                    onSelect={(date) => handleDateChange('deadline_date', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="start_date"
+                name="start_date"
+                type="date"
+                value={formatDateForInput(formData.start_date)}
+                onChange={handleDateChange}
+                disabled={isSaving}
+              />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Date estimée de fin
+              <label htmlFor="deadline_date" className="text-sm font-medium">
+                Date d'échéance (deadline)
               </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.estimated_completion_date && "text-muted-foreground"
-                    )}
-                    disabled={isSaving}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.estimated_completion_date ? (
-                      format(new Date(formData.estimated_completion_date), "PPP", { locale: fr })
-                    ) : (
-                      <span>Sélectionner une date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.estimated_completion_date ? new Date(formData.estimated_completion_date) : undefined}
-                    onSelect={(date) => handleDateChange('estimated_completion_date', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="deadline_date"
+                name="deadline_date"
+                type="date"
+                value={formatDateForInput(formData.deadline_date)}
+                onChange={handleDateChange}
+                disabled={isSaving}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="estimated_delivery_date" className="text-sm font-medium">
+                Date de livraison estimée
+              </label>
+              <Input
+                id="estimated_delivery_date"
+                name="estimated_delivery_date"
+                type="date"
+                value={formatDateForInput(formData.estimated_delivery_date)}
+                onChange={handleDateChange}
+                disabled={isSaving}
+              />
             </div>
           </div>
 

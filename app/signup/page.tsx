@@ -85,20 +85,8 @@ export default function SignUpPage() {
 
     try {
       setIsLoading(true)
-      console.log("Signup attempt with email:", email)
       
-      // Ajouter un timeout pour éviter un blocage indéfini
-      const signupPromise = signUp(email, password, fullName);
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('L\'inscription a pris trop de temps'));
-        }, 15000); // 15 secondes max
-      });
-      
-      // Race entre l'inscription et le timeout
-      const { data, error } = await Promise.race([signupPromise, timeoutPromise]) as any;
-      
-      console.log("Signup response:", { data: !!data, error })
+      const { data, error } = await signUp(email, password, fullName)
       
       if (error) {
         console.error("Signup error:", error)
@@ -108,13 +96,6 @@ export default function SignUpPage() {
           toast({
             title: "Erreur",
             description: 'Cet email est déjà utilisé',
-            variant: "destructive",
-            duration: 5000,
-          })
-        } else if (error.message.includes('trop de temps')) {
-          toast({
-            title: "Erreur",
-            description: 'L\'inscription a pris trop de temps. Veuillez réessayer.',
             variant: "destructive",
             duration: 5000,
           })
@@ -130,38 +111,12 @@ export default function SignUpPage() {
         return
       }
       
-      console.log("Signup successful, redirecting to login page")
       toast({
         title: "Succès",
         description: 'Compte créé avec succès ! Veuillez vérifier votre email pour confirmer votre compte.',
         duration: 5000,
       })
-      
-      // Ajouter un délai avec vérification périodique
-      let redirectAttempts = 0;
-      const maxRedirectAttempts = 5;
-      
-      const attemptRedirect = () => {
-        redirectAttempts++;
-        if (redirectAttempts > maxRedirectAttempts) {
-          // Nombre maximum de tentatives atteint
-          console.log("Max redirect attempts exceeded, forcing redirect");
-          setIsLoading(false);
-          router.push('/login');
-          return;
-        }
-        
-        try {
-          setIsLoading(false);
-          router.push('/login');
-        } catch (redirectError) {
-          console.error("Error during redirect:", redirectError);
-          // En cas d'erreur, réessayer après un court délai
-          setTimeout(attemptRedirect, 500);
-        }
-      };
-      
-      setTimeout(attemptRedirect, 1000);
+      router.push('/login')
     } catch (error) {
       console.error("Unexpected signup error:", error)
       toast({
@@ -170,6 +125,7 @@ export default function SignUpPage() {
         variant: "destructive",
         duration: 5000,
       })
+    } finally {
       setIsLoading(false)
     }
   }
