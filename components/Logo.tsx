@@ -6,15 +6,16 @@ interface LogoProps {
   showText?: boolean;
 }
 
-export function Logo({ className = "", showText = true }: LogoProps) {
+export function Logo({ className = "", showText = false }: LogoProps) {
   return (
     <Link href="/" className={`flex items-center ${className}`}>
       <Image 
         src="/images/klyra-logo.png" 
         alt="Klyra Logo"
-        width={40} 
+        width={150} 
         height={40}
-        className="h-10 w-auto"
+        className="h-auto w-auto"
+        priority
       />
       {showText && (
         <span className="ml-2 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#467FF7] to-[#7FA3F9]">

@@ -11,6 +11,8 @@ import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowRight, Calendar, CheckCircle, Clock } from 'lucide-react'
+import { Logo } from '@/components/Logo'
+import { HeaderNav } from '@/components/HeaderNav'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -216,45 +218,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6 md:gap-10">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-klyra">Klyra</span>
-            </Link>
-            <nav className="hidden gap-6 md:flex">
-              <Link href="/dashboard" className="text-sm font-medium text-klyra transition-colors">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/profile" className="text-sm font-medium transition-colors hover:text-klyra">
-                Profil
-              </Link>
-              <Link href="/dashboard/purchases" className="text-sm font-medium transition-colors hover:text-klyra">
-                Historique d'achats
-              </Link>
-              <Link href="/dashboard/marketplace" className="text-sm font-medium transition-colors hover:text-klyra">
-                Marketplace
-              </Link>
-              {isAdmin && (
-                <Link href="/dashboard/admin" className="text-sm font-medium transition-colors hover:text-klyra">
-                  Admin
-                </Link>
-              )}
-            </nav>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={async () => {
-                await supabase.auth.signOut()
-                router.push('/')
-              }}
-            >
-              Déconnexion
-            </Button>
-          </div>
-        </div>
-      </header>
+      <HeaderNav />
       <main className="flex-1 container py-10">
         <div className="space-y-8">
           <div className="flex items-center justify-between">
