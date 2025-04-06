@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { getAllServices, createStripeSession, type Service } from '@/lib/supabase'
-import { HeaderNav } from '@/components/HeaderNav'
 
 // Make slug from title
 const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
@@ -106,7 +105,7 @@ export default function MarketplacePage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-klyra mx-auto"></div>
+          <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
           <p className="mt-4 text-lg">Chargement...</p>
         </div>
       </div>
@@ -114,10 +113,9 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <HeaderNav />
+    <div>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-16 bg-klyra-50">
+        <section className="w-full py-12 md:py-16 bg-primary-50">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center text-center space-y-4">
               <div className="space-y-2">
@@ -147,8 +145,8 @@ export default function MarketplacePage() {
                           onClick={() => setSelectedCategory(cat)}
                           className={`text-xs rounded-full px-3 py-1 ${
                             cat === selectedCategory 
-                              ? 'bg-klyra text-white' 
-                              : 'bg-secondary hover:bg-klyra/20'
+                              ? 'bg-primary text-white' 
+                              : 'bg-secondary hover:bg-primary/20'
                           }`}
                         >
                           {cat}
@@ -165,8 +163,8 @@ export default function MarketplacePage() {
                           onClick={() => setSelectedPrice(price)}
                           className={`text-xs rounded-full px-3 py-1 ${
                             price === selectedPrice 
-                              ? 'bg-klyra text-white' 
-                              : 'bg-secondary hover:bg-klyra/20'
+                              ? 'bg-primary text-white' 
+                              : 'bg-secondary hover:bg-primary/20'
                           }`}
                         >
                           {price}
@@ -189,7 +187,7 @@ export default function MarketplacePage() {
                         <h3 className="text-xl font-bold">{service.name}</h3>
                         <p className="text-muted-foreground line-clamp-2">{service.description}</p>
                         <div className="flex justify-between items-center">
-                          <p className="font-medium text-klyra">{service.price}€</p>
+                          <p className="font-medium text-primary">{service.price}€</p>
                           <p className="text-xs text-muted-foreground">{service.duration} jours</p>
                         </div>
                         <div className="space-y-1">
@@ -197,7 +195,7 @@ export default function MarketplacePage() {
                           <ul className="text-xs text-muted-foreground space-y-1">
                             {(service.features || []).slice(0, 2).map((feature, i) => (
                               <li key={i} className="flex items-center">
-                                <span className="mr-1 text-klyra">✓</span> {feature}
+                                <span className="mr-1 text-primary">✓</span> {feature}
                               </li>
                             ))}
                             {(service.features || []).length > 2 && (
@@ -219,7 +217,7 @@ export default function MarketplacePage() {
                           {processingPayment === service.id ? 'Traitement...' : 'Acheter maintenant'}
                         </Button>
                       </div>
-                      <div className="absolute top-2 right-2 bg-klyra-100 text-klyra-700 text-xs px-2 py-1 rounded-full">
+                      <div className="absolute top-2 right-2 bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full">
                         {service.category}
                       </div>
                     </div>

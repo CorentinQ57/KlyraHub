@@ -347,20 +347,6 @@ export default function ServicePage({ params }: Props) {
   if (!service) {
     return (
       <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-16 items-center justify-between">
-            <div className="flex items-center gap-6 md:gap-10">
-              <Link href="/dashboard" className="flex items-center space-x-2">
-                <span className="text-2xl font-bold text-klyra">Klyra</span>
-              </Link>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => router.push('/dashboard/marketplace')}>
-                Retour au marketplace
-              </Button>
-            </div>
-          </div>
-        </header>
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-md p-6">
             <h1 className="text-2xl font-bold mb-4">Service non trouvé</h1>
@@ -377,35 +363,7 @@ export default function ServicePage({ params }: Props) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6 md:gap-10">
-            <Link href="/dashboard" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-klyra">Klyra</span>
-            </Link>
-            <nav className="hidden gap-6 md:flex">
-              <Link href="/dashboard" className="text-sm font-medium transition-colors hover:text-klyra">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/profile" className="text-sm font-medium transition-colors hover:text-klyra">
-                Profil
-              </Link>
-              <Link href="/dashboard/purchases" className="text-sm font-medium transition-colors hover:text-klyra">
-                Historique d'achats
-              </Link>
-              <Link href="/dashboard/marketplace" className="text-sm font-medium transition-colors hover:text-klyra">
-                Marketplace
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => router.push('/dashboard/marketplace')}>
-              Retour aux services
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div>
       <main className="flex-1">
         <div className="container py-10">
           <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
@@ -446,7 +404,7 @@ export default function ServicePage({ params }: Props) {
                   <h2 className="text-2xl font-bold">Description</h2>
                   <p className="text-muted-foreground">{service?.long_description || service?.description}</p>
                   
-                  {service?.features && service.features.length > 0 && (
+                  {service?.features && service?.features.length > 0 && (
                     <>
                       <h3 className="text-xl font-bold">Ce qui est inclus</h3>
                       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -472,7 +430,7 @@ export default function ServicePage({ params }: Props) {
                       >
                         {i < (service?.phases || defaultProcess).length - 1 && (
                           <motion.div 
-                            className="absolute left-4 top-8 w-0.5 bg-klyra/20" 
+                            className="absolute left-4 top-8 w-0.5 bg-primary/20" 
                             style={{ height: "calc(100% + 10px)" }}
                             initial={{ height: 0 }}
                             whileInView={{ height: "calc(100% + 10px)" }}
@@ -482,7 +440,7 @@ export default function ServicePage({ params }: Props) {
                         )}
                         
                         <motion.div 
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-klyra text-white shrink-0 z-10"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shrink-0 z-10"
                           initial={{ scale: 0 }}
                           whileInView={{ scale: 1 }}
                           transition={{ 
@@ -497,7 +455,7 @@ export default function ServicePage({ params }: Props) {
                         </motion.div>
                         
                         <motion.div 
-                          className="bg-klyra-50 p-4 rounded-lg shadow-sm border border-klyra/10 flex-1"
+                          className="bg-primary-50 p-4 rounded-lg shadow-sm border border-primary/10 flex-1"
                           whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
                           transition={{ duration: 0.2 }}
                         >
@@ -529,7 +487,7 @@ export default function ServicePage({ params }: Props) {
                   
                   <div className="space-y-2">
                     <Button 
-                      className="w-full bg-klyra hover:bg-klyra/90"
+                      className="w-full bg-primary hover:bg-primary/90"
                       onClick={handleBuyNow}
                       disabled={isProcessingPayment}
                     >
@@ -547,7 +505,7 @@ export default function ServicePage({ params }: Props) {
                   )}
                   
                   <div className="text-xs text-muted-foreground">
-                    En achetant ce service, vous acceptez nos <Link href="/terms" className="underline hover:text-klyra">conditions d'utilisation</Link>
+                    En achetant ce service, vous acceptez nos <Link href="/terms" className="underline hover:text-primary">conditions d'utilisation</Link>
                   </div>
                 </div>
               </div>
