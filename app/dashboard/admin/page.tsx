@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth'
 import { fetchAllProjects } from '@/lib/supabase'
 import { Project } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
+import { HeaderNav } from '@/components/HeaderNav'
 
 // Étendre le type Project pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -108,37 +109,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6 md:gap-10">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-klyra">Klyra</span>
-            </Link>
-            <nav className="hidden gap-6 md:flex">
-              <Link href="/dashboard" className="text-sm font-medium transition-colors hover:text-klyra">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/profile" className="text-sm font-medium transition-colors hover:text-klyra">
-                Profil
-              </Link>
-              <Link href="/dashboard/marketplace" className="text-sm font-medium transition-colors hover:text-klyra">
-                Marketplace
-              </Link>
-              <Link href="/dashboard/admin" className="text-sm font-medium text-klyra transition-colors">
-                Admin
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-            >
-              Retour au Dashboard
-            </Button>
-          </div>
-        </div>
-      </header>
+      <HeaderNav />
       <main className="flex-1 container py-10">
         <div className="space-y-8">
           <div>

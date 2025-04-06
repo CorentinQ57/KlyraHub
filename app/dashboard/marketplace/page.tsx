@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { getAllServices, createStripeSession, type Service } from '@/lib/supabase'
+import { HeaderNav } from '@/components/HeaderNav'
 
 // Make slug from title
 const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
@@ -114,34 +115,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6 md:gap-10">
-            <Link href="/dashboard" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-klyra">Klyra</span>
-            </Link>
-            <nav className="hidden gap-6 md:flex">
-              <Link href="/dashboard" className="text-sm font-medium transition-colors hover:text-klyra">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/profile" className="text-sm font-medium transition-colors hover:text-klyra">
-                Profil
-              </Link>
-              <Link href="/dashboard/purchases" className="text-sm font-medium transition-colors hover:text-klyra">
-                Historique d'achats
-              </Link>
-              <Link href="/dashboard/marketplace" className="text-sm font-medium transition-colors hover:text-klyra">
-                Marketplace
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => router.push('/dashboard')}>
-              Retour
-            </Button>
-          </div>
-        </div>
-      </header>
+      <HeaderNav />
       <main className="flex-1">
         <section className="w-full py-12 md:py-16 bg-klyra-50">
           <div className="container px-4 md:px-6">
