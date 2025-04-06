@@ -492,6 +492,28 @@ export default function ProjectPage({
                     <span className="font-medium">{project.price}€</span>
                   </div>
                   
+                  {project.deadline_date && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Date limite</span>
+                      <span className="font-medium">{new Date(project.deadline_date).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long', 
+                        year: 'numeric'
+                      })}</span>
+                    </div>
+                  )}
+                  
+                  {project.estimated_completion_date && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Date estimée de fin</span>
+                      <span className="font-medium">{new Date(project.estimated_completion_date).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}</span>
+                    </div>
+                  )}
+                  
                   {isAdmin && project.profiles && (
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between items-center">

@@ -20,7 +20,7 @@
 - [x] 5 étapes Klyra
 - [x] Fichiers livrables (upload/download)
 - [x] Historique par projet
-- [ ] Affichage des délais/échéances
+- [x] Affichage des délais/échéances
 
 ## MESSAGERIE
 - [x] Module de messagerie asynchrone

@@ -64,6 +64,8 @@ export type Project = {
   price: number
   created_at: string
   updated_at: string
+  deadline_date?: string
+  estimated_completion_date?: string
 }
 
 export type Comment = {
