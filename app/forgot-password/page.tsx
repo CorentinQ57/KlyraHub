@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -26,12 +26,11 @@ const BackgroundMesh = () => {
   )
 }
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const { signIn, user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -40,21 +39,14 @@ export default function LoginPage() {
     setMounted(true)
   }, [])
 
-  // Redirect if user is already logged in
-  useEffect(() => {
-    if (user) {
-      router.push('/dashboard')
-    }
-  }, [user, router])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Form validation
-    if (!email || !password) {
+    if (!email) {
       toast({
         title: "Erreur",
-        description: 'Veuillez remplir tous les champs',
+        description: 'Veuillez entrer votre adresse email',
         variant: "destructive",
         duration: 5000,
       })
@@ -63,67 +55,43 @@ export default function LoginPage() {
 
     try {
       setIsLoading(true)
-      console.log("Login attempt with email:", email)
       
-      const { data, error } = await signIn(email, password)
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
       
       if (error) {
-        console.error("Login error:", error)
-        
-        // Provide specific error messages based on error type
-        if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Erreur",
-            description: 'Email ou mot de passe incorrect',
-            variant: "destructive",
-            duration: 5000,
-          })
-        } else if (error.message.includes('Email not confirmed')) {
-          toast({
-            title: "Erreur",
-            description: 'Veuillez confirmer votre email avant de vous connecter',
-            variant: "destructive",
-            duration: 5000,
-          })
-        } else {
-          toast({
-            title: "Erreur",
-            description: `Erreur de connexion: ${error.message}`,
-            variant: "destructive",
-            duration: 5000,
-          })
-        }
+        console.error("Reset password error:", error)
+        toast({
+          title: "Erreur",
+          description: `Erreur lors de la réinitialisation: ${error.message}`,
+          variant: "destructive",
+          duration: 5000,
+        })
         setIsLoading(false)
         return
       }
       
+      setIsSubmitted(true)
       toast({
-        title: "Succès",
-        description: 'Connexion réussie',
-        variant: "default",
+        title: "Email envoyé",
+        description: 'Vérifiez votre boîte mail pour réinitialiser votre mot de passe',
         duration: 5000,
       })
-      
-      // Réinitialiser isLoading avant la redirection
-      setIsLoading(false)
-      
-      // Add a small delay before redirecting to ensure auth state is fully updated
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1000)
-    } catch (error) {
-      console.error("Unexpected login error:", error)
+    } catch (error: any) {
+      console.error("Unexpected reset password error:", error)
       toast({
         title: "Erreur",
         description: 'Une erreur inattendue est survenue',
         variant: "destructive",
         duration: 5000,
       })
+    } finally {
       setIsLoading(false)
     }
   }
 
-  // If not mounted yet (server-side), don't show login content to prevent hydration errors
+  // If not mounted yet (server-side), don't show content to prevent hydration errors
   if (!mounted) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -136,7 +104,7 @@ export default function LoginPage() {
         <div className="flex-1 flex items-center justify-center">
           <Card className="w-full max-w-md mx-auto backdrop-blur-sm bg-white/80">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
+              <CardTitle className="text-2xl font-bold">Mot de passe oublié</CardTitle>
               <CardDescription>Chargement...</CardDescription>
             </CardHeader>
           </Card>
@@ -162,53 +130,62 @@ export default function LoginPage() {
         >
           <Card className="backdrop-blur-sm bg-white/80 shadow-xl border-opacity-50">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#467FF7] to-[#7FA3F9]">Connexion</CardTitle>
-              <CardDescription className="text-gray-600">Entrez vos identifiants pour accéder à votre compte</CardDescription>
+              <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#467FF7] to-[#7FA3F9]">Mot de passe oublié</CardTitle>
+              <CardDescription className="text-gray-600">
+                {isSubmitted 
+                  ? "Consultez votre email pour les instructions de réinitialisation"
+                  : "Entrez votre email pour réinitialiser votre mot de passe"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="exemple@domaine.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="bg-white/50 border-opacity-50 focus:border-[#467FF7] transition-colors"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-gray-700">Mot de passe</Label>
-                    <Link href="/forgot-password" className="text-sm text-[#467FF7] hover:text-[#3A6FE0] transition-colors">
-                      Mot de passe oublié?
-                    </Link>
+              {!isSubmitted ? (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-gray-700">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="exemple@domaine.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-white/50 border-opacity-50 focus:border-[#467FF7] transition-colors"
+                    />
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="bg-white/50 border-opacity-50 focus:border-[#467FF7] transition-colors"
-                  />
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-[#467FF7] to-[#7FA3F9] hover:from-[#3A6FE0] hover:to-[#6A8FE5] transition-all duration-300 transform hover:scale-[1.02]"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Envoi en cours...' : 'Envoyer les instructions'}
+                  </Button>
+                </form>
+              ) : (
+                <div className="flex flex-col items-center space-y-4 py-4">
+                  <div className="bg-green-100 text-green-700 p-3 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  </div>
+                  <p className="text-center text-gray-600">
+                    Un email a été envoyé à <span className="font-semibold">{email}</span>.<br/>
+                    Suivez les instructions pour réinitialiser votre mot de passe.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => setIsSubmitted(false)}
+                  >
+                    Réessayer avec un autre email
+                  </Button>
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-[#467FF7] to-[#7FA3F9] hover:from-[#3A6FE0] hover:to-[#6A8FE5] transition-all duration-300 transform hover:scale-[1.02]"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Connexion en cours...' : 'Se connecter'}
-                </Button>
-              </form>
+              )}
             </CardContent>
             <CardFooter className="flex flex-col items-center">
               <div className="text-sm text-gray-600">
-                Vous n&apos;avez pas de compte?{' '}
-                <Link href="/signup" className="text-[#467FF7] hover:text-[#3A6FE0] transition-colors">
-                  Créer un compte
+                <Link href="/login" className="text-[#467FF7] hover:text-[#3A6FE0] transition-colors">
+                  Retour à la connexion
                 </Link>
               </div>
             </CardFooter>
