@@ -123,17 +123,43 @@ export default function DashboardPage() {
   const loadProjects = async () => {
     if (user) {
       try {
-        const fetchedProjects = isAdmin 
-          ? await fetchAllProjects()
-          : await fetchProjects(user.id);
+        // Ajouter un timeout pour éviter le blocage indéfini
+        let timeoutId: NodeJS.Timeout | null = null;
+        
+        const timeoutPromise = new Promise<ProjectWithRelations[]>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error('Chargement des projets a expiré'));
+          }, 8000); // 8 secondes max
+        });
+        
+        const fetchPromise = new Promise<ProjectWithRelations[]>(async (resolve) => {
+          try {
+            const fetchedProjects = isAdmin 
+              ? await fetchAllProjects()
+              : await fetchProjects(user.id);
+            resolve(fetchedProjects);
+          } catch (error) {
+            console.error('Erreur dans fetchPromise:', error);
+            resolve([]); // En cas d'erreur, on retourne un tableau vide
+          }
+        });
+        
+        // Course entre le chargement et le timeout
+        const fetchedProjects = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        // Nettoyer le timeout si la promesse de chargement a gagné
+        if (timeoutId) clearTimeout(timeoutId);
+        
         setProjects(fetchedProjects);
       } catch (error) {
         console.error('Erreur lors du chargement des projets:', error);
         toast({
           title: "Erreur",
-          description: "Impossible de charger vos projets.",
+          description: "Impossible de charger vos projets. Veuillez rafraîchir la page.",
           variant: "destructive",
         });
+        // Même en cas d'erreur, on définit des projets vides pour éviter un écran de chargement infini
+        setProjects([]);
       } finally {
         setIsLoading(false);
       }

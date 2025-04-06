@@ -87,7 +87,17 @@ export default function SignUpPage() {
       setIsLoading(true)
       console.log("Signup attempt with email:", email)
       
-      const { data, error } = await signUp(email, password, fullName)
+      // Ajouter un timeout pour éviter un blocage indéfini
+      const signupPromise = signUp(email, password, fullName);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('L\'inscription a pris trop de temps'));
+        }, 15000); // 15 secondes max
+      });
+      
+      // Race entre l'inscription et le timeout
+      const { data, error } = await Promise.race([signupPromise, timeoutPromise]) as any;
+      
       console.log("Signup response:", { data: !!data, error })
       
       if (error) {
@@ -98,6 +108,13 @@ export default function SignUpPage() {
           toast({
             title: "Erreur",
             description: 'Cet email est déjà utilisé',
+            variant: "destructive",
+            duration: 5000,
+          })
+        } else if (error.message.includes('trop de temps')) {
+          toast({
+            title: "Erreur",
+            description: 'L\'inscription a pris trop de temps. Veuillez réessayer.',
             variant: "destructive",
             duration: 5000,
           })
@@ -120,12 +137,31 @@ export default function SignUpPage() {
         duration: 5000,
       })
       
-      // Ajouter un délai pour s'assurer que tout est bien enregistré
-      setTimeout(() => {
-        setIsLoading(false)
-        // Redirection explicite vers la page de connexion
-        router.push('/login')
-      }, 1000)
+      // Ajouter un délai avec vérification périodique
+      let redirectAttempts = 0;
+      const maxRedirectAttempts = 5;
+      
+      const attemptRedirect = () => {
+        redirectAttempts++;
+        if (redirectAttempts > maxRedirectAttempts) {
+          // Nombre maximum de tentatives atteint
+          console.log("Max redirect attempts exceeded, forcing redirect");
+          setIsLoading(false);
+          router.push('/login');
+          return;
+        }
+        
+        try {
+          setIsLoading(false);
+          router.push('/login');
+        } catch (redirectError) {
+          console.error("Error during redirect:", redirectError);
+          // En cas d'erreur, réessayer après un court délai
+          setTimeout(attemptRedirect, 500);
+        }
+      };
+      
+      setTimeout(attemptRedirect, 1000);
     } catch (error) {
       console.error("Unexpected signup error:", error)
       toast({

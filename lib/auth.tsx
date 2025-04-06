@@ -52,14 +52,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true)
 
-      // Check for active session
-      const { data: { session }, error } = await supabase.auth.getSession()
+      // Check for active session with a timeout for better error handling
+      const sessionPromise = supabase.auth.getSession();
+      
+      // Timeout après 5 secondes pour éviter un blocage indéfini
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Session request timeout'));
+        }, 5000);
+      });
+      
+      // Race entre la promesse de session et le timeout
+      const { data: { session }, error } = await Promise.race([
+        sessionPromise,
+        timeoutPromise
+      ]) as any;
       
       if (error) {
         console.error('Error getting session:', error)
+        // En cas d'erreur, on considère qu'il n'y a pas de session
+        setSession(null)
+        setUser(null)
+        setIsAdmin(false)
+        setIsLoading(false)
+        return
       }
 
       if (session) {
+        console.log("Found existing session for user:", session.user.id)
         setSession(session)
         setUser(session.user)
         
@@ -67,12 +87,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const role = await checkUserRole(session.user.id)
         setIsAdmin(role === 'admin')
       } else {
+        console.log("No active session found")
         setSession(null)
         setUser(null)
         setIsAdmin(false)
       }
     } catch (error) {
       console.error('Error in getInitialSession:', error)
+      // En cas d'erreur, on considère qu'il n'y a pas de session
+      setSession(null)
+      setUser(null)
+      setIsAdmin(false)
     } finally {
       setIsLoading(false)
     }
