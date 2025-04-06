@@ -11,8 +11,6 @@ import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowRight, Calendar, CheckCircle, Clock } from 'lucide-react'
-import { Logo } from '@/components/Logo'
-import { HeaderNav } from '@/components/HeaderNav'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -85,7 +83,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
+  const { user, isAdmin } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -142,29 +140,17 @@ export default function DashboardPage() {
     }
   };
   
-  // Effet pour gérer la redirection si non authentifié
+  // Effet pour charger les projets
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login')
-      return
-    }
-    
     if (user) {
       loadProjects()
     }
-  }, [user, authLoading, router])
+  }, [user])
   
   // Effet pour gérer la création de projet après un paiement réussi
   useEffect(() => {
     const handlePaymentSuccess = async () => {
       if (paymentSuccess === 'true' && sessionId && serviceId && title && price && user && !isLoading) {
-        console.log("Paiement réussi détecté dans l'URL, création du projet:", {
-          sessionId,
-          serviceId,
-          title,
-          price
-        })
-        
         try {
           const project = await createProject(
             user.id,
@@ -174,8 +160,6 @@ export default function DashboardPage() {
           )
           
           if (project) {
-            console.log('Projet créé avec succès:', project)
-            
             // Afficher un toast de confirmation
             toast({
               title: "Paiement réussi !",
@@ -205,77 +189,61 @@ export default function DashboardPage() {
     handlePaymentSuccess()
   }, [paymentSuccess, sessionId, serviceId, title, price, user, isLoading])
 
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-klyra mx-auto"></div>
-          <p className="mt-4 text-lg">Chargement de votre tableau de bord...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex min-h-screen flex-col">
-      <HeaderNav />
-      <main className="flex-1 container py-10">
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-              {isAdmin && (
-                <p className="text-sm text-klyra mt-1">Mode administrateur - Tous les projets sont visibles</p>
-              )}
-            </div>
-            <Link href="/dashboard/marketplace">
-              <Button>Acheter un service</Button>
-            </Link>
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold">{isAdmin ? 'Tous les projets' : 'Vos projets'}</h2>
-            <p className="text-muted-foreground">
-              {isAdmin 
-                ? 'Vue d\'ensemble de tous les projets Klyra'
-                : 'Suivi de vos projets Klyra'
-              }
-            </p>
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div 
-                  key={i} 
-                  className="rounded-lg border bg-card text-card-foreground shadow-sm animate-pulse"
-                  style={{ height: '200px' }}
-                />
-              ))}
-            </div>
-          ) : projects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project} 
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 space-y-4">
-              <div className="text-4xl">🚀</div>
-              <h3 className="text-xl font-medium">Vous n'avez pas encore de projet</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Explorez notre marketplace pour trouver le service parfait pour votre entreprise.
-              </p>
-              <Link href="/dashboard/marketplace" className="inline-block mt-4">
-                <Button>Explorer la marketplace</Button>
-              </Link>
-            </div>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          {isAdmin && (
+            <p className="text-sm text-primary mt-1">Mode administrateur - Tous les projets sont visibles</p>
           )}
         </div>
-      </main>
+        <Link href="/dashboard/marketplace">
+          <Button>Acheter un service</Button>
+        </Link>
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="text-xl font-semibold">{isAdmin ? 'Tous les projets' : 'Vos projets'}</h2>
+        <p className="text-muted-foreground">
+          {isAdmin 
+            ? 'Vue d\'ensemble de tous les projets Klyra'
+            : 'Suivi de vos projets Klyra'
+          }
+        </p>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div 
+              key={i} 
+              className="rounded-lg border bg-card text-card-foreground shadow-sm animate-pulse"
+              style={{ height: '200px' }}
+            />
+          ))}
+        </div>
+      ) : projects.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.map((project) => (
+            <ProjectCard 
+              key={project.id} 
+              project={project} 
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 space-y-4">
+          <div className="text-4xl">🚀</div>
+          <h3 className="text-xl font-medium">Vous n'avez pas encore de projet</h3>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Explorez notre marketplace pour trouver le service parfait pour votre entreprise.
+          </p>
+          <Link href="/dashboard/marketplace" className="inline-block mt-4">
+            <Button>Explorer la marketplace</Button>
+          </Link>
+        </div>
+      )}
     </div>
   )
 } 
