@@ -30,10 +30,35 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      flowType: 'pkce',
+      storage: {
+        getItem: (key) => {
+          if (typeof window === 'undefined') {
+            return null
+          }
+          
+          const value = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith(`${key}=`))
+            ?.split('=')[1]
+          
+          return value ? decodeURIComponent(value) : null
+        },
+        setItem: (key, value) => {
+          if (typeof window !== 'undefined') {
+            document.cookie = `${key}=${encodeURIComponent(value)}; path=/; max-age=2592000; SameSite=Lax; secure`
+          }
+        },
+        removeItem: (key) => {
+          if (typeof window !== 'undefined') {
+            document.cookie = `${key}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; secure`
+          }
+        },
+      },
     },
     global: {
       headers: {
-        'X-Client-Info': 'supabase-js@2.39.7',
+        'X-Client-Info': 'supabase-js@2.49.3',
       },
     },
   }

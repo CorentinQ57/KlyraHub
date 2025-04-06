@@ -210,28 +210,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('User role:', role)
         setIsAdmin(role === 'admin')
         
-        // Désactiver temporairement la mise à jour du last_sign_in_at
-        // car la colonne n'existe pas dans le schéma de la base de données
-        /* 
-        // Update last_sign_in_at in profiles table
-        try {
-          console.log('Updating last sign in time...')
-          // Ne pas inclure l'ID dans l'objet mis à jour pour éviter l'erreur 400
-          const { data: updateData, error: updateError } = await supabase
-            .from('profiles')
-            .update({ last_sign_in_at: new Date().toISOString() })
-            .eq('id', data.user.id)
-            
-          if (updateError) {
-            console.error('Error updating last sign in time:', updateError)
-          } else {
-            console.log('Last sign in time updated successfully')
-          }
-        } catch (updateError) {
-          console.error('Exception in updating last sign in time:', updateError)
-          // Non-critical error, don't return it
+        // Force refresh of session cookies - this is important to ensure cookies are written
+        console.log('Refreshing session to ensure cookies are written...')
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+        if (refreshError) {
+          console.error('Error refreshing session:', refreshError)
+        } else {
+          console.log('Session refreshed successfully')
         }
-        */
       }
 
       console.log('Sign in completed successfully')

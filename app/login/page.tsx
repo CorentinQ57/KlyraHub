@@ -106,10 +106,13 @@ export default function LoginPage() {
         duration: 3000,
       })
       
-      // Forcer la redirection immédiatement
-      console.log("Redirecting to dashboard...")
-      setIsLoading(false)
-      router.push('/dashboard')
+      // Ajouter un délai pour s'assurer que les cookies sont bien enregistrés
+      console.log("Waiting for cookies to be set before redirecting...")
+      setTimeout(() => {
+        console.log("Redirecting to dashboard...")
+        setIsLoading(false)
+        router.push('/dashboard')
+      }, 1000)
     } catch (error) {
       console.error("Unexpected login error:", error)
       toast({

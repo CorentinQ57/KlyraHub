@@ -120,9 +120,12 @@ export default function SignUpPage() {
         duration: 5000,
       })
       
-      setIsLoading(false)
-      // Redirection explicite vers la page de connexion
-      router.push('/login')
+      // Ajouter un délai pour s'assurer que tout est bien enregistré
+      setTimeout(() => {
+        setIsLoading(false)
+        // Redirection explicite vers la page de connexion
+        router.push('/login')
+      }, 1000)
     } catch (error) {
       console.error("Unexpected signup error:", error)
       toast({

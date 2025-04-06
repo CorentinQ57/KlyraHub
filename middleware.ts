@@ -6,6 +6,34 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
+// Helper function to get Supabase cookie
+function getSupabaseCookie(request: NextRequest): string | undefined {
+  // Get all cookies
+  const cookies = request.cookies.getAll()
+  console.log(`[Middleware] All cookies:`, cookies.map(c => c.name))
+  
+  // Look for any cookie that starts with 'sb-' and ends with '-auth-token'
+  const authCookie = cookies.find(cookie => 
+    cookie.name.startsWith('sb-') && cookie.name.endsWith('-auth-token')
+  )
+  
+  // If found, return its value
+  if (authCookie) {
+    console.log(`[Middleware] Found auth cookie: ${authCookie.name}`)
+    return authCookie.value
+  }
+  
+  // Fallback to the old format
+  const oldFormatCookie = request.cookies.get('sb-auth-token')
+  if (oldFormatCookie) {
+    console.log(`[Middleware] Found old format auth cookie`)
+    return oldFormatCookie.value
+  }
+  
+  console.log(`[Middleware] No auth cookie found`)
+  return undefined
+}
+
 export async function middleware(request: NextRequest) {
   console.log(`[Middleware] Processing request for: ${request.nextUrl.pathname}`)
   
@@ -19,8 +47,8 @@ export async function middleware(request: NextRequest) {
     },
   })
   
-  // Get auth cookies
-  const supabaseCookie = request.cookies.get('sb-auth-token')?.value
+  // Get auth cookies using the helper function
+  const supabaseCookie = getSupabaseCookie(request)
   console.log(`[Middleware] Auth cookie present: ${!!supabaseCookie}`)
   
   // Check if we have a session
