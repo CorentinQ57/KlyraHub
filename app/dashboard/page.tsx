@@ -46,28 +46,28 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 
   return (
     <motion.div 
-      className="border rounded-lg shadow-sm p-6 bg-white hover:shadow-md transition-shadow"
+      className="card hover:shadow-md transition-shadow"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-medium">{project.title}</h3>
+          <h3 className="text-xl font-semibold tracking-snug">{project.title}</h3>
           {project.services && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-klyra-text-medium mt-1">
               Service: {project.services.title}
             </p>
           )}
         </div>
         <span
-          className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusLabels[project.status].color}`}
+          className={`badge ${statusLabels[project.status].color}`}
         >
           {statusLabels[project.status].label}
         </span>
       </div>
       <div className="flex justify-between items-center mt-6">
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-klyra-text-light">
           {new Date(project.created_at).toLocaleDateString()}
         </span>
         <div className="space-x-2">
@@ -193,14 +193,19 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-semibold tracking-tighter">Dashboard</h1>
           {isAdmin && (
-            <p className="text-sm text-primary mt-1">Mode administrateur - Tous les projets sont visibles</p>
+            <p className="text-sm text-klyra-text-medium mt-1">Mode administrateur - Tous les projets sont visibles</p>
           )}
         </div>
-        <Link href="/dashboard/marketplace">
-          <Button>Acheter un service</Button>
-        </Link>
+        <div className="flex space-x-4">
+          <Link href="/dashboard/marketplace">
+            <Button>
+              Explorer les services
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -215,35 +220,94 @@ export default function DashboardPage() {
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div 
-              key={i} 
-              className="rounded-lg border bg-card text-card-foreground shadow-sm animate-pulse"
-              style={{ height: '200px' }}
-            />
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="card animate-pulse">
+              <div className="h-6 bg-klyra-50 rounded mb-4 w-3/4"></div>
+              <div className="h-4 bg-klyra-50 rounded mb-2 w-2/4"></div>
+              <div className="h-4 bg-klyra-50 rounded mb-6 w-1/4"></div>
+              <div className="flex justify-between items-center">
+                <div className="h-4 bg-klyra-50 rounded w-1/4"></div>
+                <div className="h-8 bg-klyra-50 rounded w-1/4"></div>
+              </div>
+            </div>
           ))}
         </div>
       ) : projects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
-            <ProjectCard 
-              key={project.id} 
-              project={project} 
-            />
+            <ProjectCard key={project.id} project={project} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 space-y-4">
-          <div className="text-4xl">🚀</div>
-          <h3 className="text-xl font-medium">Vous n'avez pas encore de projet</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Explorez notre marketplace pour trouver le service parfait pour votre entreprise.
-          </p>
-          <Link href="/dashboard/marketplace" className="inline-block mt-4">
-            <Button>Explorer la marketplace</Button>
-          </Link>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Aucun projet pour le moment</CardTitle>
+            <CardDescription>
+              Commencez votre premier projet en explorant notre marketplace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-klyra-text-medium">
+              Découvrez notre gamme de services professionnels adaptés à vos besoins.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Link href="/dashboard/marketplace">
+              <Button>
+                Explorer les services
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
       )}
+
+      <div className="mt-12">
+        <h2 className="text-2xl font-semibold tracking-tight mb-6">Informations importantes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Clock className="mr-2 h-5 w-5 text-klyra" />
+                Délais
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-klyra-text-medium">
+                Nos délais de livraison sont calculés en jours ouvrés et commencent une fois votre projet validé par notre équipe.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calendar className="mr-2 h-5 w-5 text-klyra" />
+                Suivi
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-klyra-text-medium">
+                Vous pouvez suivre l'avancement de vos projets en temps réel et interagir avec notre équipe directement depuis votre dashboard.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <CheckCircle className="mr-2 h-5 w-5 text-klyra" />
+                Satisfaction
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-klyra-text-medium">
+                Nous travaillons jusqu'à votre satisfaction complète, avec des révisions illimitées selon les termes spécifiés dans chaque service.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 } 

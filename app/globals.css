@@ -80,89 +80,113 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-normal;
+    @apply bg-klyra-bg text-klyra-text-dark font-normal;
+    font-family: var(--font-poppins), sans-serif;
   }
   h1 {
-    @apply text-2xl md:text-4xl font-semibold tracking-[-0.07em];
+    @apply text-3xl font-semibold tracking-tighter text-klyra-text-dark;
   }
   h2 {
-    @apply text-xl md:text-2xl font-semibold tracking-[-0.05em];
+    @apply text-2xl font-semibold tracking-tight text-klyra-text-dark;
   }
   h3 {
-    @apply text-lg md:text-xl font-semibold tracking-[-0.03em];
+    @apply text-xl font-semibold tracking-snug text-klyra-text-dark;
   }
   h4 {
-    @apply text-base md:text-lg font-semibold tracking-[-0.02em];
+    @apply text-lg font-semibold tracking-normal text-klyra-text-dark;
   }
   p {
-    @apply text-gray-600;
+    @apply text-base font-normal text-klyra-text-medium;
+  }
+  small {
+    @apply text-sm font-normal text-klyra-text-light;
   }
 }
 
 @layer components {
+  /* Bouton principal */
   .btn-primary {
-    @apply bg-klyra text-white font-medium py-2 px-6 rounded-lg hover:bg-klyra/90 transition-colors;
+    @apply bg-klyra text-white font-medium px-6 py-2 rounded-medium hover:bg-klyra-600 transition-colors shadow-sm hover:shadow-btn-hover;
   }
   
+  /* Bouton secondaire */
   .btn-secondary {
-    @apply bg-white text-klyra border border-klyra font-medium py-2 px-6 rounded-lg hover:bg-klyra/10 transition-colors;
+    @apply bg-white text-klyra border border-klyra font-medium px-6 py-2 rounded-medium hover:bg-klyra-50 transition-colors;
   }
   
+  /* Variantes de taille des boutons */
+  .btn-sm {
+    @apply text-sm px-4 py-1;
+  }
+  
+  .btn-lg {
+    @apply text-lg px-8 py-4;
+  }
+  
+  /* Badges */
   .badge {
-    @apply px-2 py-1 text-xs font-semibold uppercase tracking-[0.05em] rounded-full;
+    @apply px-2 py-1 text-xs font-semibold uppercase tracking-badge rounded-full;
+  }
+  
+  /* Carte */
+  .card {
+    @apply bg-white rounded-large p-6 shadow-card;
+  }
+  
+  /* Dégradés */
+  .gradient-blue-pink {
+    @apply bg-gradient-to-r from-klyra-100 to-[#F7A6C1];
+  }
+  
+  .gradient-blue-yellow {
+    @apply bg-gradient-to-r from-klyra-100 to-[#FFE9A3];
+  }
+  
+  .gradient-blue-green {
+    @apply bg-gradient-to-r from-klyra-100 to-[#A6F0C6];
   }
 }
 
+/* Classes utilitaires directes */
 .bg-klyra {
-  background-color: hsl(var(--klyra));
-  color: hsl(var(--klyra-foreground));
+  background-color: #467FF7;
 }
 
 .text-klyra {
-  color: hsl(var(--klyra));
+  color: #467FF7;
+}
+
+.bg-klyra-hover {
+  background-color: #3A6FE0;
+}
+
+.text-klyra-hover {
+  color: #3A6FE0;
 }
 
 .text-klyra-text-dark {
-  color: hsl(var(--klyra-text-dark));
+  color: #1A2B3C;
 }
 
 .text-klyra-text-medium {
-  color: hsl(var(--klyra-text-medium));
+  color: #4A5568;
 }
 
 .text-klyra-text-light {
-  color: hsl(var(--klyra-text-light));
+  color: #718096;
 }
 
-.hover\:bg-klyra\/90:hover {
-  background-color: hsl(var(--klyra) / 0.9);
-}
-
-.hover\:text-klyra:hover {
-  color: hsl(var(--klyra));
-}
-
-.bg-klyra-50 {
-  background-color: hsl(var(--klyra) / 0.05);
-}
-
-.bg-klyra-100 {
-  background-color: hsl(var(--klyra) / 0.1);
-}
-
-.text-klyra-700 {
-  color: hsl(var(--klyra) / 0.7);
+.bg-klyra-bg {
+  background-color: #F7FAFC;
 }
 
 .ring-klyra {
-  --tw-ring-color: hsl(var(--klyra));
+  --tw-ring-color: #467FF7;
 }
 
 .border-klyra {
-  border-color: hsl(var(--klyra));
+  border-color: #467FF7;
 }
-
-
 
 @layer base {
   * {
