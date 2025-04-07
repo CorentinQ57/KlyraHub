@@ -111,21 +111,8 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-2">Projets</h2>
-          <p className="text-muted-foreground mb-4">Gérez tous les projets clients</p>
-          <div className="mt-auto">
-            <Button 
-              className="w-full" 
-              onClick={() => router.push('/dashboard/admin')}
-            >
-              Voir les projets
-            </Button>
-          </div>
-        </Card>
-        
-        <Card className="p-6">
+      <div className="flex justify-center">
+        <Card className="p-6 max-w-md w-full">
           <h2 className="text-xl font-semibold mb-2">Services</h2>
           <p className="text-muted-foreground mb-4">Gérez les services de la marketplace</p>
           <div className="mt-auto">
@@ -134,20 +121,6 @@ export default function AdminDashboardPage() {
               onClick={() => router.push('/dashboard/admin/services')}
             >
               Gérer les services
-            </Button>
-          </div>
-        </Card>
-        
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-2">Utilisateurs</h2>
-          <p className="text-muted-foreground mb-4">Gérez les comptes utilisateurs</p>
-          <div className="mt-auto">
-            <Button 
-              className="w-full" 
-              variant="outline"
-              disabled
-            >
-              Fonctionnalité à venir
             </Button>
           </div>
         </Card>
