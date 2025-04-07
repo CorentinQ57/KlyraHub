@@ -30,7 +30,8 @@ export default function MarketplacePage() {
   useEffect(() => {
     const loadServices = async () => {
       const data = await getAllServices()
-      setServices(data)
+      // Only show active services in the marketplace
+      setServices(data.filter(service => service.active))
       setIsLoadingServices(false)
     }
     loadServices()
@@ -105,33 +106,48 @@ export default function MarketplacePage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-klyra mx-auto"></div>
-          <p className="mt-4 text-lg text-[#4A5568] font-normal">Chargement...</p>
+          <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg">Chargement...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F7FAFC]">
+    <div>
       <main className="flex-1">
+        <section className="w-full py-12 md:py-16 bg-primary-50">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+                  Nos Services
+                </h1>
+                <p className="max-w-[700px] text-muted-foreground md:text-xl">
+                  Découvrez nos services packagés pour transformer votre présence digitale
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
         <section className="w-full py-12">
           <div className="container px-4 md:px-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
               <div className="md:col-span-3 space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-[1.25rem] font-semibold text-[#1A2B3C] tracking-[-0.02em]">Filtres</h3>
+                  <h3 className="text-lg font-semibold">Filtres</h3>
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-[#4A5568]">Catégories</h4>
+                    <h4 className="text-sm font-medium">Catégories</h4>
                     <div className="flex flex-wrap gap-2">
                       {categories.map((cat) => (
                         <button
                           key={cat}
                           onClick={() => setSelectedCategory(cat)}
-                          className={`text-xs rounded-full px-3 py-1 font-medium ${
+                          className={`text-xs rounded-full px-3 py-1 ${
                             cat === selectedCategory 
-                              ? 'bg-[#467FF7] text-white' 
-                              : 'bg-white text-[#467FF7] border border-[#467FF7] hover:bg-[#E6EDFD]'
+                              ? 'bg-primary text-white' 
+                              : 'bg-secondary hover:bg-primary/20'
                           }`}
                         >
                           {cat}
@@ -140,16 +156,16 @@ export default function MarketplacePage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-[#4A5568]">Prix</h4>
+                    <h4 className="text-sm font-medium">Prix</h4>
                     <div className="flex flex-wrap gap-2">
                       {['Tous', '< 1000€', '1000€ - 3000€', '> 3000€'].map((price) => (
                         <button
                           key={price}
                           onClick={() => setSelectedPrice(price)}
-                          className={`text-xs rounded-full px-3 py-1 font-medium ${
+                          className={`text-xs rounded-full px-3 py-1 ${
                             price === selectedPrice 
-                              ? 'bg-[#467FF7] text-white' 
-                              : 'bg-white text-[#467FF7] border border-[#467FF7] hover:bg-[#E6EDFD]'
+                              ? 'bg-primary text-white' 
+                              : 'bg-secondary hover:bg-primary/20'
                           }`}
                         >
                           {price}
@@ -165,46 +181,44 @@ export default function MarketplacePage() {
                   {filteredServices.map((service) => (
                     <div 
                       key={service.id} 
-                      className="group relative overflow-hidden rounded-lg border bg-white p-6 hover:shadow-md transition-all"
+                      className="group relative overflow-hidden rounded-lg border bg-background p-6 hover:shadow-md transition-all"
                     >
                       <div className="space-y-2">
                         <div className="text-4xl">{service.icon}</div>
-                        <h3 className="text-[1.25rem] font-semibold text-[#1A2B3C] tracking-[-0.02em]">{service.name}</h3>
-                        <p className="text-[#718096] line-clamp-2">{service.description}</p>
+                        <h3 className="text-xl font-bold">{service.name}</h3>
+                        <p className="text-muted-foreground line-clamp-2">{service.description}</p>
                         <div className="flex justify-between items-center">
-                          <p className="font-medium text-[#467FF7]">{service.price}€</p>
-                          <p className="text-xs text-[#718096]">{service.duration} jours</p>
+                          <p className="font-medium text-primary">{service.price}€</p>
+                          <p className="text-xs text-muted-foreground">{service.duration} jours</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-xs font-medium text-[#4A5568]">Inclus :</p>
-                          <ul className="text-xs text-[#718096] space-y-1">
+                          <p className="text-xs font-medium">Inclus :</p>
+                          <ul className="text-xs text-muted-foreground space-y-1">
                             {(service.features || []).slice(0, 2).map((feature, i) => (
                               <li key={i} className="flex items-center">
-                                <span className="mr-1 text-[#467FF7]">✓</span> {feature}
+                                <span className="mr-1 text-primary">✓</span> {feature}
                               </li>
                             ))}
                             {(service.features || []).length > 2 && (
-                              <li className="text-xs text-[#718096]">+ {(service.features || []).length - 2} autres...</li>
+                              <li className="text-xs text-muted-foreground">+ {(service.features || []).length - 2} autres...</li>
                             )}
                           </ul>
                         </div>
                       </div>
                       <div className="pt-4 flex flex-col space-y-2">
                         <Link href={`/dashboard/marketplace/${getSlug(service.name)}`}>
-                          <Button className="w-full bg-[#467FF7] text-white hover:bg-[#3A6FE0] font-medium">
-                            Voir les détails
-                          </Button>
+                          <Button className="w-full">Voir les détails</Button>
                         </Link>
                         <Button 
-                          variant="outline"
-                          className="w-full border border-[#467FF7] text-[#467FF7] hover:bg-[#E6EDFD] font-medium"
+                          variant="outline" 
+                          className="w-full"
                           onClick={(e) => handleBuyNow(service, e)}
                           disabled={processingPayment === service.id}
                         >
                           {processingPayment === service.id ? 'Traitement...' : 'Acheter maintenant'}
                         </Button>
                       </div>
-                      <div className="absolute top-2 right-2 bg-[#E6EDFD] text-[#467FF7] text-xs px-2 py-1 rounded-full font-semibold">
+                      <div className="absolute top-2 right-2 bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full">
                         {service.category}
                       </div>
                     </div>

@@ -514,7 +514,6 @@ export async function getAllServices(): Promise<Service[]> {
           name
         )
       `)
-      .eq('active', true)
       .order('name');
 
     if (error) {
