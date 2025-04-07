@@ -46,14 +46,14 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 
   return (
     <motion.div 
-      className="card hover:shadow-md transition-shadow"
+      className="card border border-gray-100 hover:shadow-md transition-shadow h-[180px] flex flex-col"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-xl font-semibold tracking-snug">{project.title}</h3>
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1 mr-3">
+          <h3 className="text-xl font-semibold tracking-snug line-clamp-1">{project.title}</h3>
           {project.services && (
             <p className="text-sm text-klyra-text-medium mt-1">
               Service: {project.services.title}
@@ -61,12 +61,12 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
           )}
         </div>
         <span
-          className={`badge ${statusLabels[project.status].color}`}
+          className={`badge whitespace-nowrap inline-flex ${statusLabels[project.status].color}`}
         >
           {statusLabels[project.status].label}
         </span>
       </div>
-      <div className="flex justify-between items-center mt-6">
+      <div className="mt-auto flex justify-between items-center pt-4">
         <span className="text-sm text-klyra-text-light">
           {new Date(project.created_at).toLocaleDateString()}
         </span>
@@ -221,11 +221,11 @@ export default function DashboardPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="card animate-pulse">
+            <div key={i} className="card border border-gray-100 animate-pulse h-[180px]">
               <div className="h-6 bg-klyra-50 rounded mb-4 w-3/4"></div>
               <div className="h-4 bg-klyra-50 rounded mb-2 w-2/4"></div>
               <div className="h-4 bg-klyra-50 rounded mb-6 w-1/4"></div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mt-auto">
                 <div className="h-4 bg-klyra-50 rounded w-1/4"></div>
                 <div className="h-8 bg-klyra-50 rounded w-1/4"></div>
               </div>

@@ -125,7 +125,7 @@
   
   /* Badges */
   .badge {
-    @apply px-2 py-1 text-xs font-semibold uppercase tracking-badge rounded-full;
+    @apply px-2 py-1 text-xs font-semibold uppercase tracking-badge rounded-full whitespace-nowrap overflow-hidden text-ellipsis;
   }
   
   /* Carte */
