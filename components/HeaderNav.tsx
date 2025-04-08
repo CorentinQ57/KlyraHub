@@ -14,18 +14,32 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react'
 
 export function HeaderNav() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const { isAdmin } = useAuth()
+  const { isAdmin, reloadAuthState } = useAuth()
   
   // Détermine si un lien est actif
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(`${path}/`)
+  }
+  
+  // Fonction pour recharger l'état d'authentification
+  const handleReloadAuth = async () => {
+    setIsRefreshing(true)
+    try {
+      await reloadAuthState()
+    } catch (error) {
+      console.error("Erreur lors du rechargement de l'authentification:", error)
+    } finally {
+      setIsRefreshing(false)
+    }
   }
   
   // Liens de navigation pour tous les utilisateurs
@@ -102,6 +116,16 @@ export function HeaderNav() {
             Aide
           </Link>
           <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReloadAuth}
+            disabled={isRefreshing}
+            className="flex items-center mr-1"
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Actualisation...' : 'Actualiser'}
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             onClick={async () => {
@@ -155,6 +179,15 @@ export function HeaderNav() {
             <HelpCircle className="h-4 w-4" />
             <span className="mt-1">Aide</span>
           </Link>
+          
+          <button
+            onClick={handleReloadAuth}
+            disabled={isRefreshing}
+            className="flex flex-col items-center text-xs font-medium p-1 text-gray-600"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="mt-1">Actualiser</span>
+          </button>
         </div>
       </div>
     </header>

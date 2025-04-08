@@ -130,6 +130,53 @@ export default function DebugPage() {
     }
   };
 
+  // Forcer la récupération de la session
+  const forceGetSession = async () => {
+    setLoading(true);
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Error forcing session fetch:", error);
+        setDebugInfo((prev: Record<string, any>) => ({ 
+          ...prev, 
+          forceGetSessionError: { 
+            error, 
+            timestamp: new Date().toISOString() 
+          } 
+        }));
+        return;
+      }
+      
+      console.log("Force get session:", {
+        session,
+        user: session?.user,
+        userType: typeof session?.user
+      });
+      
+      setDebugInfo((prev: Record<string, any>) => ({
+        ...prev,
+        forceGetSession: {
+          session,
+          user: session?.user,
+          userType: typeof session?.user,
+          timestamp: new Date().toISOString()
+        }
+      }));
+    } catch (error) {
+      console.error("Exception in forceGetSession:", error);
+      setDebugInfo((prev: Record<string, any>) => ({ 
+        ...prev, 
+        forceGetSessionError: { 
+          error, 
+          timestamp: new Date().toISOString() 
+        } 
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Forcer la déconnexion
   const handleSignOut = async () => {
     setLoading(true);
@@ -214,6 +261,13 @@ export default function DebugPage() {
               variant="outline"
             >
               Get User Directly From Supabase
+            </Button>
+            <Button 
+              onClick={forceGetSession}
+              disabled={loading}
+              variant="outline"
+            >
+              Force Get Session
             </Button>
             <Button 
               onClick={handleSignOut}
