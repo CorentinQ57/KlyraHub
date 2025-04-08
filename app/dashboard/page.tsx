@@ -10,7 +10,7 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart } from 'lucide-react'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -87,7 +87,8 @@ const TutorialStep = ({
   description, 
   onNext, 
   onClose,
-  isLast
+  isLast,
+  icon
 }: { 
   step: number; 
   title: string; 
@@ -95,36 +96,86 @@ const TutorialStep = ({
   onNext: () => void; 
   onClose: () => void;
   isLast: boolean;
+  icon: React.ReactNode;
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
     >
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>Étape {step} sur 5</CardDescription>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 350 }}
+        className="w-full max-w-md mx-4"
+      >
+        <Card className="border-0 shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-6">
+            <div className="flex justify-between items-start mb-4">
+              <motion.div
+                initial={{ x: -10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-md"
+              >
+                <div className="text-primary">
+                  {icon}
+                </div>
+              </motion.div>
+              <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full bg-white/80 hover:bg-white">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <CardTitle className="text-2xl">{title}</CardTitle>
+              <div className="flex mt-2 items-center">
+                <div className="flex space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className={`h-2 rounded-full ${i < step ? 'bg-primary' : 'bg-primary/20'} ${i === step - 1 ? 'w-6' : 'w-2'}`}
+                      initial={i === step - 1 ? { width: 8 } : {}}
+                      animate={i === step - 1 ? { width: 24 } : {}}
+                      transition={{ delay: 0.5 }}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs ml-3 text-gray-600">Étape {step}/5</p>
+              </div>
+            </motion.div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <p>{description}</p>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="ghost" onClick={onClose}>
-            Ignorer
-          </Button>
-          <Button onClick={onNext}>
-            {isLast ? "Terminer" : "Suivant"} <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </CardFooter>
-      </Card>
+          <CardContent className="p-6">
+            <motion.p 
+              className="text-gray-600 mb-6"
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              {description}
+            </motion.p>
+          </CardContent>
+          <CardFooter className="p-4 bg-gray-50 flex justify-between">
+            <Button variant="ghost" onClick={onClose} size="sm">
+              Ignorer le tutoriel
+            </Button>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button onClick={onNext} className="font-medium" size="sm">
+                {isLast ? "Terminer" : "Suivant"} <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </motion.div>
+          </CardFooter>
+        </Card>
+      </motion.div>
     </motion.div>
   );
 };
@@ -289,24 +340,46 @@ export default function DashboardPage() {
   // Les étapes du tutoriel
   const tutorialSteps = [
     {
-      title: "Bienvenue sur Klyra Hub !",
-      description: "Bienvenue sur votre plateforme Klyra ! Ce rapide tutoriel vous aidera à comprendre comment utiliser votre espace client."
+      title: "Hey ! Bienvenue sur Klyra Hub 👋",
+      description: "Super content de te voir ici ! Je suis là pour te guider dans tes premiers pas sur la plateforme Klyra. Prêt(e) pour un petit tour ? C'est parti !",
+      icon: <motion.div 
+              animate={{ 
+                rotate: [0, 10, 0, -10, 0],
+              }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            >
+              👋
+            </motion.div>
     },
     {
-      title: "Découvrez nos services",
-      description: "Consultez notre marketplace pour découvrir tous les services proposés par Klyra. Vous pouvez filtrer par catégorie ou par prix pour trouver ce qui correspond à vos besoins."
+      title: "Découvre notre marketplace 🛍️",
+      description: "Ici, tu trouveras tous nos services design et web. Tu peux filtrer par catégorie ou prix pour trouver exactement ce qu'il te faut. N'hésite pas à explorer !",
+      icon: <Store className="h-6 w-6" />
     },
     {
-      title: "Suivez vos projets",
-      description: "Après un achat, vos projets apparaîtront sur cette page. Vous pourrez suivre leur avancement, consulter les livrables et échanger avec notre équipe."
+      title: "Tes projets en direct 🚀",
+      description: "Après ton premier achat, tes projets apparaîtront ici. Tu pourras suivre leur avancement, échanger avec notre équipe et voir les livrables... Tout ça au même endroit !",
+      icon: <motion.div
+              animate={{ y: [0, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              🚀
+            </motion.div>
     },
     {
-      title: "Consultez votre historique d'achats",
-      description: "Retrouvez l'ensemble de vos commandes, factures et transactions dans la section Historique d'achats accessible depuis le menu."
+      title: "Ton historique d'achats 📝",
+      description: "Toutes tes commandes, factures et transactions sont conservées dans la section 'Mes achats'. Pratique pour garder une trace de tout, non ?",
+      icon: <ShoppingCart className="h-6 w-6" />
     },
     {
-      title: "Personnalisez votre profil",
-      description: "Accédez à votre profil pour modifier vos informations personnelles, préférences et paramètres de notification."
+      title: "C'est toi qui décides 🎯",
+      description: "N'oublie pas de personnaliser ton profil ! Tu peux modifier tes infos, préférences et paramètres quand tu veux. C'est ton espace, fais-toi plaisir !",
+      icon: <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            >
+              🎯
+            </motion.div>
     }
   ]
 
@@ -320,6 +393,7 @@ export default function DashboardPage() {
           onNext={nextTutorialStep}
           onClose={closeTutorial}
           isLast={tutorialStep === 5}
+          icon={tutorialSteps[tutorialStep - 1].icon}
         />
       )}
       
