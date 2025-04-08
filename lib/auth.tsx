@@ -15,6 +15,7 @@ type AuthContextType = {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ data: any | null; error: Error | null }>
   checkUserRole: (userId: string) => Promise<string | null>
+  reloadAuthState: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -119,21 +120,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Initial session result:", session ? "Session found" : "No session")
 
       if (session) {
-        console.log("Session user:", session.user.email, "Type:", typeof session.user)
+        console.log("Session user:", session.user?.email, "Type:", typeof session.user)
         
-        // Vérification supplémentaire pour s'assurer que user est un objet valide
-        if (typeof session.user === 'object' && session.user.id) {
+        // Si session.user existe mais n'est pas un objet valide, essayer de récupérer directement l'utilisateur
+        if (!session.user || typeof session.user !== 'object' || !session.user.id) {
+          console.log("Session user invalid, forcing getUser call")
+          try {
+            // Forcer la récupération directe de l'utilisateur
+            const { data: { user: directUser }, error: userError } = await supabase.auth.getUser()
+            
+            if (userError) {
+              console.error("Error forcing getUser:", userError)
+              setSession(null)
+              setUser(null)
+              setIsAdmin(false)
+              return
+            }
+            
+            console.log("Direct getUser result:", directUser)
+            
+            if (directUser && typeof directUser === 'object' && directUser.id) {
+              setSession(session)
+              safeSetUser(directUser)
+              
+              // Check if user is admin
+              const role = await checkUserRole(directUser.id)
+              setIsAdmin(role === 'admin')
+            } else {
+              console.error("Direct getUser also failed, user is invalid:", directUser)
+              setSession(null)
+              setUser(null)
+              setIsAdmin(false)
+            }
+          } catch (userError) {
+            console.error("Exception in direct getUser:", userError)
+            setSession(null)
+            setUser(null)
+            setIsAdmin(false)
+          }
+        } else {
+          // Session user is valid
           setSession(session)
           safeSetUser(session.user)
           
           // Check if user is admin
           const role = await checkUserRole(session.user.id)
           setIsAdmin(role === 'admin')
-        } else {
-          console.error("ERREUR: session.user n'est pas un objet valide:", session.user)
-          setSession(null)
-          setUser(null)
-          setIsAdmin(false)
         }
       } else {
         setSession(null)
@@ -164,12 +196,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up listener for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log(`Auth event: ${event}`, session ? `User: ${session.user.email}` : "No session")
+        console.log(`Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session")
         
         try {
           if (session) {
             // Vérification supplémentaire pour s'assurer que user est un objet valide
-            if (typeof session.user === 'object' && session.user.id) {
+            if (typeof session.user === 'object' && session.user?.id) {
               setSession(session)
               safeSetUser(session.user)
               
@@ -180,13 +212,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               // Update last_sign_in_at in profiles table
               if (event === 'SIGNED_IN') {
                 console.log("Updating last sign in timestamp")
-                await supabase
-                  .from('profiles')
-                  .update({ last_sign_in_at: new Date().toISOString() })
-                  .eq('id', session.user.id)
+                try {
+                  await supabase
+                    .from('profiles')
+                    .update({ last_sign_in_at: new Date().toISOString() })
+                    .eq('id', session.user.id)
+                } catch (updateError) {
+                  console.error('Error updating last sign in time:', updateError)
+                  // Non-critical error, continue execution
+                }
+                
+                // Forcer la récupération de l'utilisateur après SIGNED_IN pour s'assurer d'avoir les dernières données
+                console.log("Forcing getUser after SIGNED_IN")
+                try {
+                  const { data: { user: updatedUser }, error: userError } = await supabase.auth.getUser()
+                  if (!userError && updatedUser) {
+                    console.log("Updated user after SIGNED_IN:", updatedUser.email)
+                    safeSetUser(updatedUser)
+                  }
+                } catch (userError) {
+                  console.error("Error getting updated user after SIGNED_IN:", userError)
+                }
               }
             } else {
               console.error("ERREUR: session.user n'est pas un objet valide dans onAuthStateChange:", session.user)
+              
+              // Attempt to recover by directly calling getUser
+              try {
+                console.log("Attempting to recover user from auth event")
+                const { data: { user: recoveredUser } } = await supabase.auth.getUser()
+                
+                if (recoveredUser && typeof recoveredUser === 'object' && recoveredUser.id) {
+                  console.log("Recovered user:", recoveredUser.email)
+                  setSession(session)
+                  safeSetUser(recoveredUser)
+                  
+                  // Check if the recovered user is admin
+                  const role = await checkUserRole(recoveredUser.id)
+                  setIsAdmin(role === 'admin')
+                } else {
+                  console.error("Recovery failed, invalid user:", recoveredUser)
+                  setSession(null)
+                  setUser(null)
+                  setIsAdmin(false)
+                }
+              } catch (recoveryError) {
+                console.error("Error in recovery attempt:", recoveryError)
+                setSession(null)
+                setUser(null)
+                setIsAdmin(false)
+              }
             }
           } else {
             setSession(null)
@@ -195,6 +270,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } catch (error) {
           console.error("Error in auth state change handler:", error)
+          setSession(null)
+          setUser(null)
+          setIsAdmin(false)
         } finally {
           console.log("Setting isLoading to false from auth state change")
           setIsLoading(false)
@@ -254,9 +332,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // If successful, update local state immediately
-      if (data.user) {
+      if (data?.user) {
         // Vérification supplémentaire pour s'assurer que user est un objet valide
         if (typeof data.user === 'object' && data.user.id) {
+          console.log("SignIn success, setting user:", data.user.email)
           setSession(data.session)
           safeSetUser(data.user)
           
@@ -277,6 +356,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.error("ERREUR: data.user n'est pas un objet valide dans signIn:", data.user)
         }
+      } else {
+        console.error("No user data returned from signInWithPassword")
       }
 
       return { data, error: null }
@@ -315,6 +396,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  // Reload auth state function
+  const reloadAuthState = async (): Promise<void> => {
+    try {
+      console.log("Manually reloading auth state")
+      setIsLoading(true)
+      
+      // Forcer la déconnexion/reconnexion du client Supabase
+      await supabase.auth.refreshSession()
+      
+      // Get current user and session
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (userError || sessionError) {
+        console.error("Error reloading auth state:", userError || sessionError)
+        setUser(null)
+        setSession(null)
+        setIsAdmin(false)
+        return
+      }
+      
+      if (currentUser && currentSession) {
+        console.log("Auth reloaded successfully:", currentUser.email)
+        // Utiliser la fonction sécurisée pour définir l'utilisateur
+        safeSetUser(currentUser)
+        setSession(currentSession)
+        
+        // Check if user is admin
+        const role = await checkUserRole(currentUser.id)
+        setIsAdmin(role === 'admin')
+        
+        // Forcer une mise à jour complète
+        const { data: { user: updatedUser }, error: updatedUserError } = await supabase.auth.getUser()
+        if (!updatedUserError && updatedUser) {
+          safeSetUser(updatedUser)
+        }
+      } else {
+        console.log("No active user session found during reload")
+        setUser(null)
+        setSession(null)
+        setIsAdmin(false)
+      }
+    } catch (error) {
+      console.error("Exception in reloadAuthState:", error)
+      setUser(null)
+      setSession(null)
+      setIsAdmin(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Create context value
   const value = {
     user,
@@ -326,6 +459,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     resetPassword,
     checkUserRole,
+    reloadAuthState,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
