@@ -436,17 +436,10 @@ export async function createProject(
 
 export async function getServiceBySlug(slug: string): Promise<Service | null> {
   try {
-    // Convertir le slug en nom potentiel de service
-    // Exemple : "logo-design" -> "Logo Design"
-    const searchName = slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-
-    console.log('Recherche du service par nom:', searchName);
-
-    // Essayer d'abord par le nom exact (méthode originale)
-    let { data, error } = await supabase
+    console.log('Recherche du service par slug:', slug);
+    
+    // Récupérer tous les services actifs
+    const { data: allServices, error } = await supabase
       .from('services')
       .select(`
         *,
@@ -454,49 +447,32 @@ export async function getServiceBySlug(slug: string): Promise<Service | null> {
           name
         )
       `)
-      .eq('name', searchName) // Recherche exacte du nom
-      .maybeSingle();
-
-    // Si aucun résultat ou erreur, essayer une recherche plus large
-    if (!data && !error) {
-      console.log('Aucun service trouvé par nom exact, recherche plus large...');
-      
-      // Récupérer tous les services actifs
-      const { data: allServices, error: allError } = await supabase
-        .from('services')
-        .select(`
-          *,
-          categories:category_id (
-            name
-          )
-        `)
-        .eq('active', true);
-      
-      if (!allError && allServices && allServices.length > 0) {
-        // Créer une version slug de chaque nom de service et comparer
-        const matchedService = allServices.find(service => {
-          const serviceSlug = service.name.toLowerCase().replace(/\s+/g, '-');
-          return serviceSlug === slug;
-        });
-        
-        if (matchedService) {
-          data = matchedService;
-          console.log('Service trouvé par correspondance de slug:', matchedService.name);
-        }
-      }
-    }
-
+      .eq('active', true);
+    
     if (error) {
-      console.error('Error fetching service by slug:', error);
+      console.error('Error fetching services:', error);
       return null;
     }
-
-    if (!data) {
+    
+    if (!allServices || allServices.length === 0) {
+      console.log('Aucun service trouvé dans la base de données');
+      return null;
+    }
+    
+    // Chercher le service dont le slug correspond
+    const matchedService = allServices.find(service => {
+      const serviceSlug = service.name.toLowerCase().replace(/\s+/g, '-');
+      console.log(`Comparaison: "${serviceSlug}" avec "${slug}"`);
+      return serviceSlug === slug;
+    });
+    
+    if (!matchedService) {
       console.log('Aucun service trouvé pour le slug:', slug);
       return null;
     }
-
-    return formatServiceData(data);
+    
+    console.log('Service trouvé par slug:', matchedService.name);
+    return formatServiceData(matchedService);
 
   } catch (error) {
     console.error('Exception in getServiceBySlug:', error);
