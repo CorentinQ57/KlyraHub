@@ -26,13 +26,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
 
+  // Fonction sécurisée pour définir l'utilisateur
+  const safeSetUser = (userData: any) => {
+    // Vérifie si userData est un objet valide avec un ID
+    if (userData && typeof userData === 'object' && userData.id) {
+      console.log("Setting user object:", userData.email);
+      setUser(userData);
+    } else if (typeof userData === 'string') {
+      // Si c'est une chaîne, c'est probablement une erreur
+      console.error("ERREUR: Tentative de définir user comme une chaîne:", userData);
+      // Ne pas définir l'utilisateur
+    } else if (userData === null) {
+      // Réinitialisation normale
+      setUser(null);
+    } else {
+      // Autre cas invalide
+      console.error("ERREUR: Tentative de définir user avec une valeur invalide:", userData);
+      // Ne pas définir l'utilisateur
+    }
+  }
+
   // Log d'état pour debugging
   useEffect(() => {
-    console.log("Auth state:", { isLoading, user: user?.email, isAdmin })
+    console.log("Auth state:", { 
+      isLoading, 
+      user: user?.email, 
+      userType: user ? typeof user : 'null',
+      userHasId: user && typeof user === 'object' ? Boolean(user.id) : false,
+      isAdmin 
+    })
   }, [isLoading, user, isAdmin])
 
   // Check user role function
   const checkUserRole = async (userId: string): Promise<string | null> => {
+    if (!userId) {
+      console.error("checkUserRole appelé avec un userId invalide:", userId);
+      return null;
+    }
+
     try {
       console.log("Checking user role for:", userId)
       const { data, error } = await supabase
@@ -43,10 +74,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Error fetching user role:', error)
-        return null
+        console.log('SQL query details:', { table: 'profiles', column: 'role', id: userId })
+        
+        // Fallback attempt with user_id column
+        console.log('Attempting fallback with user_id column instead of id')
+        const fallbackResult = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', userId)
+          .single()
+          
+        if (fallbackResult.error) {
+          console.error('Fallback also failed:', fallbackResult.error)
+          return null
+        }
+        
+        console.log("Fallback user role result:", fallbackResult.data)
+        return fallbackResult.data?.role || null
       }
 
-      console.log("User role:", data?.role)
+      console.log("User role data:", data)
       return data?.role || null
     } catch (error) {
       console.error('Error in checkUserRole:', error)
@@ -72,13 +119,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Initial session result:", session ? "Session found" : "No session")
 
       if (session) {
-        console.log("Session user:", session.user.email)
-        setSession(session)
-        setUser(session.user)
+        console.log("Session user:", session.user.email, "Type:", typeof session.user)
         
-        // Check if user is admin
-        const role = await checkUserRole(session.user.id)
-        setIsAdmin(role === 'admin')
+        // Vérification supplémentaire pour s'assurer que user est un objet valide
+        if (typeof session.user === 'object' && session.user.id) {
+          setSession(session)
+          safeSetUser(session.user)
+          
+          // Check if user is admin
+          const role = await checkUserRole(session.user.id)
+          setIsAdmin(role === 'admin')
+        } else {
+          console.error("ERREUR: session.user n'est pas un objet valide:", session.user)
+          setSession(null)
+          setUser(null)
+          setIsAdmin(false)
+        }
       } else {
         setSession(null)
         setUser(null)
@@ -112,20 +168,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         try {
           if (session) {
-            setSession(session)
-            setUser(session.user)
-            
-            // Check if user is admin on auth state change
-            const role = await checkUserRole(session.user.id)
-            setIsAdmin(role === 'admin')
-            
-            // Update last_sign_in_at in profiles table
-            if (event === 'SIGNED_IN') {
-              console.log("Updating last sign in timestamp")
-              await supabase
-                .from('profiles')
-                .update({ last_sign_in_at: new Date().toISOString() })
-                .eq('id', session.user.id)
+            // Vérification supplémentaire pour s'assurer que user est un objet valide
+            if (typeof session.user === 'object' && session.user.id) {
+              setSession(session)
+              safeSetUser(session.user)
+              
+              // Check if user is admin on auth state change
+              const role = await checkUserRole(session.user.id)
+              setIsAdmin(role === 'admin')
+              
+              // Update last_sign_in_at in profiles table
+              if (event === 'SIGNED_IN') {
+                console.log("Updating last sign in timestamp")
+                await supabase
+                  .from('profiles')
+                  .update({ last_sign_in_at: new Date().toISOString() })
+                  .eq('id', session.user.id)
+              }
+            } else {
+              console.error("ERREUR: session.user n'est pas un objet valide dans onAuthStateChange:", session.user)
             }
           } else {
             setSession(null)
@@ -194,22 +255,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If successful, update local state immediately
       if (data.user) {
-        setSession(data.session)
-        setUser(data.user)
-        
-        // Check user role
-        const role = await checkUserRole(data.user.id)
-        setIsAdmin(role === 'admin')
-        
-        // Update last_sign_in_at in profiles table
-        try {
-          await supabase
-            .from('profiles')
-            .update({ last_sign_in_at: new Date().toISOString() })
-            .eq('id', data.user.id)
-        } catch (updateError) {
-          console.error('Error updating last sign in time:', updateError)
-          // Non-critical error, don't return it
+        // Vérification supplémentaire pour s'assurer que user est un objet valide
+        if (typeof data.user === 'object' && data.user.id) {
+          setSession(data.session)
+          safeSetUser(data.user)
+          
+          // Check user role
+          const role = await checkUserRole(data.user.id)
+          setIsAdmin(role === 'admin')
+          
+          // Update last_sign_in_at in profiles table
+          try {
+            await supabase
+              .from('profiles')
+              .update({ last_sign_in_at: new Date().toISOString() })
+              .eq('id', data.user.id)
+          } catch (updateError) {
+            console.error('Error updating last sign in time:', updateError)
+            // Non-critical error, don't return it
+          }
+        } else {
+          console.error("ERREUR: data.user n'est pas un objet valide dans signIn:", data.user)
         }
       }
 
