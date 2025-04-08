@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth'
+import { Button } from '@/components/ui/button'
+import { AlertCircle } from 'lucide-react'
 
 export default function AdminLayout({
   children,
@@ -12,25 +14,67 @@ export default function AdminLayout({
 }) {
   const router = useRouter()
   const { user, isAdmin, isLoading } = useAuth()
+  // État pour gérer un timeout de sécurité
+  const [safetyTimeout, setSafetyTimeout] = useState(false)
+  const [forceDisplay, setForceDisplay] = useState(false)
 
   useEffect(() => {
     if (!isLoading && (!user || !isAdmin)) {
       router.push('/dashboard')
     }
   }, [user, isAdmin, isLoading, router])
+  
+  // Timeout de sécurité pour éviter un loading infini
+  useEffect(() => {
+    console.log("Admin layout - loading state:", isLoading, "user:", user?.email, "isAdmin:", isAdmin)
+    
+    if (isLoading) {
+      // Après 8 secondes, montrer un bouton pour forcer l'affichage
+      const timeoutId = setTimeout(() => {
+        console.log("Safety timeout triggered in admin layout")
+        setSafetyTimeout(true)
+      }, 8000)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [isLoading, user, isAdmin])
+  
+  // Fonction pour forcer l'affichage du dashboard
+  const handleForceDisplay = () => {
+    console.log("User forced display of admin panel")
+    setForceDisplay(true)
+  }
 
-  if (isLoading) {
+  if (isLoading && !forceDisplay) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen flex-col items-center justify-center">
         <div className="text-center">
-          <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-klyra mx-auto"></div>
+          <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
           <p className="mt-4 text-lg">Chargement...</p>
+          
+          {safetyTimeout && (
+            <div className="mt-8 max-w-md mx-auto">
+              <div className="bg-yellow-50 p-4 rounded-lg text-yellow-700 mb-4 flex items-start">
+                <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Le chargement prend plus de temps que prévu</p>
+                  <p className="text-sm mt-1">Vous pouvez forcer l'affichage du panel admin si vous êtes sûr d'être connecté avec un compte administrateur.</p>
+                </div>
+              </div>
+              <Button 
+                onClick={handleForceDisplay}
+                className="w-full"
+              >
+                Continuer vers le panel admin
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     )
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !forceDisplay) {
     return null
   }
 
@@ -39,7 +83,7 @@ export default function AdminLayout({
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 text-white">
         <div className="p-4">
-          <Link href="/admin" className="text-xl font-bold text-klyra">
+          <Link href="/admin" className="text-xl font-bold text-primary">
             Klyra Admin
           </Link>
         </div>

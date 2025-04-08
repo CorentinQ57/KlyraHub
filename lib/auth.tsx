@@ -26,9 +26,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
 
+  // Log d'état pour debugging
+  useEffect(() => {
+    console.log("Auth state:", { isLoading, user: user?.email, isAdmin })
+  }, [isLoading, user, isAdmin])
+
   // Check user role function
   const checkUserRole = async (userId: string): Promise<string | null> => {
     try {
+      console.log("Checking user role for:", userId)
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -40,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null
       }
 
+      console.log("User role:", data?.role)
       return data?.role || null
     } catch (error) {
       console.error('Error in checkUserRole:', error)
@@ -50,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Get initial session and set up auth state listener
   const getInitialSession = async () => {
     try {
+      console.log("Getting initial session...")
       setIsLoading(true)
 
       // Check for active session
@@ -57,9 +65,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Error getting session:', error)
+        setIsLoading(false)
+        return
       }
 
+      console.log("Initial session result:", session ? "Session found" : "No session")
+
       if (session) {
+        console.log("Session user:", session.user.email)
         setSession(session)
         setUser(session.user)
         
@@ -74,46 +87,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error in getInitialSession:', error)
     } finally {
+      console.log("Setting isLoading to false from getInitialSession")
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
+    console.log("Setting up auth state listener...")
+    
+    // Mettre un timeout de sécurité pour empêcher un loading infini
+    const safetyTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.log("⚠️ Safety timeout triggered - forcing isLoading to false")
+        setIsLoading(false)
+      }
+    }, 5000) // 5 secondes maximum de loading
+    
     getInitialSession()
 
     // Set up listener for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log(`Auth event: ${event}`)
+        console.log(`Auth event: ${event}`, session ? `User: ${session.user.email}` : "No session")
         
-        if (session) {
-          setSession(session)
-          setUser(session.user)
-          
-          // Check if user is admin on auth state change
-          const role = await checkUserRole(session.user.id)
-          setIsAdmin(role === 'admin')
-          
-          // Update last_sign_in_at in profiles table
-          if (event === 'SIGNED_IN') {
-            await supabase
-              .from('profiles')
-              .update({ last_sign_in_at: new Date().toISOString() })
-              .eq('id', session.user.id)
+        try {
+          if (session) {
+            setSession(session)
+            setUser(session.user)
+            
+            // Check if user is admin on auth state change
+            const role = await checkUserRole(session.user.id)
+            setIsAdmin(role === 'admin')
+            
+            // Update last_sign_in_at in profiles table
+            if (event === 'SIGNED_IN') {
+              console.log("Updating last sign in timestamp")
+              await supabase
+                .from('profiles')
+                .update({ last_sign_in_at: new Date().toISOString() })
+                .eq('id', session.user.id)
+            }
+          } else {
+            setSession(null)
+            setUser(null)
+            setIsAdmin(false)
           }
-        } else {
-          setSession(null)
-          setUser(null)
-          setIsAdmin(false)
+        } catch (error) {
+          console.error("Error in auth state change handler:", error)
+        } finally {
+          console.log("Setting isLoading to false from auth state change")
+          setIsLoading(false)
         }
-
-        setIsLoading(false)
       }
     )
 
-    // Cleanup subscription on unmount
+    // Cleanup subscription and timeout on unmount
     return () => {
+      console.log("Cleanup: unsubscribing from auth changes")
       subscription.unsubscribe()
+      clearTimeout(safetyTimeout)
     }
   }, [])
 
@@ -191,6 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sign out function
   const signOut = async () => {
     try {
+      console.log("Signing out user")
       await supabase.auth.signOut()
       setUser(null)
       setSession(null)
@@ -204,6 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Reset password function
   const resetPassword = async (email: string) => {
     try {
+      console.log("Requesting password reset for:", email)
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
