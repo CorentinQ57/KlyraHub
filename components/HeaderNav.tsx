@@ -1,145 +1,139 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Menu, X, User, ShoppingCart, Home, Package, Settings, HelpCircle } from 'lucide-react'
+import { useState } from 'react'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/Logo'
 import { 
   LayoutDashboard, 
-  User, 
-  ShoppingCart, 
-  Store, 
-  Settings, 
   LogOut 
 } from 'lucide-react'
 
 export function HeaderNav() {
+  const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const { isAdmin } = useAuth()
+  const { user, isAdmin } = useAuth()
   
-  // Détermine si un lien est actif
-  const isActive = (path: string) => {
-    return pathname === path || pathname?.startsWith(`${path}/`)
-  }
-  
-  // Liens de navigation pour tous les utilisateurs
-  const userNavLinks = [
+  // Liste des liens de navigation pour l'utilisateur
+  const userLinks = [
     {
       href: '/dashboard',
       label: 'Dashboard',
-      icon: <LayoutDashboard className="h-4 w-4 mr-1" />,
-      exact: true
+      icon: <Home className="h-4 w-4" />
+    },
+    {
+      href: '/dashboard/marketplace',
+      label: 'Services',
+      icon: <Package className="h-4 w-4" />
+    },
+    {
+      href: '/dashboard/purchases',
+      label: 'Achats',
+      icon: <ShoppingCart className="h-4 w-4" />
     },
     {
       href: '/dashboard/profile',
       label: 'Profil',
-      icon: <User className="h-4 w-4 mr-1" />
-    },
-    {
-      href: '/dashboard/purchases',
-      label: 'Mes achats',
-      icon: <ShoppingCart className="h-4 w-4 mr-1" />
-    },
-    {
-      href: '/dashboard/marketplace',
-      label: 'Marketplace',
-      icon: <Store className="h-4 w-4 mr-1" />
+      icon: <User className="h-4 w-4" />
     }
   ]
   
-  // Lien admin supplémentaire
+  // Ajouter le lien admin si l'utilisateur est admin
   const adminLink = {
     href: '/dashboard/admin',
     label: 'Admin',
-    icon: <Settings className="h-4 w-4 mr-1" />
+    icon: <Settings className="h-4 w-4" />
   }
-
+  
+  const links = isAdmin ? [...userLinks, adminLink] : userLinks
+  
+  // Déterminer si un lien est actif
+  const isActive = (href: string) => {
+    if (href === '/dashboard' && pathname === '/dashboard') {
+      return true
+    }
+    return href !== '/dashboard' && pathname?.startsWith(href)
+  }
+  
   return (
-    <header className="sticky top-0 z-10 border-b bg-white shadow-sm">
+    <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-6 md:gap-10">
-          <Logo />
-          <nav className="hidden lg:flex items-center space-x-1">
-            {userNavLinks.map((link) => (
-              <Link 
+        <div className="flex items-center">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
+            <span className="font-bold text-primary">Klyra</span>
+          </Link>
+          
+          {/* Navigation pour ordinateur */}
+          <nav className="hidden md:flex items-center space-x-6">
+            {links.map(link => (
+              <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive(link.href) && (link.exact ? pathname === link.href : true)
-                    ? "bg-primary/10 text-primary" 
-                    : "text-gray-600 hover:text-primary hover:bg-primary/5"
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  isActive(link.href)
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-gray-600 hover:text-primary hover:bg-gray-100'
                 }`}
               >
                 {link.icon}
-                {link.label}
+                <span className="ml-2">{link.label}</span>
               </Link>
             ))}
-            
-            {isAdmin && (
-              <Link 
-                href={adminLink.href}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive(adminLink.href) 
-                    ? "bg-primary/10 text-primary" 
-                    : "text-gray-600 hover:text-primary hover:bg-primary/5"
-                }`}
-              >
-                {adminLink.icon}
-                {adminLink.label}
-              </Link>
-            )}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              await supabase.auth.signOut()
-              router.push('/')
-            }}
-            className="flex items-center"
+        
+        <div className="flex items-center space-x-4">
+          <Link href="/dashboard?showTutorial=true" className="hidden md:flex items-center text-sm text-gray-600 hover:text-primary">
+            <HelpCircle className="h-4 w-4 mr-1" />
+            <span>Aide</span>
+          </Link>
+          
+          {/* Bouton hamburger pour mobile */}
+          <button
+            className="md:hidden"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
           >
-            <LogOut className="h-4 w-4 mr-1" />
-            Déconnexion
-          </Button>
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
       </div>
       
-      {/* Navigation mobile (pour les petits écrans) */}
-      <div className="lg:hidden border-t py-2">
-        <div className="container flex justify-between items-center">
-          {userNavLinks.map((link) => (
-            <Link 
-              key={link.href}
-              href={link.href}
-              className={`flex flex-col items-center text-xs font-medium p-1 ${
-                isActive(link.href) && (link.exact ? pathname === link.href : true)
-                  ? "text-primary" 
-                  : "text-gray-600"
-              }`}
-            >
-              {link.icon}
-              <span className="mt-1">{link.label}</span>
-            </Link>
-          ))}
-          
-          {isAdmin && (
-            <Link 
-              href={adminLink.href}
-              className={`flex flex-col items-center text-xs font-medium p-1 ${
-                isActive(adminLink.href) 
-                  ? "text-primary" 
-                  : "text-gray-600"
-              }`}
-            >
-              {adminLink.icon}
-              <span className="mt-1">{adminLink.label}</span>
-            </Link>
-          )}
+      {/* Navigation mobile */}
+      {isOpen && (
+        <div className="md:hidden border-t">
+          <div className="container py-4">
+            <nav className="flex flex-col space-y-2">
+              {links.map(link => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                    isActive(link.href)
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-gray-600 hover:text-primary hover:bg-gray-100'
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.icon}
+                  <span className="ml-2">{link.label}</span>
+                </Link>
+              ))}
+              <Link
+                href="/dashboard?showTutorial=true"
+                className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-primary hover:bg-gray-100"
+                onClick={() => setIsOpen(false)}
+              >
+                <HelpCircle className="h-4 w-4" />
+                <span className="ml-2">Aide</span>
+              </Link>
+            </nav>
+          </div>
         </div>
-      </div>
+      )}
     </header>
   )
 } 

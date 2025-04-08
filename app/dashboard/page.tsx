@@ -10,7 +10,7 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, X } from 'lucide-react'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -55,19 +55,19 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
         <div className="flex-1 mr-3">
           <h3 className="text-xl font-semibold tracking-snug line-clamp-1">{project.title}</h3>
           {project.services && (
-            <p className="text-sm text-klyra-text-medium mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Service: {project.services.title}
             </p>
           )}
         </div>
         <span
-          className={`badge whitespace-nowrap inline-flex ${statusLabels[project.status].color}`}
+          className={`badge whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}
         >
           {statusLabels[project.status].label}
         </span>
       </div>
       <div className="mt-auto flex justify-between items-center pt-4">
-        <span className="text-sm text-klyra-text-light">
+        <span className="text-sm text-muted-foreground">
           {new Date(project.created_at).toLocaleDateString()}
         </span>
         <div className="space-x-2">
@@ -80,6 +80,55 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
   )
 }
 
+// Composant pour une étape du tutoriel
+const TutorialStep = ({ 
+  step, 
+  title, 
+  description, 
+  onNext, 
+  onClose,
+  isLast
+}: { 
+  step: number; 
+  title: string; 
+  description: string; 
+  onNext: () => void; 
+  onClose: () => void;
+  isLast: boolean;
+}) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+      <Card className="w-full max-w-md mx-4">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>Étape {step} sur 5</CardDescription>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <p>{description}</p>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button variant="ghost" onClick={onClose}>
+            Ignorer
+          </Button>
+          <Button onClick={onNext}>
+            {isLast ? "Terminer" : "Suivant"} <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </CardFooter>
+      </Card>
+    </motion.div>
+  );
+};
+
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
@@ -88,12 +137,19 @@ export default function DashboardPage() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
   
+  // État pour le tutoriel
+  const [showTutorial, setShowTutorial] = useState<boolean>(false)
+  const [tutorialStep, setTutorialStep] = useState<number>(1)
+  
   // Paramètres de paiement réussi
   const paymentSuccess = searchParams.get('payment_success')
   const sessionId = searchParams.get('session_id')
   const serviceId = searchParams.get('service_id')
   const title = searchParams.get('title')
   const price = searchParams.get('price')
+  
+  // Vérifier si le tutoriel doit être affiché depuis l'URL
+  const showTutorialParam = searchParams.get('showTutorial')
   
   // Status labels
   const statusLabels = {
@@ -127,6 +183,15 @@ export default function DashboardPage() {
           ? await fetchAllProjects()
           : await fetchProjects(user.id);
         setProjects(fetchedProjects);
+        
+        // Si c'est la première connexion et qu'il n'y a pas de projets, afficher le tutoriel
+        if (fetchedProjects.length === 0) {
+          const hasSeenTutorial = localStorage.getItem('hasSeenTutorial')
+          if (!hasSeenTutorial) {
+            setShowTutorial(true)
+            localStorage.setItem('hasSeenTutorial', 'true')
+          }
+        }
       } catch (error) {
         console.error('Erreur lors du chargement des projets:', error);
         toast({
@@ -140,12 +205,44 @@ export default function DashboardPage() {
     }
   };
   
+  // Fonction pour passer à l'étape suivante du tutoriel
+  const nextTutorialStep = () => {
+    if (tutorialStep < 5) {
+      setTutorialStep(tutorialStep + 1)
+    } else {
+      setShowTutorial(false)
+      // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
+      if (showTutorialParam) {
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, document.title, newUrl)
+      }
+    }
+  }
+  
+  // Fonction pour fermer le tutoriel
+  const closeTutorial = () => {
+    setShowTutorial(false)
+    // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
+    if (showTutorialParam) {
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, document.title, newUrl)
+    }
+  }
+  
   // Effet pour charger les projets
   useEffect(() => {
     if (user) {
       loadProjects()
     }
   }, [user])
+  
+  // Effet pour afficher le tutoriel si le paramètre est présent dans l'URL
+  useEffect(() => {
+    if (showTutorialParam === 'true') {
+      setTutorialStep(1)
+      setShowTutorial(true)
+    }
+  }, [showTutorialParam])
   
   // Effet pour gérer la création de projet après un paiement réussi
   useEffect(() => {
@@ -189,16 +286,52 @@ export default function DashboardPage() {
     handlePaymentSuccess()
   }, [paymentSuccess, sessionId, serviceId, title, price, user, isLoading])
 
+  // Les étapes du tutoriel
+  const tutorialSteps = [
+    {
+      title: "Bienvenue sur Klyra Hub !",
+      description: "Bienvenue sur votre plateforme Klyra ! Ce rapide tutoriel vous aidera à comprendre comment utiliser votre espace client."
+    },
+    {
+      title: "Découvrez nos services",
+      description: "Consultez notre marketplace pour découvrir tous les services proposés par Klyra. Vous pouvez filtrer par catégorie ou par prix pour trouver ce qui correspond à vos besoins."
+    },
+    {
+      title: "Suivez vos projets",
+      description: "Après un achat, vos projets apparaîtront sur cette page. Vous pourrez suivre leur avancement, consulter les livrables et échanger avec notre équipe."
+    },
+    {
+      title: "Consultez votre historique d'achats",
+      description: "Retrouvez l'ensemble de vos commandes, factures et transactions dans la section Historique d'achats accessible depuis le menu."
+    },
+    {
+      title: "Personnalisez votre profil",
+      description: "Accédez à votre profil pour modifier vos informations personnelles, préférences et paramètres de notification."
+    }
+  ]
+
   return (
     <div className="space-y-8">
+      {showTutorial && (
+        <TutorialStep
+          step={tutorialStep}
+          title={tutorialSteps[tutorialStep - 1].title}
+          description={tutorialSteps[tutorialStep - 1].description}
+          onNext={nextTutorialStep}
+          onClose={closeTutorial}
+          isLast={tutorialStep === 5}
+        />
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tighter">Dashboard</h1>
           {isAdmin && (
-            <p className="text-sm text-klyra-text-medium mt-1">Mode administrateur - Tous les projets sont visibles</p>
+            <p className="text-sm text-muted-foreground mt-1">Mode administrateur - Tous les projets sont visibles</p>
           )}
         </div>
-        <div className="flex space-x-4">
+        
+        <div className="flex items-center gap-4">
           <Link href="/dashboard/marketplace">
             <Button>
               Explorer les services
@@ -207,30 +340,10 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold">{isAdmin ? 'Tous les projets' : 'Vos projets'}</h2>
-        <p className="text-muted-foreground">
-          {isAdmin 
-            ? 'Vue d\'ensemble de tous les projets Klyra'
-            : 'Suivi de vos projets Klyra'
-          }
-        </p>
-      </div>
-
+      
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="card border border-gray-100 animate-pulse h-[180px]">
-              <div className="h-6 bg-klyra-50 rounded mb-4 w-3/4"></div>
-              <div className="h-4 bg-klyra-50 rounded mb-2 w-2/4"></div>
-              <div className="h-4 bg-klyra-50 rounded mb-6 w-1/4"></div>
-              <div className="flex justify-between items-center mt-auto">
-                <div className="h-4 bg-klyra-50 rounded w-1/4"></div>
-                <div className="h-8 bg-klyra-50 rounded w-1/4"></div>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-center py-12">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
         </div>
       ) : projects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -239,75 +352,22 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Aucun projet pour le moment</CardTitle>
-            <CardDescription>
-              Commencez votre premier projet en explorant notre marketplace.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-klyra-text-medium">
-              Découvrez notre gamme de services professionnels adaptés à vos besoins.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Link href="/dashboard/marketplace">
-              <Button>
-                Explorer les services
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      )}
-
-      <div className="mt-12">
-        <h2 className="text-2xl font-semibold tracking-tight mb-6">Informations importantes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Clock className="mr-2 h-5 w-5 text-klyra" />
-                Délais
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-klyra-text-medium">
-                Nos délais de livraison sont calculés en jours ouvrés et commencent une fois votre projet validé par notre équipe.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="mr-2 h-5 w-5 text-klyra" />
-                Suivi
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-klyra-text-medium">
-                Vous pouvez suivre l'avancement de vos projets en temps réel et interagir avec notre équipe directement depuis votre dashboard.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CheckCircle className="mr-2 h-5 w-5 text-klyra" />
-                Satisfaction
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-klyra-text-medium">
-                Nous travaillons jusqu'à votre satisfaction complète, avec des révisions illimitées selon les termes spécifiés dans chaque service.
-              </p>
-            </CardContent>
-          </Card>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="mb-4 text-primary">
+            <Calendar className="h-12 w-12 mx-auto" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">Vous n'avez pas encore de projets</h3>
+          <p className="text-muted-foreground max-w-md mb-6">
+            Explorez notre marketplace et découvrez nos services pour commencer votre premier projet avec Klyra.
+          </p>
+          <Link href="/dashboard/marketplace">
+            <Button size="lg">
+              Découvrir nos services
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
-      </div>
+      )}
     </div>
   )
 } 
