@@ -15,8 +15,10 @@ import {
   LogOut,
   Menu,
   X,
-  RefreshCw
+  RefreshCw,
+  BookOpen
 } from 'lucide-react'
+import { UserMenu } from './UserMenu'
 
 export function HeaderNav() {
   const [isOpen, setIsOpen] = useState(false)
@@ -64,6 +66,11 @@ export function HeaderNav() {
       href: '/dashboard/marketplace',
       label: 'Marketplace',
       icon: <Store className="h-4 w-4 mr-1" />
+    },
+    {
+      href: '/dashboard/docs',
+      label: 'Documentation',
+      icon: <BookOpen className="h-4 w-4 mr-1" />
     }
   ]
   
