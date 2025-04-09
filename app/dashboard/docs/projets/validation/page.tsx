@@ -388,7 +388,7 @@ export default function DeliverableValidationPage() {
                 Vous pouvez définir un type de validation par défaut dans vos paramètres de compte, mais aussi le modifier pour chaque projet ou même pour chaque livrable individuellement.
               </p>
               <div className="mt-4">
-                <Link href="/dashboard/profile/settings">
+                <Link href="/dashboard/profile">
                   <Button variant="outline" size="sm">
                     Configurer mes préférences de validation
                   </Button>
@@ -508,7 +508,7 @@ export default function DeliverableValidationPage() {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <Link href="/dashboard/purchases/revisions">
+                  <Link href="/dashboard/purchases">
                     <Button variant="outline" size="sm">
                       Acheter des révisions supplémentaires
                     </Button>

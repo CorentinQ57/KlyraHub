@@ -27,6 +27,7 @@ export type DocItem = {
   icon?: React.ReactNode;
   badge?: string;
   badgeColor?: string;
+  disabled?: boolean;
 };
 
 export type DocCategory = {
@@ -73,13 +74,19 @@ export const docCategories: DocCategory[] = [
       },
       {
         title: "Processus de livraison",
-        href: "/dashboard/docs/services/processus-livraison",
+        href: "/dashboard/docs",
         icon: <FileText className="h-4 w-4" />,
+        disabled: true,
+        badge: "Bientôt",
+        badgeColor: "bg-yellow-100 text-yellow-800",
       },
       {
         title: "Livrables et formats",
-        href: "/dashboard/docs/services/livrables",
+        href: "/dashboard/docs",
         icon: <FileText className="h-4 w-4" />,
+        disabled: true,
+        badge: "Bientôt",
+        badgeColor: "bg-yellow-100 text-yellow-800",
       },
     ],
   },
@@ -110,18 +117,27 @@ export const docCategories: DocCategory[] = [
     items: [
       {
         title: "Gestion de compte",
-        href: "/dashboard/docs/compte/gestion",
+        href: "/dashboard/docs",
         icon: <FileText className="h-4 w-4" />,
+        disabled: true,
+        badge: "Bientôt",
+        badgeColor: "bg-yellow-100 text-yellow-800",
       },
       {
         title: "Facturation",
-        href: "/dashboard/docs/compte/facturation",
+        href: "/dashboard/docs",
         icon: <FileText className="h-4 w-4" />,
+        disabled: true,
+        badge: "Bientôt",
+        badgeColor: "bg-yellow-100 text-yellow-800",
       },
       {
         title: "Modes de paiement",
-        href: "/dashboard/docs/compte/paiement",
+        href: "/dashboard/docs",
         icon: <FileText className="h-4 w-4" />,
+        disabled: true,
+        badge: "Bientôt",
+        badgeColor: "bg-yellow-100 text-yellow-800",
       },
     ],
   },
@@ -131,13 +147,19 @@ export const docCategories: DocCategory[] = [
     items: [
       {
         title: "Contacter le support",
-        href: "/dashboard/docs/support/contact",
+        href: "/dashboard/docs",
         icon: <FileText className="h-4 w-4" />,
+        disabled: true,
+        badge: "Bientôt",
+        badgeColor: "bg-yellow-100 text-yellow-800",
       },
       {
         title: "Rapporter un problème",
-        href: "/dashboard/docs/support/probleme",
+        href: "/dashboard/docs",
         icon: <FileText className="h-4 w-4" />,
+        disabled: true,
+        badge: "Bientôt",
+        badgeColor: "bg-yellow-100 text-yellow-800",
       },
     ],
   },
@@ -192,31 +214,53 @@ export function DocsNav() {
             {category.expanded && (
               <div className="ml-4 mt-1 space-y-1">
                 {category.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center justify-between py-1.5 px-3 text-sm rounded-md",
-                      isActive(item.href)
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <div className="flex items-center">
-                      {item.icon}
-                      <span className="ml-2">{item.title}</span>
+                  item.disabled ? (
+                    <div
+                      key={item.href}
+                      className="flex items-center justify-between py-1.5 px-3 text-sm rounded-md text-muted-foreground/60 cursor-not-allowed"
+                    >
+                      <div className="flex items-center">
+                        {item.icon}
+                        <span className="ml-2">{item.title}</span>
+                      </div>
+                      {item.badge && (
+                        <Badge
+                          className={cn(
+                            "text-xs",
+                            item.badgeColor || "bg-primary/10 text-primary"
+                          )}
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
                     </div>
-                    {item.badge && (
-                      <Badge
-                        className={cn(
-                          "text-xs",
-                          item.badgeColor || "bg-primary/10 text-primary"
-                        )}
-                      >
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </Link>
+                  ) : (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center justify-between py-1.5 px-3 text-sm rounded-md",
+                        isActive(item.href)
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        {item.icon}
+                        <span className="ml-2">{item.title}</span>
+                      </div>
+                      {item.badge && (
+                        <Badge
+                          className={cn(
+                            "text-xs",
+                            item.badgeColor || "bg-primary/10 text-primary"
+                          )}
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  )
                 ))}
               </div>
             )}
