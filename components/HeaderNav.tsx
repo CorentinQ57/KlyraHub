@@ -18,7 +18,6 @@ import {
   RefreshCw,
   BookOpen
 } from 'lucide-react'
-import { UserMenu } from './UserMenu'
 
 export function HeaderNav() {
   const [isOpen, setIsOpen] = useState(false)
