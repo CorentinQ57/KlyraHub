@@ -2,7 +2,16 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // Get the response
+  // Vérifier si la route concerne la documentation
+  const url = request.nextUrl.clone()
+  const isDocsRoute = url.pathname.startsWith('/dashboard/docs')
+  
+  // Si c'est une route de documentation, autoriser l'accès sans autre vérification
+  if (isDocsRoute) {
+    return NextResponse.next()
+  }
+  
+  // Pour les autres routes, continuer avec le comportement normal
   const response = NextResponse.next()
 
   // Add CORS headers
