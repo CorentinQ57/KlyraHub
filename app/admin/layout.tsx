@@ -13,11 +13,12 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const { user, isAdmin, isLoading, signOut } = useAuth()
+  const { user, isAdmin, isLoading, signOut, reloadAuthState } = useAuth()
   // État pour gérer un timeout de sécurité
   const [safetyTimeout, setSafetyTimeout] = useState(false)
   const [forceDisplay, setForceDisplay] = useState(false)
   const [userTypeError, setUserTypeError] = useState(false)
+  const [isReloading, setIsReloading] = useState(false)
 
   // Vérifier que l'utilisateur est valide et a les permissions
   useEffect(() => {
@@ -52,11 +53,11 @@ export default function AdminLayout({
                 "isAdmin:", isAdmin)
     
     if (isLoading) {
-      // Après 8 secondes, montrer un bouton pour forcer l'affichage
+      // Après 5 secondes, montrer un bouton pour forcer l'affichage
       const timeoutId = setTimeout(() => {
         console.log("Safety timeout triggered in admin layout")
         setSafetyTimeout(true)
-      }, 8000)
+      }, 5000) // Réduit de 8 à 5 secondes
       
       return () => clearTimeout(timeoutId)
     }
@@ -78,6 +79,19 @@ export default function AdminLayout({
   const handleForceDisplay = () => {
     console.log("User forced display of admin panel")
     setForceDisplay(true)
+  }
+  
+  // Fonction pour forcer le rafraîchissement de l'état d'authentification
+  const handleForceReload = async () => {
+    try {
+      console.log("User requested auth state reload in admin layout")
+      setIsReloading(true)
+      await reloadAuthState()
+    } catch (error) {
+      console.error("Error during force reload in admin layout:", error)
+    } finally {
+      setIsReloading(false)
+    }
   }
   
   // Afficher un message d'erreur si user n'est pas un objet valide
@@ -116,15 +130,25 @@ export default function AdminLayout({
                 <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium">Le chargement prend plus de temps que prévu</p>
-                  <p className="text-sm mt-1">Vous pouvez forcer l'affichage du panel admin si vous êtes sûr d'être connecté avec un compte administrateur.</p>
+                  <p className="text-sm mt-1">Vous pouvez essayer de rafraîchir l'authentification ou forcer l'affichage du panel admin.</p>
                 </div>
               </div>
-              <Button 
-                onClick={handleForceDisplay}
-                className="w-full"
-              >
-                Continuer vers le panel admin
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  onClick={handleForceReload}
+                  className="w-full"
+                  variant="outline"
+                  disabled={isReloading}
+                >
+                  {isReloading ? "Rafraîchissement..." : "Rafraîchir l'authentification"}
+                </Button>
+                <Button 
+                  onClick={handleForceDisplay}
+                  className="w-full"
+                >
+                  Continuer vers le panel admin
+                </Button>
+              </div>
             </div>
           )}
         </div>

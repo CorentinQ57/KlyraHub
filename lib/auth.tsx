@@ -67,35 +67,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       console.log("Checking user role for:", userId)
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single()
+      
+      // Utilisation d'un timeout pour éviter les requêtes bloquantes
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.log("Role check timed out")
+          resolve(null)
+        }, 3000) // 3 secondes maximum pour la vérification du rôle
+      })
+      
+      // Requête à Supabase avec timeout de sécurité
+      const rolePromise = new Promise<string | null>(async (resolve) => {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .single()
 
-      if (error) {
-        console.error('Error fetching user role:', error)
-        console.log('SQL query details:', { table: 'profiles', column: 'role', id: userId })
-        
-        // Fallback attempt with user_id column
-        console.log('Attempting fallback with user_id column instead of id')
-        const fallbackResult = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', userId)
-          .single()
-          
-        if (fallbackResult.error) {
-          console.error('Fallback also failed:', fallbackResult.error)
-          return null
+          if (error) {
+            console.error('Error fetching user role:', error)
+            console.log('SQL query details:', { table: 'profiles', column: 'role', id: userId })
+            
+            // Fallback attempt with user_id column
+            console.log('Attempting fallback with user_id column instead of id')
+            const fallbackResult = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('user_id', userId)
+              .single()
+              
+            if (fallbackResult.error) {
+              console.error('Fallback also failed:', fallbackResult.error)
+              resolve(null)
+              return
+            }
+            
+            console.log("Fallback user role result:", fallbackResult.data)
+            resolve(fallbackResult.data?.role || null)
+            return
+          }
+
+          console.log("User role data:", data)
+          resolve(data?.role || null)
+        } catch (error) {
+          console.error('Error in rolePromise:', error)
+          resolve(null)
         }
-        
-        console.log("Fallback user role result:", fallbackResult.data)
-        return fallbackResult.data?.role || null
-      }
-
-      console.log("User role data:", data)
-      return data?.role || null
+      })
+      
+      // Utilisation de Promise.race pour implémenter un timeout
+      const role = await Promise.race([rolePromise, timeoutPromise])
+      
+      // Log plus détaillé
+      console.log(`Role check result for ${userId}: ${role || 'no role found'}`)
+      
+      return role
     } catch (error) {
       console.error('Error in checkUserRole:', error)
       return null
@@ -187,9 +214,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const safetyTimeout = setTimeout(() => {
       if (isLoading) {
         console.log("⚠️ Safety timeout triggered - forcing isLoading to false")
-        setIsLoading(false)
+        
+        // Forcer une dernière tentative de récupération de l'utilisateur et vérification du rôle
+        const emergencyCheck = async () => {
+          try {
+            const { data: { user: emergencyUser } } = await supabase.auth.getUser()
+            
+            if (emergencyUser && typeof emergencyUser === 'object' && emergencyUser.id) {
+              console.log("Emergency user check successful:", emergencyUser.email)
+              safeSetUser(emergencyUser)
+              
+              // Tenter une dernière vérification du rôle avec un timout court
+              const role = await Promise.race([
+                checkUserRole(emergencyUser.id),
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
+              ])
+              
+              console.log("Emergency role check result:", role)
+              setIsAdmin(role === 'admin')
+            }
+          } catch (error) {
+            console.error("Error in emergency user check:", error)
+          } finally {
+            // Dans tous les cas, forcer la fin du chargement
+            setIsLoading(false)
+          }
+        }
+        
+        emergencyCheck()
       }
-    }, 5000) // 5 secondes maximum de loading
+    }, 3000) // 3 secondes maximum de loading (réduit de 5 à 3 secondes)
     
     getInitialSession()
 
@@ -402,6 +456,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Manually reloading auth state")
       setIsLoading(true)
       
+      // Timeout de sécurité pour éviter que reloadAuthState ne reste bloqué
+      const timeoutId = setTimeout(() => {
+        console.log("reloadAuthState safety timeout triggered")
+        setIsLoading(false)
+      }, 3000) // 3 secondes maximum
+      
       // Forcer la déconnexion/reconnexion du client Supabase
       await supabase.auth.refreshSession()
       
@@ -414,6 +474,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null)
         setSession(null)
         setIsAdmin(false)
+        clearTimeout(timeoutId)
+        setIsLoading(false)
         return
       }
       
@@ -423,14 +485,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         safeSetUser(currentUser)
         setSession(currentSession)
         
-        // Check if user is admin
-        const role = await checkUserRole(currentUser.id)
-        setIsAdmin(role === 'admin')
-        
-        // Forcer une mise à jour complète
-        const { data: { user: updatedUser }, error: updatedUserError } = await supabase.auth.getUser()
-        if (!updatedUserError && updatedUser) {
-          safeSetUser(updatedUser)
+        // Check if user is admin avec un timeout
+        try {
+          const roleCheckPromise = checkUserRole(currentUser.id)
+          const roleTimeout = new Promise<null>((resolve) => 
+            setTimeout(() => resolve(null), 2000)
+          )
+          
+          const role = await Promise.race([roleCheckPromise, roleTimeout])
+          console.log("Role check in reloadAuthState:", role)
+          setIsAdmin(role === 'admin')
+        } catch (roleError) {
+          console.error("Error checking role in reloadAuthState:", roleError)
+          // Par défaut, ne pas modifier le statut admin en cas d'erreur
         }
       } else {
         console.log("No active user session found during reload")
@@ -438,6 +505,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(null)
         setIsAdmin(false)
       }
+      
+      clearTimeout(timeoutId)
     } catch (error) {
       console.error("Exception in reloadAuthState:", error)
       setUser(null)
