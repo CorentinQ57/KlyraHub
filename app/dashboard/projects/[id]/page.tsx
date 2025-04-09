@@ -9,7 +9,6 @@ import { fetchProjectById, fetchComments, addComment, fetchDeliverables, supabas
 import { Project, Comment, Deliverable } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import ClientUploadRequests from './components/ClientUploadRequests'
-import { HeaderNav } from '@/components/HeaderNav'
 
 // Définition des types étendus
 type ProjectWithRelations = Project & {
@@ -267,7 +266,6 @@ export default function ProjectPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <HeaderNav />
       <main className="flex-1 container py-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
           {/* Main content */}
