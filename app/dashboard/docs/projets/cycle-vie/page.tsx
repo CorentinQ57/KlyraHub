@@ -23,6 +23,7 @@ import {
   Users,
   Award,
   Bell,
+  ChevronRight,
 } from "lucide-react";
 
 // Liens recommandés dans la barre latérale
@@ -257,132 +258,111 @@ export default function ProjectLifecyclePage() {
               Les phases du projet
             </h2>
             <p>
-              Votre projet traversera 5 phases principales, chacune avec ses objectifs spécifiques et ses livrables. À chaque étape, votre participation active est précieuse pour garantir un résultat final parfaitement aligné avec vos attentes.
+              Chaque projet traverse cinq phases distinctes, chacune avec des objectifs spécifiques et des actions attendues de votre part.
             </p>
 
-            {projectPhases.map((phase) => (
-              <div key={phase.id} id={phase.id} className="border rounded-lg p-6 space-y-5 bg-white/50 mt-6">
-                <div className="flex items-center">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                    {phase.icon}
+            <div className="space-y-8 mt-4">
+              {projectPhases.map((phase) => (
+                <div key={phase.id} id={phase.id} className="border rounded-lg p-6 transition-all">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-primary/10 rounded-full">
+                      {phase.icon}
+                    </div>
+                    <h3 className="text-xl font-bold">{phase.title}</h3>
                   </div>
-                  <h3 className="text-xl font-semibold">{phase.title}</h3>
+                  
+                  <p className="mb-4 text-muted-foreground">
+                    {phase.description}
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center">
+                        <CheckSquare className="h-4 w-4 mr-2 text-primary" />
+                        Points clés
+                      </h4>
+                      <ul className="space-y-2">
+                        {phase.keyPoints.map((point, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-primary mr-2">•</span>
+                            <span className="text-sm">{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-primary" />
+                        Actions attendues (client)
+                      </h4>
+                      <ul className="space-y-2">
+                        {phase.clientActions.map((action, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-primary mr-2">•</span>
+                            <span className="text-sm">{action}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-                <p>{phase.description}</p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                  <div>
-                    <h4 className="font-medium text-primary mb-3">Points clés</h4>
-                    <ul className="space-y-2">
-                      {phase.keyPoints.map((point, index) => (
-                        <li key={index} className="flex items-start">
-                          <CheckSquare className="h-4 w-4 text-primary mr-2 flex-shrink-0 mt-1" />
-                          <span className="text-sm">{point}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-primary mb-3">Votre rôle</h4>
-                    <ul className="space-y-2">
-                      {phase.clientActions.map((action, index) => (
-                        <li key={index} className="flex items-start">
-                          <CheckSquare className="h-4 w-4 text-primary mr-2 flex-shrink-0 mt-1" />
-                          <span className="text-sm">{action}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </section>
 
-          <section id="timeline" className="space-y-6">
+          <section id="timeline" className="space-y-4">
             <h2 className="text-2xl font-bold tracking-tight">
               Chronologie indicative
             </h2>
             <p>
-              La durée de chaque phase varie en fonction de la complexité du projet et du service choisi. Voici une répartition indicative du temps consacré à chaque étape pour un projet standard :
+              La durée de chaque phase varie en fonction de la complexité du projet et du service sélectionné. Voici une estimation générale pour vous aider à planifier :
             </p>
-
-            <div className="w-full bg-white/50 rounded-lg border p-6 mt-4">
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <div className="w-1/4 font-medium">Découverte & Briefing</div>
-                  <div className="w-3/4 relative">
-                    <div className="h-4 bg-primary/10 rounded-full">
-                      <div className="h-4 bg-primary rounded-l-full" style={{ width: "15%" }}></div>
-                    </div>
-                    <span className="absolute -top-6 right-0 text-sm text-muted-foreground">15%</span>
+            
+            <div className="relative mt-8 pl-8 border-l border-primary/30 space-y-10">
+              {projectPhases.map((phase, index) => (
+                <div key={phase.id} className="relative">
+                  <div className="absolute -left-10 flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white">
+                    {index + 1}
                   </div>
+                  <h3 className="font-medium">{phase.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {index === 0 ? "1-3 jours" : 
+                     index === 1 ? "2-5 jours" : 
+                     index === 2 ? "3-10 jours" : 
+                     index === 3 ? "2-5 jours" : "1-2 jours"}
+                  </p>
                 </div>
-
-                <div className="flex items-center">
-                  <div className="w-1/4 font-medium">Conceptualisation</div>
-                  <div className="w-3/4 relative">
-                    <div className="h-4 bg-primary/10 rounded-full">
-                      <div className="h-4 bg-primary rounded-l-full" style={{ width: "25%" }}></div>
-                    </div>
-                    <span className="absolute -top-6 right-0 text-sm text-muted-foreground">25%</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center">
-                  <div className="w-1/4 font-medium">Production</div>
-                  <div className="w-3/4 relative">
-                    <div className="h-4 bg-primary/10 rounded-full">
-                      <div className="h-4 bg-primary rounded-l-full" style={{ width: "35%" }}></div>
-                    </div>
-                    <span className="absolute -top-6 right-0 text-sm text-muted-foreground">35%</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center">
-                  <div className="w-1/4 font-medium">Révision & Affinement</div>
-                  <div className="w-3/4 relative">
-                    <div className="h-4 bg-primary/10 rounded-full">
-                      <div className="h-4 bg-primary rounded-l-full" style={{ width: "20%" }}></div>
-                    </div>
-                    <span className="absolute -top-6 right-0 text-sm text-muted-foreground">20%</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center">
-                  <div className="w-1/4 font-medium">Livraison & Clôture</div>
-                  <div className="w-3/4 relative">
-                    <div className="h-4 bg-primary/10 rounded-full">
-                      <div className="h-4 bg-primary rounded-l-full" style={{ width: "5%" }}></div>
-                    </div>
-                    <span className="absolute -top-6 right-0 text-sm text-muted-foreground">5%</span>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-sm text-muted-foreground mt-6">
-                <Calendar className="h-4 w-4 inline mr-1" /> La durée totale d'un projet varie généralement de 2 à 6 semaines selon sa complexité et sa portée. Votre devis et contrat spécifient le calendrier exact prévu pour votre projet.
+              ))}
+            </div>
+            
+            <div className="bg-muted p-4 rounded mt-6">
+              <p className="text-sm">
+                <strong>Note :</strong> Ces durées sont données à titre indicatif. La durée précise pour votre projet est indiquée dans la description du service que vous avez sélectionné et sera confirmée lors de la phase de découverte.
               </p>
             </div>
           </section>
 
           <section id="success-factors" className="space-y-6">
             <h2 className="text-2xl font-bold tracking-tight">
-              Les facteurs de réussite
+              Facteurs de réussite
             </h2>
             <p>
-              Pour maximiser les chances de succès de votre projet, certains facteurs clés doivent être pris en compte tout au long du cycle de vie. Ces éléments contribuent significativement à la qualité du résultat final.
+              Pour garantir le succès de votre projet, certains facteurs clés doivent être pris en compte tout au long du cycle de vie :
             </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               {successFactors.map((factor) => (
-                <div key={factor.id} className="border rounded-lg p-5 bg-white/50">
-                  <div className="flex items-center mb-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                <div key={factor.id} className="border rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="text-primary">
                       {factor.icon}
                     </div>
-                    <h3 className="font-semibold">{factor.title}</h3>
+                    <h3 className="font-medium">{factor.title}</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground">{factor.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {factor.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -390,31 +370,39 @@ export default function ProjectLifecyclePage() {
 
           <section id="conclusion" className="space-y-4">
             <h2 className="text-2xl font-bold tracking-tight">
-              Prêt à commencer votre voyage ?
+              Conclusion
             </h2>
             <p>
-              Maintenant que vous comprenez le cycle de vie de votre projet, vous êtes mieux équipé pour collaborer efficacement avec notre équipe. Cette compréhension mutuelle du processus nous aidera à créer ensemble un résultat exceptionnel qui répond pleinement à vos objectifs.
+              Ce cycle de vie du projet a été conçu pour vous offrir une expérience fluide et prévisible, tout en garantissant des résultats de haute qualité qui répondent parfaitement à vos objectifs.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <p>
+              En suivant cette structure éprouvée et en maintenant une communication transparente à chaque étape, nous créons ensemble les conditions idéales pour la réussite de votre projet.
+            </p>
+            <p>
+              Pour toute question spécifique concernant le cycle de vie de votre projet en cours, n'hésitez pas à contacter directement votre chef de projet via votre espace client.
+            </p>
+            
+            <div className="mt-8">
               <Button asChild>
-                <Link href="/dashboard/marketplace">
-                  Explorer nos services
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
                 <Link href="/dashboard/docs/projets/suivi">
-                  Découvrir le suivi de projet
+                  Découvrir notre système de suivi de projet
+                  <ChevronRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>
           </section>
         </div>
       </div>
-
+      
       {/* Barre latérale */}
-      <div className="w-full lg:w-72 lg:flex-none space-y-10">
-        <TableOfContents items={tocItems} />
-        <LinkCard links={relatedLinks} title="Ressources utiles" />
+      <div className="w-full lg:w-64 lg:flex-none">
+        <div className="sticky top-16 space-y-6">
+          <TableOfContents items={tocItems} />
+          <LinkCard 
+            title="Liens connexes" 
+            links={relatedLinks}
+          />
+        </div>
       </div>
     </div>
   );
