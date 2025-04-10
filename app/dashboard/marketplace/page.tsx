@@ -220,8 +220,10 @@ export default function MarketplacePage() {
                     whileHover={{ x: 2 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {cat !== 'Tous' && (
-                      <span className="mr-2">{getCategoryIcon(cat)}</span>
+                    {cat !== 'Tous' ? (
+                      <span className="mr-2 flex-shrink-0">{getCategoryIcon(cat)}</span>
+                    ) : (
+                      <span className="mr-2 flex-shrink-0 w-4 h-4">•</span>
                     )}
                     <span>{cat}</span>
                   </motion.button>
@@ -280,7 +282,7 @@ export default function MarketplacePage() {
                 >
                   <div className="flex justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center">
+                      <div className="flex items-center mb-2">
                         <div className="mr-3">
                           <IconHoverEffect isActive={selectedService?.id === service.id}>
                             <ServiceIcon 
@@ -292,19 +294,22 @@ export default function MarketplacePage() {
                             />
                           </IconHoverEffect>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-medium leading-tight">{service.name}</h3>
-                          <Badge variant="outline" className="mt-1">
-                            {getCategoryIcon(service.category || 'Autre')}
-                            <span className="ml-1">{service.category || 'Autre'}</span>
-                          </Badge>
-                        </div>
+                        <h3 className="text-lg font-medium leading-tight">{service.name}</h3>
                       </div>
-                      <p className="text-muted-foreground text-sm mt-2 line-clamp-2">
+                      <div className="flex items-center mb-2">
+                        <Badge variant="outline" className="mr-2">
+                          {getCategoryIcon(service.category || 'Autre')}
+                          <span className="ml-1">{service.category || 'Autre'}</span>
+                        </Badge>
+                        {service.duration && (
+                          <Badge variant="secondary">{service.duration} jours</Badge>
+                        )}
+                      </div>
+                      <p className="text-muted-foreground text-sm line-clamp-2">
                         {service.description}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end justify-between">
+                    <div className="flex flex-col items-end justify-between ml-4">
                       <p className="font-bold text-lg">{service.price}€</p>
                       <motion.div
                         animate={selectedService?.id === service.id ? { x: [0, 4, 0] } : {}}
@@ -343,31 +348,33 @@ export default function MarketplacePage() {
           {selectedService ? (
             <div className="p-4">
               <div className="space-y-4">
-                <motion.div 
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="flex justify-center"
-                >
-                  <ServiceIcon 
-                    serviceName={selectedService.name} 
-                    size="xl" 
-                    animate={true}
-                    variant="bold"
-                    className="text-primary"
-                  />
-                </motion.div>
-                <motion.h2 
-                  className="text-2xl font-bold text-center"
-                  initial={{ y: -10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.3 }}
-                >
-                  {selectedService.name}
-                </motion.h2>
+                <div className="flex items-center justify-center">
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="mr-4"
+                  >
+                    <ServiceIcon 
+                      serviceName={selectedService.name} 
+                      size="lg" 
+                      animate={true}
+                      variant="bold"
+                      className="text-primary"
+                    />
+                  </motion.div>
+                  <motion.h2 
+                    className="text-2xl font-bold"
+                    initial={{ y: -10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.3 }}
+                  >
+                    {selectedService.name}
+                  </motion.h2>
+                </div>
                 
-                <div className="flex items-center justify-center space-x-2">
-                  <Badge variant="outline">
+                <div className="flex items-center justify-center space-x-2 mt-2">
+                  <Badge variant="outline" className="flex items-center">
                     {getCategoryIcon(selectedService.category || 'Autre')}
                     <span className="ml-1">{selectedService.category || 'Autre'}</span>
                   </Badge>
