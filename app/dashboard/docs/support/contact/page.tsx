@@ -41,6 +41,12 @@ const relatedLinks: LinkItem[] = [
   },
 ];
 
+// Conversion du format pour DocHeader qui attend href et label
+const formattedRelatedLinks = relatedLinks.map(link => ({
+  href: link.href,
+  label: link.title
+}));
+
 export default function ContactSupportPage() {
   const [tocItems] = useState<TocItem[]>([
     { id: "introduction", title: "Notre support client", level: 2 },
@@ -83,7 +89,7 @@ export default function ContactSupportPage() {
         title="Contacter le support"
         description="Besoin d'aide ? Notre équipe de support est là pour vous répondre."
         tableOfContents={tocItems}
-        relatedLinks={relatedLinks}
+        relatedLinks={formattedRelatedLinks}
       />
 
       <DocSection id="introduction" title="Notre support client" icon={CheckCircle}>
