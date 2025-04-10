@@ -110,8 +110,16 @@ export default function MarketplacePage() {
   })
 
   // Extraire les catégories uniques des services
-  const uniqueCategories = Array.from(new Set(services.map(service => service.category || 'Autre')))
-  const categories = ['Tous', ...uniqueCategories]
+  const uniqueCategories = Array.from(
+    new Set(
+      services
+        .filter((service): service is ExtendedService & { category: string } => 
+          typeof service.category === 'string' && service.category !== '')
+        .map(service => service.category)
+    )
+  ).sort();
+
+  const categories = ['Tous', ...uniqueCategories];
 
   const handleBuyNow = async (service: ExtendedService, event: React.MouseEvent) => {
     event.preventDefault()
@@ -348,7 +356,7 @@ export default function MarketplacePage() {
           {selectedService ? (
             <div className="p-4">
               <div className="space-y-4">
-                <div className="flex items-center justify-center">
+                <div className="flex items-center">
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -373,7 +381,7 @@ export default function MarketplacePage() {
                   </motion.h2>
                 </div>
                 
-                <div className="flex items-center justify-center space-x-2 mt-2">
+                <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="flex items-center">
                     {getCategoryIcon(selectedService.category || 'Autre')}
                     <span className="ml-1">{selectedService.category || 'Autre'}</span>
