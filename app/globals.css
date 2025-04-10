@@ -1,6 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Import des animations personnalisées */
+@import '../styles/animations.css';
  
 @layer base {
   :root {

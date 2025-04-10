@@ -1,0 +1,71 @@
+/* Animation keyframes pour les icônes de service */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slide-in {
+  0% { transform: translateX(-20px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes glowing {
+  0% { box-shadow: 0 0 5px rgba(70, 127, 247, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(70, 127, 247, 0.8); }
+  100% { box-shadow: 0 0 5px rgba(70, 127, 247, 0.5); }
+}
+
+/* Classes d'animation pour les icônes */
+.icon-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.icon-pulse {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.icon-spin {
+  animation: spin-slow 8s linear infinite;
+}
+
+.icon-bounce {
+  animation: bounce 2s ease infinite;
+}
+
+.icon-glow {
+  animation: glowing 2s ease-in-out infinite;
+}
+
+/* Animation d'entrée pour les éléments de liste */
+.list-item-appear {
+  animation: slide-in 0.5s ease forwards;
+}
+
+/* Délais d'animation */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+
+/* Durées d'animation */
+.duration-slow { animation-duration: 4s; }
+.duration-medium { animation-duration: 2s; }
+.duration-fast { animation-duration: 1s; } 

@@ -12,6 +12,9 @@ import { Home, Building2, Image, Code, Edit3, PenTool, Eye, Activity, ChevronRig
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
+import ServiceIcon from '@/components/ServiceIcon'
+import { motion } from 'framer-motion'
+import ServiceIconAnimation, { IconHoverEffect } from '@/components/ServiceIconAnimation'
 
 // Make slug from title
 const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
@@ -38,6 +41,17 @@ const getCategoryIcon = (category: string) => {
 interface ExtendedService extends Service {
   timeline?: string;
 }
+
+// Animation variants for service items
+const serviceItemVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+  hover: { 
+    scale: 1.02, 
+    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+    transition: { duration: 0.2 }
+  }
+};
 
 export default function MarketplacePage() {
   const router = useRouter()
@@ -164,6 +178,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
+      <ServiceIconAnimation />
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Left column with filters */}
         <div className="w-64 border-r bg-background p-4 flex-shrink-0 overflow-y-auto">
@@ -193,7 +208,7 @@ export default function MarketplacePage() {
               <h3 className="text-lg font-semibold mb-2">Catégories</h3>
               <div className="space-y-1">
                 {categories.map((cat) => (
-                  <button
+                  <motion.button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={`w-full text-left px-3 py-2 rounded-md flex items-center ${
@@ -201,12 +216,14 @@ export default function MarketplacePage() {
                         ? 'bg-primary text-white' 
                         : 'hover:bg-secondary'
                     }`}
+                    whileHover={{ x: 2 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     {cat !== 'Tous' && (
                       <span className="mr-2">{getCategoryIcon(cat)}</span>
                     )}
                     <span>{cat}</span>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
@@ -247,18 +264,33 @@ export default function MarketplacePage() {
             <h2 className="text-2xl font-bold mb-4">Nos Services</h2>
             
             <div className="space-y-3">
-              {filteredServices.map((service) => (
-                <div 
+              {filteredServices.map((service, index) => (
+                <motion.div 
                   key={service.id} 
-                  className={`group rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer ${
+                  className={`group rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer service-card ${
                     selectedService?.id === service.id ? 'border-primary bg-primary/5' : 'bg-background'
                   }`}
                   onClick={() => handleSelectService(service)}
+                  variants={serviceItemVariants}
+                  initial="initial"
+                  animate="animate"
+                  whileHover="hover"
+                  transition={{ delay: index * 0.05 }}
                 >
                   <div className="flex justify-between">
                     <div className="flex-1">
                       <div className="flex items-center">
-                        <div className="mr-3 text-2xl">{service.icon}</div>
+                        <div className="mr-3">
+                          <IconHoverEffect active={selectedService?.id === service.id}>
+                            <ServiceIcon 
+                              serviceName={service.name} 
+                              size="md"
+                              animate={true}
+                              animationType={index % 5 === 0 ? 'float' : index % 5 === 1 ? 'pulse' : index % 5 === 2 ? 'bounce' : index % 5 === 3 ? 'spin' : 'glow'}
+                              className={selectedService?.id === service.id ? 'text-primary' : 'text-primary/80'}
+                            />
+                          </IconHoverEffect>
+                        </div>
                         <div>
                           <h3 className="text-lg font-medium leading-tight">{service.name}</h3>
                           <Badge variant="outline" className="mt-1">
@@ -273,12 +305,17 @@ export default function MarketplacePage() {
                     </div>
                     <div className="flex flex-col items-end justify-between">
                       <p className="font-bold text-lg">{service.price}€</p>
-                      <ChevronRight className={`h-5 w-5 mt-4 ${
-                        selectedService?.id === service.id ? 'text-primary' : 'text-muted-foreground'
-                      }`} />
+                      <motion.div
+                        animate={selectedService?.id === service.id ? { x: [0, 4, 0] } : {}}
+                        transition={{ repeat: Infinity, repeatDelay: 2 }}
+                      >
+                        <ChevronRight className={`h-5 w-5 mt-4 ${
+                          selectedService?.id === service.id ? 'text-primary' : 'text-muted-foreground'
+                        }`} />
+                      </motion.div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
 
               {filteredServices.length === 0 && (
@@ -305,10 +342,29 @@ export default function MarketplacePage() {
           {selectedService ? (
             <div className="p-4">
               <div className="space-y-4">
-                <div className="text-3xl">{selectedService.icon}</div>
-                <h2 className="text-2xl font-bold">{selectedService.name}</h2>
+                <motion.div 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex justify-center"
+                >
+                  <ServiceIcon 
+                    serviceName={selectedService.name} 
+                    size="xl" 
+                    animate={true}
+                    className="text-primary"
+                  />
+                </motion.div>
+                <motion.h2 
+                  className="text-2xl font-bold text-center"
+                  initial={{ y: -10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                >
+                  {selectedService.name}
+                </motion.h2>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <Badge variant="outline">
                     {getCategoryIcon(selectedService.category || 'Autre')}
                     <span className="ml-1">{selectedService.category || 'Autre'}</span>
@@ -316,54 +372,73 @@ export default function MarketplacePage() {
                   <Badge variant="secondary">{selectedService.duration} jours</Badge>
                 </div>
                 
-                <p className="text-muted-foreground">{selectedService.description}</p>
+                <motion.p 
+                  className="text-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                >
+                  {selectedService.description}
+                </motion.p>
                 
-                <Card>
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-xl">Détails</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-1">
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-medium">Inclus</h4>
-                        <ul className="mt-1 space-y-1">
-                          {(selectedService.features || []).map((feature, i) => (
-                            <li key={i} className="flex items-start">
-                              <span className="mr-2 text-primary">✓</span> 
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.4 }}
+                >
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-xl">Détails</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-1">
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="font-medium">Inclus</h4>
+                          <ul className="mt-1 space-y-1">
+                            {(selectedService.features || []).map((feature, i) => (
+                              <motion.li 
+                                key={i} 
+                                className="flex items-start"
+                                initial={{ opacity: 0, x: -5 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.3 + i * 0.1 }}
+                              >
+                                <span className="mr-2 text-primary">✓</span> 
+                                <span>{feature}</span>
+                              </motion.li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        {selectedService.timeline && (
+                          <div>
+                            <h4 className="font-medium">Calendrier</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{selectedService.timeline}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col items-stretch pt-0">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm text-muted-foreground">Prix</p>
+                        <p className="text-xl font-bold">{selectedService.price}€</p>
                       </div>
                       
-                      {selectedService.timeline && (
-                        <div>
-                          <h4 className="font-medium">Calendrier</h4>
-                          <p className="text-sm text-muted-foreground mt-1">{selectedService.timeline}</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col items-stretch pt-0">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm text-muted-foreground">Prix</p>
-                      <p className="text-xl font-bold">{selectedService.price}€</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <Link href={`/dashboard/marketplace/${getSlug(selectedService.name)}`}>
-                        <Button className="w-full" variant="outline">Détails complets</Button>
-                      </Link>
-                      <Button 
-                        className="w-full"
-                        onClick={(e) => handleBuyNow(selectedService, e)}
-                        disabled={processingPayment === selectedService.id}
-                      >
-                        {processingPayment === selectedService.id ? 'Traitement...' : 'Acheter'}
-                      </Button>
-                    </div>
-                  </CardFooter>
-                </Card>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link href={`/dashboard/marketplace/${getSlug(selectedService.name)}`}>
+                          <Button className="w-full" variant="outline">Détails complets</Button>
+                        </Link>
+                        <Button 
+                          className="w-full"
+                          onClick={(e) => handleBuyNow(selectedService, e)}
+                          disabled={processingPayment === selectedService.id}
+                        >
+                          {processingPayment === selectedService.id ? 'Traitement...' : 'Acheter'}
+                        </Button>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
               </div>
             </div>
           ) : (
