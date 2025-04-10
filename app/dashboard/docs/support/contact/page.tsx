@@ -84,7 +84,7 @@ export default function ContactSupportPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div>
       <DocHeader
         title="Contacter le support"
         description="Besoin d'aide ? Notre équipe de support est là pour vous répondre."
