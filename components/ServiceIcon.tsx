@@ -1,26 +1,26 @@
 "use client"
 
-import React, { useState } from 'react'
+import React from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Palette, 
-  Code, 
-  LineChart, 
-  Megaphone, 
-  Globe, 
-  PenSquare, 
-  Image, 
-  LayoutGrid, 
-  Building2, 
-  Settings, 
-  ShieldCheck, 
+import {
+  // Icônes plus modernes et fines
+  Layers,
+  Code2,
+  BarChart3,
+  Sparkles,
+  Megaphone,
   Search,
+  ImageIcon, 
+  LayoutGrid,
+  Settings2,
+  ShieldCheck,
+  Globe,
   Lightbulb,
   Zap,
   Tag,
-  Layout,
+  LayoutDashboard,
   FileText,
-  Users,
+  Users2,
   ScanLine
 } from 'lucide-react'
 
@@ -29,38 +29,17 @@ type ServiceIconProps = {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   animate?: boolean;
-  animationType?: 'pulse' | 'float' | 'spin' | 'bounce' | 'glow' | 'none';
+  variant?: 'outline' | 'bold' | 'minimal';
 }
 
-// Animation variants
-const iconVariants = {
-  hover: {
-    scale: 1.1,
-    rotate: [0, 5, -5, 0],
-    transition: {
-      duration: 0.4,
-      ease: "easeInOut"
-    }
-  },
-  pulse: {
-    scale: [1, 1.05, 1],
-    opacity: [0.9, 1, 0.9],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      repeatType: "loop" as const
-    }
-  }
-}
-
-// Path animations for SVG icons
-const pathVariants = {
+// Animation variants subtiles
+const lineVariants = {
   hidden: { pathLength: 0, opacity: 0 },
   visible: { 
     pathLength: 1, 
     opacity: 1,
     transition: { 
-      duration: 1.5,
+      duration: 0.8,
       ease: "easeInOut"
     }
   }
@@ -71,16 +50,21 @@ export const ServiceIcon = ({
   size = 'md', 
   className = '', 
   animate = true,
-  animationType = 'pulse'
+  variant = 'outline'
 }: ServiceIconProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
   // Get icon size based on size prop
   const sizeClasses = {
-    sm: "w-6 h-6",
-    md: "w-8 h-8",
-    lg: "w-10 h-10",
-    xl: "w-16 h-16"
+    sm: "w-5 h-5",
+    md: "w-6 h-6",
+    lg: "w-8 h-8",
+    xl: "w-12 h-12"
+  }
+  
+  // Styles based on variant
+  const variantClasses = {
+    outline: "stroke-[1.5px] stroke-current fill-none",
+    bold: "stroke-[2px] stroke-current fill-none",
+    minimal: "stroke-[1px] stroke-current fill-none"
   }
 
   // Map service name to icon
@@ -88,23 +72,23 @@ export const ServiceIcon = ({
     const lowercaseName = name.toLowerCase();
     
     if (lowercaseName.includes('design') || lowercaseName.includes('ui')) {
-      return <Palette />
+      return <Layers />
     } else if (lowercaseName.includes('développement') || lowercaseName.includes('web') || lowercaseName.includes('site')) {
-      return <Code />
+      return <Code2 />
     } else if (lowercaseName.includes('marketing') || lowercaseName.includes('stratégie')) {
-      return <LineChart />
+      return <BarChart3 />
     } else if (lowercaseName.includes('branding') || lowercaseName.includes('marque')) {
-      return <PenSquare />
+      return <Sparkles />
     } else if (lowercaseName.includes('pub') || lowercaseName.includes('communication')) {
       return <Megaphone />
     } else if (lowercaseName.includes('seo') || lowercaseName.includes('référencement')) {
       return <Search />
     } else if (lowercaseName.includes('logo') || lowercaseName.includes('identité')) {
-      return <Image />
+      return <ImageIcon />
     } else if (lowercaseName.includes('landing') || lowercaseName.includes('one page')) {
       return <LayoutGrid />
     } else if (lowercaseName.includes('maintenance') || lowercaseName.includes('support')) {
-      return <Settings />
+      return <Settings2 />
     } else if (lowercaseName.includes('securité') || lowercaseName.includes('audit')) {
       return <ShieldCheck />
     } else if (lowercaseName.includes('international') || lowercaseName.includes('global')) {
@@ -116,49 +100,53 @@ export const ServiceIcon = ({
     } else if (lowercaseName.includes('prix') || lowercaseName.includes('tarif')) {
       return <Tag />
     } else if (lowercaseName.includes('interface') || lowercaseName.includes('ux')) {
-      return <Layout />
+      return <LayoutDashboard />
     } else if (lowercaseName.includes('contenu') || lowercaseName.includes('article')) {
       return <FileText />
     } else if (lowercaseName.includes('équipe') || lowercaseName.includes('collaboration')) {
-      return <Users />
+      return <Users2 />
     } else if (lowercaseName.includes('analyse') || lowercaseName.includes('diagnostic')) {
       return <ScanLine />
     } else {
-      return <Building2 />
+      return <Globe />
     }
   }
 
   const icon = getIcon(serviceName);
   
-  // Animation CSS class based on animationType
-  const animationClass = animate && animationType !== 'none' ? `icon-${animationType}` : '';
+  // Container classes
+  const containerClasses = `text-primary ${sizeClasses[size]} ${variantClasses[variant]} ${className}`;
   
-  // Base container classes
-  const containerClasses = `text-primary ${sizeClasses[size]} ${animationClass} ${className}`;
+  // Si animation est activée, utiliser motion.div avec des animations subtiles
+  if (animate) {
+    return (
+      <motion.div 
+        className={containerClasses}
+        initial="hidden"
+        animate="visible"
+        whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { 
+            opacity: 1,
+            transition: { duration: 0.3 }
+          }
+        }}
+      >
+        <motion.div
+          variants={lineVariants}
+        >
+          {icon}
+        </motion.div>
+      </motion.div>
+    )
+  }
   
-  // Container animation props for framer-motion
-  const containerAnimationProps = animate ? {
-    whileHover: "hover",
-    variants: iconVariants,
-    onMouseEnter: () => setIsHovered(true),
-    onMouseLeave: () => setIsHovered(false)
-  } : {};
-
+  // Sans animation, retourner simplement l'icône
   return (
-    <motion.div 
-      className={containerClasses}
-      {...containerAnimationProps}
-    >
+    <div className={containerClasses}>
       {icon}
-      {isHovered && animate && (
-        <motion.div 
-          className="absolute -inset-3 rounded-full bg-primary-100 -z-10"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.5, scale: 1 }}
-          exit={{ opacity: 0 }}
-        />
-      )}
-    </motion.div>
+    </div>
   )
 }
 

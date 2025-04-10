@@ -8,13 +8,14 @@ import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { getAllServices, createStripeSession, type Service } from '@/lib/supabase'
 import { Input } from '@/components/ui/input'
-import { Home, Building2, Image, Code, Edit3, PenTool, Eye, Activity, ChevronRight, X, Search } from 'lucide-react'
+import { Home, Building2, ImageIcon, Code2, Edit3, Sparkles, ScanLine, BarChart3, ChevronRight, X, Search } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import ServiceIcon from '@/components/ServiceIcon'
 import { motion } from 'framer-motion'
-import ServiceIconAnimation, { IconHoverEffect } from '@/components/ServiceIconAnimation'
+import IconHoverEffect from '@/components/IconHoverEffect'
+import { ServiceIconAnimation } from '@/components/ServiceIconAnimation'
 
 // Make slug from title
 const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
@@ -23,15 +24,15 @@ const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
 const getCategoryIcon = (category: string) => {
   switch (category) {
     case 'Site web':
-      return <Code className="h-4 w-4" />
+      return <Code2 className="h-4 w-4" />
     case 'Design':
-      return <PenTool className="h-4 w-4" />
+      return <Sparkles className="h-4 w-4" />
     case 'Branding':
-      return <Image className="h-4 w-4" />
+      return <ImageIcon className="h-4 w-4" />
     case 'Marketing':
-      return <Activity className="h-4 w-4" />
+      return <BarChart3 className="h-4 w-4" />
     case 'Consulting':
-      return <Eye className="h-4 w-4" />
+      return <ScanLine className="h-4 w-4" />
     default:
       return <Building2 className="h-4 w-4" />
   }
@@ -281,12 +282,12 @@ export default function MarketplacePage() {
                     <div className="flex-1">
                       <div className="flex items-center">
                         <div className="mr-3">
-                          <IconHoverEffect active={selectedService?.id === service.id}>
+                          <IconHoverEffect isActive={selectedService?.id === service.id}>
                             <ServiceIcon 
                               serviceName={service.name} 
                               size="md"
                               animate={true}
-                              animationType={index % 5 === 0 ? 'float' : index % 5 === 1 ? 'pulse' : index % 5 === 2 ? 'bounce' : index % 5 === 3 ? 'spin' : 'glow'}
+                              variant="outline"
                               className={selectedService?.id === service.id ? 'text-primary' : 'text-primary/80'}
                             />
                           </IconHoverEffect>
@@ -352,6 +353,7 @@ export default function MarketplacePage() {
                     serviceName={selectedService.name} 
                     size="xl" 
                     animate={true}
+                    variant="bold"
                     className="text-primary"
                   />
                 </motion.div>

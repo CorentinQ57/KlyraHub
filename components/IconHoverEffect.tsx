@@ -3,78 +3,63 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 
-type AnimationType = 'float' | 'pulse' | 'bounce' | 'spin' | 'glow'
+type HoverEffectType = 'subtle' | 'glow' | 'none'
 
 interface IconHoverEffectProps {
   children: React.ReactNode
-  type?: AnimationType
   isActive?: boolean
+  effect?: HoverEffectType
   className?: string
-}
-
-// Animation variants for different effects
-const variants = {
-  float: {
-    y: [0, -10, 0],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  },
-  pulse: {
-    scale: [1, 1.05, 1],
-    transition: {
-      duration: 1.5,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  },
-  bounce: {
-    y: [0, -15, 0],
-    transition: {
-      duration: 0.6,
-      repeat: Infinity,
-      ease: "easeOut"
-    }
-  },
-  spin: {
-    rotate: [0, 360],
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      ease: "linear"
-    }
-  },
-  glow: {
-    opacity: [0.85, 1, 0.85],
-    filter: ["brightness(100%)", "brightness(150%)", "brightness(100%)"],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  }
 }
 
 export function IconHoverEffect({ 
   children, 
-  type = 'float', 
   isActive = false,
+  effect = 'subtle',
   className = ""
 }: IconHoverEffectProps) {
   const [hover, setHover] = useState(false)
   
-  // Only animate if hovering or explicitly set as active
-  const shouldAnimate = hover || isActive
+  // Active state
+  const isActiveState = hover || isActive
+  
+  // Style conditionnel basé sur le type d'effet
+  const getBackgroundEffect = () => {
+    if (!isActiveState || effect === 'none') return null;
+    
+    const commonClasses = "absolute -z-10 transition-all duration-200";
+    
+    if (effect === 'glow') {
+      return (
+        <motion.div 
+          className={`${commonClasses} -inset-3 bg-primary/10 blur-md rounded-full`}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.6, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+        />
+      )
+    }
+    
+    // Effet subtle par défaut
+    return (
+      <motion.div 
+        className={`${commonClasses} -inset-2 bg-primary/5 rounded-full`}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 0.7, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+      />
+    )
+  }
   
   return (
     <motion.div
-      className={className}
-      animate={shouldAnimate ? variants[type] : {}}
+      className={`relative inline-flex items-center justify-center ${className}`}
       onHoverStart={() => setHover(true)}
       onHoverEnd={() => setHover(false)}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
     >
+      {getBackgroundEffect()}
       {children}
     </motion.div>
   )
