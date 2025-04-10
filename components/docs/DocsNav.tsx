@@ -103,6 +103,13 @@ export const docCategories: DocCategory[] = [
         href: "/dashboard/docs/projets/validation",
         icon: <FileText className="h-4 w-4" />,
       },
+      {
+        title: "Commissions et paiements",
+        href: "/dashboard/docs/projets/commissions",
+        icon: <FileText className="h-4 w-4" />,
+        badge: "Nouveau",
+        badgeColor: "bg-green-100 text-green-800",
+      },
     ],
   },
   {
