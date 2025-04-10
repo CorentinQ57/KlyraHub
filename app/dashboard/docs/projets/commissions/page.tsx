@@ -45,10 +45,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Commission plateforme : Pourcentage prélevé sur chaque transaction pour soutenir l'infrastructure et les services Klyra",
-            "Part designer : Pourcentage majoritaire reversé directement au designer ou à l'agence réalisant le projet",
-            "Frais de traitement : Petite part couvrant les frais de transaction bancaire et de gestion administrative",
-            "Commissions partenaires : Dans certains cas, une commission peut être versée aux partenaires ayant recommandé le client"
+            { title: "Commission plateforme : Pourcentage prélevé sur chaque transaction pour soutenir l'infrastructure et les services Klyra" },
+            { title: "Part designer : Pourcentage majoritaire reversé directement au designer ou à l'agence réalisant le projet" },
+            { title: "Frais de traitement : Petite part couvrant les frais de transaction bancaire et de gestion administrative" },
+            { title: "Commissions partenaires : Dans certains cas, une commission peut être versée aux partenaires ayant recommandé le client" }
           ]}
         />
         <p className="mt-4">
@@ -56,10 +56,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Le type de service (standard ou personnalisé)",
-            "Le volume d'affaires généré par le designer sur la plateforme",
-            "L'ancienneté du designer sur Klyra",
-            "Les éventuels accords spécifiques pour les grands comptes"
+            { title: "Le type de service (standard ou personnalisé)" },
+            { title: "Le volume d'affaires généré par le designer sur la plateforme" },
+            { title: "L'ancienneté du designer sur Klyra" },
+            { title: "Les éventuels accords spécifiques pour les grands comptes" }
           ]}
         />
         <DocNote>
@@ -73,11 +73,11 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Base de calcul : Montant total HT du service",
-            "Application du taux : Pourcentage défini selon le type de service et le statut du designer",
-            "Déduction des frais : Frais de transaction bancaire et administratifs",
-            "Calcul de la TVA : Si applicable, en fonction du statut fiscal du designer et du client",
-            "Arrondis : Toujours effectués à deux décimales en faveur du designer"
+            { title: "Base de calcul : Montant total HT du service" },
+            { title: "Application du taux : Pourcentage défini selon le type de service et le statut du designer" },
+            { title: "Déduction des frais : Frais de transaction bancaire et administratifs" },
+            { title: "Calcul de la TVA : Si applicable, en fonction du statut fiscal du designer et du client" },
+            { title: "Arrondis : Toujours effectués à deux décimales en faveur du designer" }
           ]}
         />
         <p className="mb-4">
@@ -85,10 +85,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Pour une prestation de 1 000€ HT",
-            "Commission plateforme : 15% soit 150€",
-            "Frais de traitement : 2,5% soit 25€",
-            "Part designer : 82,5% soit 825€"
+            { title: "Pour une prestation de 1 000€ HT" },
+            { title: "Commission plateforme : 15% soit 150€" },
+            { title: "Frais de traitement : 2,5% soit 25€" },
+            { title: "Part designer : 82,5% soit 825€" }
           ]}
         />
         <p className="mt-4">
@@ -102,11 +102,11 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Déclenchement : Automatique après validation finale du livrable par le client",
-            "Période de sécurité : Délai de 48h après validation pour couvrir d'éventuelles contestations",
-            "Méthodes de paiement : Virement bancaire SEPA ou international",
-            "Seuil minimal : Paiement déclenché à partir de 50€ (montants inférieurs cumulés jusqu'au seuil)",
-            "Regroupement : Paiements hebdomadaires regroupant toutes les transactions validées"
+            { title: "Déclenchement : Automatique après validation finale du livrable par le client" },
+            { title: "Période de sécurité : Délai de 48h après validation pour couvrir d'éventuelles contestations" },
+            { title: "Méthodes de paiement : Virement bancaire SEPA ou international" },
+            { title: "Seuil minimal : Paiement déclenché à partir de 50€ (montants inférieurs cumulés jusqu'au seuil)" },
+            { title: "Regroupement : Paiements hebdomadaires regroupant toutes les transactions validées" }
           ]}
         />
         <p className="mb-4">
@@ -114,10 +114,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Accédez à votre espace designer {'>'}  Paramètres {'>'}  Informations de paiement",
-            "Renseignez vos coordonnées bancaires (IBAN et BIC)",
-            "Ajoutez vos informations fiscales (numéro de TVA si applicable)",
-            "Téléchargez les documents requis (KYC, justificatifs d'identité)"
+            { title: "Accédez à votre espace designer {'>'}  Paramètres {'>'}  Informations de paiement" },
+            { title: "Renseignez vos coordonnées bancaires (IBAN et BIC)" },
+            { title: "Ajoutez vos informations fiscales (numéro de TVA si applicable)" },
+            { title: "Téléchargez les documents requis (KYC, justificatifs d'identité)" }
           ]}
         />
         <DocNote>
@@ -131,11 +131,11 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Jour de paiement : Tous les vendredis pour les transactions validées avant mercredi minuit",
-            "Délai de traitement bancaire : 1 à 3 jours ouvrés selon votre banque",
-            "Période de gel : 48h après validation client pour vérification",
-            "Notification : Email automatique détaillant les montants versés et les projets concernés",
-            "Historique : Disponible en permanence dans votre espace personnel"
+            { title: "Jour de paiement : Tous les vendredis pour les transactions validées avant mercredi minuit" },
+            { title: "Délai de traitement bancaire : 1 à 3 jours ouvrés selon votre banque" },
+            { title: "Période de gel : 48h après validation client pour vérification" },
+            { title: "Notification : Email automatique détaillant les montants versés et les projets concernés" },
+            { title: "Historique : Disponible en permanence dans votre espace personnel" }
           ]}
         />
         <p className="mb-4">
@@ -143,9 +143,9 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Designers Premium : Option de paiement bi-hebdomadaire",
-            "Partenaires stratégiques : Possibilité de paiements personnalisés",
-            "Projets de grande envergure : Échéancier négocié au cas par cas"
+            { title: "Designers Premium : Option de paiement bi-hebdomadaire" },
+            { title: "Partenaires stratégiques : Possibilité de paiements personnalisés" },
+            { title: "Projets de grande envergure : Échéancier négocié au cas par cas" }
           ]}
         />
         <p className="mt-4">
@@ -159,10 +159,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Auto-entrepreneurs et freelances : Création manuelle de facture à partir des données fournies",
-            "Entreprises : Possibilité de générer des factures automatiques ou d'intégrer via API",
-            "Particuliers : Reçus automatiques générés par la plateforme",
-            "Facturation inversée : Disponible pour certains partenaires qualifiés"
+            { title: "Auto-entrepreneurs et freelances : Création manuelle de facture à partir des données fournies" },
+            { title: "Entreprises : Possibilité de générer des factures automatiques ou d'intégrer via API" },
+            { title: "Particuliers : Reçus automatiques générés par la plateforme" },
+            { title: "Facturation inversée : Disponible pour certains partenaires qualifiés" }
           ]}
         />
         <p className="mb-4">
@@ -170,11 +170,11 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Détails du service fourni et référence projet",
-            "Montant HT, TVA (si applicable) et montant TTC",
-            "Commission prélevée et montant net versé",
-            "Coordonnées complètes des parties",
-            "Conditions de paiement et informations légales"
+            { title: "Détails du service fourni et référence projet" },
+            { title: "Montant HT, TVA (si applicable) et montant TTC" },
+            { title: "Commission prélevée et montant net versé" },
+            { title: "Coordonnées complètes des parties" },
+            { title: "Conditions de paiement et informations légales" }
           ]}
         />
         <p className="mt-4">
@@ -191,10 +191,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "TVA : Appliquée selon le statut fiscal et la localisation des parties",
-            "Retenue à la source : Traitée conformément aux conventions fiscales internationales",
-            "Déclarations : Chaque utilisateur est responsable de ses propres déclarations fiscales",
-            "Documentation : Mise à disposition des relevés annuels pour les déclarations"
+            { title: "TVA : Appliquée selon le statut fiscal et la localisation des parties" },
+            { title: "Retenue à la source : Traitée conformément aux conventions fiscales internationales" },
+            { title: "Déclarations : Chaque utilisateur est responsable de ses propres déclarations fiscales" },
+            { title: "Documentation : Mise à disposition des relevés annuels pour les déclarations" }
           ]}
         />
         <p className="mb-4">
@@ -202,10 +202,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Europe : Gestion automatique de la TVA intracommunautaire",
-            "International : Application des règles de territorialité des services",
-            "France : Conformité avec les obligations de facturation électronique",
-            "Autres pays : Adaptation aux exigences locales lorsque possible"
+            { title: "Europe : Gestion automatique de la TVA intracommunautaire" },
+            { title: "International : Application des règles de territorialité des services" },
+            { title: "France : Conformité avec les obligations de facturation électronique" },
+            { title: "Autres pays : Adaptation aux exigences locales lorsque possible" }
           ]}
         />
         <p className="mt-4">
@@ -222,10 +222,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Carte bancaire : Paiement immédiat sécurisé (Visa, Mastercard, American Express)",
-            "Virement bancaire : Option privilégiée pour les montants importants",
-            "Prélèvement SEPA : Pour les abonnements et paiements échelonnés",
-            "Portefeuille électronique : Klyra Credits pour les clients réguliers"
+            { title: "Carte bancaire : Paiement immédiat sécurisé (Visa, Mastercard, American Express)" },
+            { title: "Virement bancaire : Option privilégiée pour les montants importants" },
+            { title: "Prélèvement SEPA : Pour les abonnements et paiements échelonnés" },
+            { title: "Portefeuille électronique : Klyra Credits pour les clients réguliers" }
           ]}
         />
         <p className="mb-4">
@@ -233,10 +233,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Garantie de paiement : Fonds sécurisés avant le démarrage du projet",
-            "Réduction des risques d'impayés : Vérification préalable des moyens de paiement",
-            "Séquestre : Protection des fonds jusqu'à validation complète",
-            "Traçabilité : Historique complet des transactions"
+            { title: "Garantie de paiement : Fonds sécurisés avant le démarrage du projet" },
+            { title: "Réduction des risques d'impayés : Vérification préalable des moyens de paiement" },
+            { title: "Séquestre : Protection des fonds jusqu'à validation complète" },
+            { title: "Traçabilité : Historique complet des transactions" }
           ]}
         />
         <p className="mt-4">
@@ -250,10 +250,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Acompte initial : Généralement 30-50% à la commande",
-            "Paiement intermédiaire : Lié à des jalons spécifiques du projet",
-            "Paiement final : À la livraison et validation finale",
-            "Retenue de garantie : Dans certains cas, une petite part peut être conservée pendant une période définie"
+            { title: "Acompte initial : Généralement 30-50% à la commande" },
+            { title: "Paiement intermédiaire : Lié à des jalons spécifiques du projet" },
+            { title: "Paiement final : À la livraison et validation finale" },
+            { title: "Retenue de garantie : Dans certains cas, une petite part peut être conservée pendant une période définie" }
           ]}
         />
         <p className="mb-4">
@@ -261,10 +261,10 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Configuration : Définie au moment de l'établissement du devis",
-            "Automatisation : Prélèvements automatiques aux dates convenues",
-            "Flexibilité : Possibilité d'ajuster l'échéancier en cas d'évolution du projet",
-            "Transparence : Notification à chaque étape du processus"
+            { title: "Configuration : Définie au moment de l'établissement du devis" },
+            { title: "Automatisation : Prélèvements automatiques aux dates convenues" },
+            { title: "Flexibilité : Possibilité d'ajuster l'échéancier en cas d'évolution du projet" },
+            { title: "Transparence : Notification à chaque étape du processus" }
           ]}
         />
         <p className="mt-4">
@@ -281,11 +281,11 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Chiffrement : Toutes les données financières sont chiffrées selon les normes bancaires",
-            "Séquestre : Système de mise en séquestre des fonds jusqu'à validation",
-            "Partenaires certifiés : Utilisation exclusive de prestataires de paiement conformes PCI DSS",
-            "Vérification d'identité : Procédures KYC (Know Your Customer) pour tous les utilisateurs",
-            "Surveillance : Détection des activités suspectes en temps réel"
+            { title: "Chiffrement : Toutes les données financières sont chiffrées selon les normes bancaires" },
+            { title: "Séquestre : Système de mise en séquestre des fonds jusqu'à validation" },
+            { title: "Partenaires certifiés : Utilisation exclusive de prestataires de paiement conformes PCI DSS" },
+            { title: "Vérification d'identité : Procédures KYC (Know Your Customer) pour tous les utilisateurs" },
+            { title: "Surveillance : Détection des activités suspectes en temps réel" }
           ]}
         />
         <p className="mb-4">
@@ -293,11 +293,11 @@ export default function CommissionsAndPaymentsPage() {
         </p>
         <DocList
           items={[
-            "Validation en deux étapes pour les montants importants",
-            "Limitation des transactions pour les nouveaux comptes",
-            "Authentification forte pour toutes les opérations sensibles",
-            "Historique détaillé et notifications immédiates",
-            "Système de résolution des litiges intégré"
+            { title: "Validation en deux étapes pour les montants importants" },
+            { title: "Limitation des transactions pour les nouveaux comptes" },
+            { title: "Authentification forte pour toutes les opérations sensibles" },
+            { title: "Historique détaillé et notifications immédiates" },
+            { title: "Système de résolution des litiges intégré" }
           ]}
         />
         <p className="mt-4">
