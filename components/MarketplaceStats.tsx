@@ -81,7 +81,7 @@ function Stat({ icon, value, label, suffix = "", color = "primary", delay = 0 }:
       className="flex flex-col items-center p-6 rounded-lg shadow-sm border border-gray-100 bg-white"
     >
       <div className={`p-3 rounded-full mb-4 ${bgColors[color as keyof typeof bgColors]}`}>
-        <IconHoverEffect type="pulse" isActive={inView}>
+        <IconHoverEffect effect="glow" isActive={inView}>
           <div className={`w-12 h-12 flex items-center justify-center ${iconColors[color as keyof typeof iconColors]}`}>
             {icon}
           </div>
