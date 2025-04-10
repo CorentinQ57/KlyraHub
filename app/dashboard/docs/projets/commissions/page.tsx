@@ -8,11 +8,6 @@ import DocList from "@/components/docs/DocList";
 import DocNote from "@/components/docs/DocNote";
 import { generateToc } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Commissions et paiements | Documentation Klyra",
-  description: "Guide complet sur les commissions, les paiements et la facturation des projets sur la plateforme Klyra.",
-};
-
 const relatedLinks = [
   { href: "/dashboard/docs/compte/paiement", label: "Méthodes de paiement" },
   { href: "/dashboard/docs/projets/validation", label: "Validation des projets" },
