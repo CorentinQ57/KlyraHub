@@ -164,72 +164,72 @@ export default function SignUpPage() {
           className="w-full max-w-md"
         >
           <Card className="backdrop-blur-sm bg-white/80 shadow-xl border-opacity-50">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold">Créer un compte</CardTitle>
-              <CardDescription>Entrez vos informations pour créer un compte</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Nom complet</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="Jean Dupont"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="exemple@domaine.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Mot de passe</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Création en cours...' : 'Créer un compte'}
-                </Button>
-              </form>
-            </CardContent>
-            <CardFooter className="flex flex-col items-center">
-              <div className="text-sm text-gray-500">
-                Vous avez déjà un compte?{' '}
-                <Link href="/login" className="text-blue-600 hover:text-blue-800">
-                  Se connecter
-                </Link>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold">Créer un compte</CardTitle>
+            <CardDescription>Entrez vos informations pour créer un compte</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Nom complet</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Jean Dupont"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
               </div>
-            </CardFooter>
-          </Card>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="exemple@domaine.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Mot de passe</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Création en cours...' : 'Créer un compte'}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col items-center">
+            <div className="text-sm text-gray-500">
+              Vous avez déjà un compte?{' '}
+              <Link href="/login" className="text-blue-600 hover:text-blue-800">
+                Se connecter
+              </Link>
+            </div>
+          </CardFooter>
+        </Card>
         </motion.div>
       </main>
     </div>

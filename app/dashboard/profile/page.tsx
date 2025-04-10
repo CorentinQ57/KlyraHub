@@ -26,34 +26,34 @@ export default function ProfilePage() {
     }
   }, [user])
 
-  async function loadProfile() {
-    setIsLoading(true)
-    try {
-      // Vérifier que user existe
-      if (!user) {
-        return;
-      }
-      
-      // Set email from auth data
-      setEmail(user.email || '')
+    async function loadProfile() {
+      setIsLoading(true)
+      try {
+        // Vérifier que user existe
+        if (!user) {
+          return;
+        }
+        
+        // Set email from auth data
+        setEmail(user.email || '')
 
-      // Get additional profile data
-      const profileData = await getProfileData(user.id)
-      if (profileData) {
-        setFullName(profileData.full_name || '')
-        setAvatarUrl(profileData.avatar_url || '')
+        // Get additional profile data
+        const profileData = await getProfileData(user.id)
+        if (profileData) {
+          setFullName(profileData.full_name || '')
+          setAvatarUrl(profileData.avatar_url || '')
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error)
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les données du profil",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error('Error loading profile:', error)
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les données du profil",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
     }
-  }
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,119 +111,119 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Votre profil</h1>
-        <p className="text-muted-foreground">
-          Gérez vos informations personnelles et vos préférences
-        </p>
-      </div>
-      
-      <div className="border rounded-lg p-6 space-y-6">
-        <form onSubmit={handleUpdate} className="space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-medium overflow-hidden">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
-                ) : (
-                  fullName?.charAt(0) || email?.charAt(0) || 'U'
-                )}
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold">{fullName || 'Utilisateur'}</h2>
-                <p className="text-muted-foreground">{email}</p>
-              </div>
-            </div>
-            
-            <div className="grid gap-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Pour changer votre email, contactez le support
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nom complet</Label>
-                <Input
-                  id="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  disabled={isUpdating}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="avatarUrl">URL de l'avatar</Label>
-                <Input
-                  id="avatarUrl"
-                  type="url"
-                  placeholder="https://exemple.com/avatar.jpg"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  disabled={isUpdating}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Entrez l'URL d'une image pour votre avatar
-                </p>
-              </div>
-            </div>
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Votre profil</h1>
+            <p className="text-muted-foreground">
+              Gérez vos informations personnelles et vos préférences
+            </p>
           </div>
           
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-              disabled={isUpdating}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              disabled={isUpdating}
-            >
-              {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
-            </Button>
+          <div className="border rounded-lg p-6 space-y-6">
+            <form onSubmit={handleUpdate} className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-medium overflow-hidden">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                    ) : (
+                      fullName?.charAt(0) || email?.charAt(0) || 'U'
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">{fullName || 'Utilisateur'}</h2>
+                    <p className="text-muted-foreground">{email}</p>
+                  </div>
+                </div>
+                
+                <div className="grid gap-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pour changer votre email, contactez le support
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Nom complet</Label>
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={isUpdating}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="avatarUrl">URL de l'avatar</Label>
+                    <Input
+                      id="avatarUrl"
+                      type="url"
+                      placeholder="https://exemple.com/avatar.jpg"
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      disabled={isUpdating}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Entrez l'URL d'une image pour votre avatar
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push('/dashboard')}
+                  disabled={isUpdating}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
+                </Button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-      
-      <div className="border rounded-lg p-6 mt-8">
-        <h2 className="text-xl font-semibold mb-4">Sécurité du compte</h2>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-medium">Changer de mot de passe</h3>
-              <p className="text-sm text-muted-foreground">
-                Mettez à jour votre mot de passe pour sécuriser votre compte
-              </p>
+          
+          <div className="border rounded-lg p-6 mt-8">
+            <h2 className="text-xl font-semibold mb-4">Sécurité du compte</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-medium">Changer de mot de passe</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Mettez à jour votre mot de passe pour sécuriser votre compte
+                  </p>
+                </div>
+                <Link href="/reset-password">
+                  <Button variant="outline">Changer</Button>
+                </Link>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-medium">Supprimer le compte</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Supprimez définitivement votre compte et toutes vos données
+                  </p>
+                </div>
+                <Button variant="outline" className="text-destructive hover:text-destructive">
+                  Supprimer
+                </Button>
+              </div>
             </div>
-            <Link href="/reset-password">
-              <Button variant="outline">Changer</Button>
-            </Link>
           </div>
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-medium">Supprimer le compte</h3>
-              <p className="text-sm text-muted-foreground">
-                Supprimez définitivement votre compte et toutes vos données
-              </p>
-            </div>
-            <Button variant="outline" className="text-destructive hover:text-destructive">
-              Supprimer
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   )
 } 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { HeaderNav } from '@/components/HeaderNav'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { AlertCircle } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { user, isLoading, signOut, reloadAuthState } = useAuth()
   // État pour gérer un timeout de sécurité
   const [safetyTimeout, setSafetyTimeout] = useState(false)
@@ -16,8 +17,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userTypeError, setUserTypeError] = useState(false)
   const [isReloading, setIsReloading] = useState(false)
   
+  // Vérifier si le chemin actuel est dans la section documentation
+  const isDocsRoute = pathname.startsWith('/dashboard/docs')
+  
   // Vérifier que l'utilisateur est valide et rediriger si nécessaire
   useEffect(() => {
+    // Si on est dans la documentation, pas besoin de vérification d'authentification
+    if (isDocsRoute) return
+    
     // Vérifier si user est un objet ou une chaîne
     const userType = typeof user
     const isValidUser = user && userType === 'object' && 'id' in user
@@ -34,13 +41,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     
     // Rediriger vers la page de connexion si l'utilisateur n'est pas authentifié
+    // et qu'il n'est pas sur une route de documentation
     if (!isLoading && !user) {
       router.push('/login')
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router, pathname, isDocsRoute])
   
   // Timeout de sécurité pour éviter un loading infini
   useEffect(() => {
+    // Ignorer le timeout pour les pages de documentation
+    if (isDocsRoute) return
+    
     // Log détaillé pour déboguer le type de user
     console.log("Dashboard layout - loading state:", isLoading, 
                 "user type:", typeof user, 
@@ -56,7 +67,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       return () => clearTimeout(timeoutId)
     }
-  }, [isLoading, user])
+  }, [isLoading, user, isDocsRoute])
   
   // Fonction pour forcer la déconnexion en cas d'erreur de type
   const handleForceSignOut = async () => {
@@ -87,6 +98,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } finally {
       setIsReloading(false)
     }
+  }
+  
+  // Si c'est une route de documentation, ignorer les vérifications d'authentification
+  if (isDocsRoute) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <HeaderNav />
+        <main className="flex-1 container py-6">
+          {children}
+        </main>
+      </div>
+    )
   }
   
   // Afficher un message d'erreur si user n'est pas un objet valide

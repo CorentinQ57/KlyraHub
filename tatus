@@ -1,5 +1,0 @@
-[33mcommit 2cba51c4bce9b81a5f57e501eb6f63a0a073099a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
-Author: CorentinQ57 <queuche.corentin@gmail.com>
-Date:   Wed Apr 9 16:29:11 2025 +0200
-
-    fix: Résoudre le problème de chargement infini et améliorer la détection du rôle administrateur

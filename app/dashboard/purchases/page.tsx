@@ -117,124 +117,124 @@ export default function PurchasesPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Historique d'achats</h1>
-        <p className="text-muted-foreground">
-          Retrouvez l'ensemble de vos achats et factures Klyra
-        </p>
-      </div>
-      
-      {/* Liste des achats */}
-      <div className="space-y-6">
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Historique d'achats</h1>
+            <p className="text-muted-foreground">
+              Retrouvez l'ensemble de vos achats et factures Klyra
+            </p>
           </div>
-        ) : (
-          <>
-            {purchases.length > 0 ? (
-              <div className="rounded-lg border overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-muted border-b">
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Service
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Montant
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Statut
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {purchases.map((purchase) => (
-                        <tr key={purchase.id} className="hover:bg-muted/50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {new Date(purchase.date).toLocaleDateString('fr-FR')}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {purchase.service_name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap font-medium">
-                            {formatPrice(purchase.price)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(purchase.status)}`}>
-                              {getStatusLabel(purchase.status)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
-                            {purchase.invoice_url && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-xs"
-                                onClick={() => window.open(purchase.invoice_url, '_blank')}
-                              >
-                                Facture
-                              </Button>
-                            )}
-                            {purchase.project_id && (
-                              <Link href={`/dashboard/projects/${purchase.project_id}`}>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-xs"
-                                >
-                                  Voir le projet
-                                </Button>
-                              </Link>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+          
+          {/* Liste des achats */}
+          <div className="space-y-6">
+            {isLoading ? (
+              <div className="flex justify-center p-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
               </div>
             ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <h3 className="text-lg font-medium">Aucun achat</h3>
-                  <p className="text-muted-foreground mt-1 mb-4">
-                    Vous n'avez pas encore effectué d'achat sur Klyra
-                  </p>
-                  <Link href="/dashboard/marketplace">
+              <>
+                {purchases.length > 0 ? (
+                  <div className="rounded-lg border overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-muted border-b">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Service
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Montant
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Statut
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {purchases.map((purchase) => (
+                            <tr key={purchase.id} className="hover:bg-muted/50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {new Date(purchase.date).toLocaleDateString('fr-FR')}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {purchase.service_name}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap font-medium">
+                                {formatPrice(purchase.price)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(purchase.status)}`}>
+                                  {getStatusLabel(purchase.status)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
+                                {purchase.invoice_url && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs"
+                                    onClick={() => window.open(purchase.invoice_url, '_blank')}
+                                  >
+                                    Facture
+                                  </Button>
+                                )}
+                                {purchase.project_id && (
+                                  <Link href={`/dashboard/projects/${purchase.project_id}`}>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs"
+                                    >
+                                      Voir le projet
+                                    </Button>
+                                  </Link>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <h3 className="text-lg font-medium">Aucun achat</h3>
+                      <p className="text-muted-foreground mt-1 mb-4">
+                        Vous n'avez pas encore effectué d'achat sur Klyra
+                      </p>
+                      <Link href="/dashboard/marketplace">
                     <Button>
-                      Explorer les services
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+                          Explorer les services
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
-          </>
-        )}
-      </div>
-      
-      {/* Informations supplémentaires */}
-      {purchases.length > 0 && (
-        <div className="mt-8 border rounded-lg p-6 bg-muted/20">
-          <h3 className="text-lg font-medium mb-2">Besoin d'aide avec votre commande ?</h3>
-          <p className="text-muted-foreground mb-4">
-            Notre équipe est à votre disposition pour toute question relative à vos achats.
-          </p>
-          <Link href="/contact">
-            <Button variant="outline">
-              Contacter le support
-            </Button>
-          </Link>
-        </div>
-      )}
+          </div>
+          
+          {/* Informations supplémentaires */}
+          {purchases.length > 0 && (
+            <div className="mt-8 border rounded-lg p-6 bg-muted/20">
+              <h3 className="text-lg font-medium mb-2">Besoin d'aide avec votre commande ?</h3>
+              <p className="text-muted-foreground mb-4">
+                Notre équipe est à votre disposition pour toute question relative à vos achats.
+              </p>
+              <Link href="/contact">
+                <Button variant="outline">
+                  Contacter le support
+                </Button>
+              </Link>
+            </div>
+          )}
     </div>
   )
 } 
