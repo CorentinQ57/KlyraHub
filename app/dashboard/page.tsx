@@ -23,7 +23,7 @@ type ProjectWithRelations = Project & {
     category_id: string;
     image_url?: string;
     description?: string;
-    categories?: {
+    category?: {
       id: string;
       name: string;
       image_url?: string;
@@ -98,7 +98,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 
   // Utiliser l'image du service ou de la catégorie
   const serviceImage = project.services?.image_url;
-  const categoryImage = project.services?.categories?.image_url;
+  const categoryImage = project.services?.category?.image_url;
   const displayImage = serviceImage || categoryImage || categoryImages.default;
 
   // Utiliser l'icône de la catégorie
@@ -127,10 +127,10 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
         <div className="flex items-start justify-between gap-2">
           <div>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              project.services?.categories ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
+              project.services?.category ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
             }`}>
               {categoryIcon}
-              <span className="ml-1">{project.services?.categories?.name || "Service"}</span>
+              <span className="ml-1">{project.services?.category?.name || "Service"}</span>
             </span>
           </div>
           <span className={`whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}>
