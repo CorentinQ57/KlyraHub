@@ -100,9 +100,22 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
   // Récupérer les informations de la catégorie
   const service = project.services;
   const category = service?.categories;
-  const serviceImage = service?.image_url;
-  const categoryImage = category?.image_url;
-  const finalImage = serviceImage || categoryImage || '/images/categories/default.jpg';
+  
+  // Vérifier si les URLs contiennent le domaine Supabase
+  const hasCategoryImage = category?.image_url && category.image_url.trim() !== '';
+  const hasServiceImage = service?.image_url && service.image_url.trim() !== '';
+  
+  // Créer un dégradé dynamique comme fallback
+  const categoryId = service?.category_id || '';
+  const gradientColors = {
+    branding: 'from-rose-100 to-pink-300',
+    web_design: 'from-blue-100 to-indigo-300',
+    development: 'from-emerald-100 to-teal-300',
+    strategy: 'from-amber-100 to-yellow-300',
+    default: 'from-gray-100 to-blue-200'
+  };
+  const gradientClasses = gradientColors[categoryId as keyof typeof gradientColors] || gradientColors.default;
+  
   const categoryName = category?.name || "Service";
   const categoryIcon = categoryIcons[service?.category_id || 'default'] || categoryIcons.default;
 
@@ -114,13 +127,19 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
       transition={{ duration: 0.3 }}
     >
       <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
-        <Image
-          src={finalImage}
-          alt={categoryName}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+        {hasServiceImage || hasCategoryImage ? (
+          <Image
+            src={hasServiceImage ? service!.image_url! : category!.image_url!}
+            alt={categoryName}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        ) : (
+          <div className={`absolute inset-0 bg-gradient-to-br ${gradientClasses} flex items-center justify-center`}>
+            <div className="text-4xl opacity-30">{categoryIcon}</div>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
       </div>
 
