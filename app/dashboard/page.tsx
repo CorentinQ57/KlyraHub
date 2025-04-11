@@ -10,12 +10,32 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package } from 'lucide-react'
+import { Progress } from "@/components/ui/progress"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
   services?: { title: string; category_id: number } | null;
   profiles?: { full_name: string | null; email: string | null } | null;
+}
+
+// Types additionnels
+type Notification = {
+  id: string
+  title: string
+  message: string
+  type: 'comment' | 'deliverable' | 'validation' | 'system'
+  createdAt: Date
+  read: boolean
+}
+
+type ProjectStats = {
+  totalProjects: number
+  completedProjects: number
+  activeProjects: number
+  totalInvestment: number
 }
 
 // Dynamic import with preload functionality 
@@ -180,6 +200,100 @@ const TutorialStep = ({
   );
 };
 
+// Nouveau composant pour les statistiques
+const StatsOverview = ({ stats }: { stats: ProjectStats }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Projets Totaux</CardTitle>
+          <Store className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalProjects}</div>
+          <p className="text-xs text-muted-foreground">
+            {stats.activeProjects} projets actifs
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Projets Complétés</CardTitle>
+          <CheckCircle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.completedProjects}</div>
+          <Progress value={(stats.completedProjects / stats.totalProjects) * 100} className="h-2" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Badges Débloqués</CardTitle>
+          <Award className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">3</div>
+          <p className="text-xs text-muted-foreground">
+            Prochain badge dans 2 projets
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Investissement Total</CardTitle>
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalInvestment}€</div>
+          <p className="text-xs text-muted-foreground">
+            Dernière facture il y a 3 jours
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Nouveau composant pour les notifications
+const NotificationsPanel = ({ notifications }: { notifications: Notification[] }) => {
+  return (
+    <Card className="col-span-1 lg:col-span-2">
+      <CardHeader>
+        <CardTitle>Notifications Récentes</CardTitle>
+        <CardDescription>Vos dernières activités et mises à jour</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[300px] w-full">
+          {notifications.map((notif) => (
+            <div key={notif.id} className="flex items-start space-x-4 mb-4 p-3 rounded-lg hover:bg-accent">
+              <div className={`rounded-full p-2 ${
+                notif.type === 'comment' ? 'bg-blue-100' :
+                notif.type === 'deliverable' ? 'bg-green-100' :
+                notif.type === 'validation' ? 'bg-yellow-100' : 'bg-gray-100'
+              }`}>
+                {notif.type === 'comment' ? <MessageSquare className="h-4 w-4" /> :
+                 notif.type === 'deliverable' ? <Package className="h-4 w-4" /> :
+                 notif.type === 'validation' ? <CheckCircle className="h-4 w-4" /> :
+                 <Bell className="h-4 w-4" />}
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-medium">{notif.title}</h4>
+                <p className="text-sm text-muted-foreground">{notif.message}</p>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(notif.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              {!notif.read && (
+                <div className="w-2 h-2 rounded-full bg-primary" />
+              )}
+            </div>
+          ))}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
@@ -225,6 +339,14 @@ export default function DashboardPage() {
       color: "bg-gray-100 text-gray-800"
     },
   }
+  
+  const [stats, setStats] = useState<ProjectStats>({
+    totalProjects: 0,
+    completedProjects: 0,
+    activeProjects: 0,
+    totalInvestment: 0
+  })
+  const [notifications, setNotifications] = useState<Notification[]>([])
   
   // Fonction pour charger les projets
   const loadProjects = async () => {
@@ -383,8 +505,81 @@ export default function DashboardPage() {
     }
   ]
 
+  // Fonction pour calculer les statistiques
+  const calculateStats = (projects: ProjectWithRelations[]) => {
+    const completed = projects.filter(p => p.status === 'completed').length
+    const active = projects.filter(p => p.status !== 'completed').length
+    // TODO: Calculer l'investissement total depuis les services
+    setStats({
+      totalProjects: projects.length,
+      completedProjects: completed,
+      activeProjects: active,
+      totalInvestment: 0 // À implémenter
+    })
+  }
+
+  // Charger les notifications
+  const loadNotifications = async () => {
+    // TODO: Implémenter la récupération des notifications depuis Supabase
+    // Pour l'instant, on utilise des données de test
+    setNotifications([
+      {
+        id: '1',
+        title: 'Nouveau commentaire',
+        message: 'L\'équipe a commenté sur votre projet',
+        type: 'comment',
+        createdAt: new Date(),
+        read: false
+      },
+      // Ajouter d'autres notifications de test...
+    ])
+  }
+
+  useEffect(() => {
+    if (projects.length > 0) {
+      calculateStats(projects)
+    }
+    loadNotifications()
+  }, [projects])
+
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
+          <p className="text-muted-foreground">
+            Bienvenue {user?.user_metadata?.full_name || 'sur votre espace client'}
+          </p>
+        </div>
+        <Link href="/dashboard/marketplace">
+          <Button>
+            <Store className="mr-2 h-4 w-4" /> Explorer les services
+          </Button>
+        </Link>
+      </div>
+
+      <StatsOverview stats={stats} />
+
+      <Tabs defaultValue="projects" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="projects">Projets</TabsTrigger>
+          <TabsTrigger value="activity">Activité</TabsTrigger>
+        </TabsList>
+        <TabsContent value="projects" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="activity" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <NotificationsPanel notifications={notifications} />
+            {/* Autres panneaux d'activité à ajouter */}
+          </div>
+        </TabsContent>
+      </Tabs>
+
       {showTutorial && (
         <TutorialStep
           step={tutorialStep}
@@ -395,52 +590,6 @@ export default function DashboardPage() {
           isLast={tutorialStep === 5}
           icon={tutorialSteps[tutorialStep - 1].icon}
         />
-      )}
-      
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tighter">Dashboard</h1>
-          {isAdmin && (
-            <p className="text-sm text-muted-foreground mt-1">Mode administrateur - Tous les projets sont visibles</p>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/marketplace">
-            <Button>
-              Explorer les services
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-      </div>
-      
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
-        </div>
-      ) : projects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-4 text-primary">
-            <Calendar className="h-12 w-12 mx-auto" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">Vous n'avez pas encore de projets</h3>
-          <p className="text-muted-foreground max-w-md mb-6">
-            Explorez notre marketplace et découvrez nos services pour commencer votre premier projet avec Klyra.
-          </p>
-          <Link href="/dashboard/marketplace">
-            <Button size="lg">
-              Découvrir nos services
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
       )}
     </div>
   )
