@@ -19,11 +19,14 @@ import Image from 'next/image'
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
   services?: {
+    id: string;
     name: string;
+    description?: string;
     category_id: string;
     image_url?: string;
-    description?: string;
-    categories: {
+    price?: number;
+    duration?: number;
+    categories?: {
       id: string;
       name: string;
       image_url?: string;
@@ -97,16 +100,18 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     },
   }
 
-  // Récupérer les informations de la catégorie
+  // Récupérer les informations du service et sa catégorie
   const service = project.services;
   const category = service?.categories;
   
-  // Vérifier si les URLs contiennent le domaine Supabase
-  const hasCategoryImage = category?.image_url && category.image_url.trim() !== '';
+  // Obtenir l'ID de la catégorie pour les fallbacks
+  const categoryId = service?.category_id || '';
+  
+  // Vérifier si les URLs des images existent
   const hasServiceImage = service?.image_url && service.image_url.trim() !== '';
+  const hasCategoryImage = category?.image_url && category.image_url.trim() !== '';
   
   // Créer un dégradé dynamique comme fallback
-  const categoryId = service?.category_id || '';
   const gradientColors = {
     branding: 'from-rose-100 to-pink-300',
     web_design: 'from-blue-100 to-indigo-300',
@@ -116,8 +121,9 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
   };
   const gradientClasses = gradientColors[categoryId as keyof typeof gradientColors] || gradientColors.default;
   
+  // Obtenir le nom de la catégorie
   const categoryName = category?.name || "Service";
-  const categoryIcon = categoryIcons[service?.category_id || 'default'] || categoryIcons.default;
+  const categoryIcon = categoryIcons[categoryId] || categoryIcons.default;
 
   return (
     <motion.div 
