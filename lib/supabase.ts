@@ -48,7 +48,11 @@ export type Service = {
   icon?: string
   features?: string[]
   phases?: string[]
-  category?: string
+  category?: {
+    id: string
+    name: string
+    image_url?: string
+  }
   active: boolean
 }
 
@@ -197,7 +201,7 @@ export async function fetchAllProjects() {
           price,
           duration,
           image_url,
-          categories (
+          category:categories (
             id,
             name,
             image_url

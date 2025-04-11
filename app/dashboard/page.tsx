@@ -102,7 +102,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
   const displayImage = serviceImage || categoryImage || categoryImages.default;
 
   // Utiliser l'icône de la catégorie
-  const categoryId = project.services?.category_id || 'default';
+  const categoryId = project.services?.category?.id || 'default';
   const categoryIcon = categoryIcons[categoryId] || categoryIcons.default;
 
   return (
