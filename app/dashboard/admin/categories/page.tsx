@@ -36,6 +36,7 @@ type Category = {
   image_url?: string;
   created_at: string;
   updated_at: string;
+  services_count?: number;
 }
 
 export default function CategoriesManagementPage() {
@@ -66,13 +67,25 @@ export default function CategoriesManagementPage() {
   const loadCategories = async () => {
     try {
       setIsLoading(true)
-      const { data, error } = await supabase
+      
+      // Récupérer les catégories avec le comptage des services
+      const { data: categoriesWithCount, error: countError } = await supabase
         .from('categories')
-        .select('*')
+        .select(`
+          *,
+          services_count:services(count)
+        `)
         .order('name')
 
-      if (error) throw error
-      setCategories(data || [])
+      if (countError) throw countError
+
+      // Formater les données pour inclure le comptage
+      const formattedCategories = (categoriesWithCount || []).map(cat => ({
+        ...cat,
+        services_count: cat.services_count?.[0]?.count || 0
+      }))
+
+      setCategories(formattedCategories)
     } catch (error) {
       console.error('Error loading categories:', error)
       toast({
@@ -285,7 +298,9 @@ export default function CategoriesManagementPage() {
                     )}
                   </TableCell>
                   <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell>0 services</TableCell>
+                  <TableCell>
+                    {category.services_count} service{category.services_count !== 1 ? 's' : ''}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
