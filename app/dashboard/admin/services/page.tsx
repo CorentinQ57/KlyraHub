@@ -180,7 +180,7 @@ export default function ServicesManagementPage() {
               services.map((service) => (
                 <TableRow key={service.id} className={!service.active ? "opacity-60" : ""}>
                   <TableCell className="font-medium">{service.name}</TableCell>
-                  <TableCell>{service.category?.name || 'Non catégorisé'}</TableCell>
+                  <TableCell>{service.category || 'Non catégorisé'}</TableCell>
                   <TableCell className="text-right">{service.price}€</TableCell>
                   <TableCell>{service.duration} jours</TableCell>
                   <TableCell>

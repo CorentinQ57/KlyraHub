@@ -19,15 +19,15 @@ import Image from 'next/image'
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
   services?: {
-    name: string;
+    title: string;
     category_id: string;
     image_url?: string;
     description?: string;
-    category?: {
+    categories?: {
       id: string;
       name: string;
       image_url?: string;
-    };
+    } | null;
   } | null;
   profiles?: {
     full_name: string | null;
@@ -96,14 +96,11 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     },
   }
 
-  // Utiliser l'image du service ou de la catégorie
-  const serviceImage = project.services?.image_url;
-  const categoryImage = project.services?.category?.image_url;
-  const displayImage = serviceImage || categoryImage || categoryImages.default;
-
-  // Utiliser l'icône de la catégorie
-  const categoryId = project.services?.category?.id || 'default';
-  const categoryIcon = categoryIcons[categoryId] || categoryIcons.default;
+  // Déterminer la catégorie du projet
+  const category = project.services?.categories || null;
+  const categoryImage = category?.image_url || categoryImages.default;
+  const categoryName = category?.name || "Service";
+  const categoryIcon = categoryIcons[category?.id || 'default'] || categoryIcons.default;
 
   return (
     <motion.div 
@@ -114,8 +111,8 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     >
       <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
         <Image
-          src={displayImage}
-          alt={project.services?.name || "Image du projet"}
+          src={categoryImage}
+          alt={categoryName}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -127,10 +124,10 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
         <div className="flex items-start justify-between gap-2">
           <div>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              project.services?.category ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
+              category ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
             }`}>
               {categoryIcon}
-              <span className="ml-1">{project.services?.category?.name || "Service"}</span>
+              <span className="ml-1">{categoryName}</span>
             </span>
           </div>
           <span className={`whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}>
