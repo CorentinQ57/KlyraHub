@@ -23,6 +23,11 @@ type ProjectWithRelations = Project & {
     category_id: string;
     image_url?: string;
     description?: string;
+    categories?: {
+      id: string;
+      name: string;
+      image_url?: string;
+    };
   } | null;
   profiles?: {
     full_name: string | null;
@@ -91,9 +96,13 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     },
   }
 
-  // Déterminer la catégorie du projet
+  // Utiliser l'image du service ou de la catégorie
+  const serviceImage = project.services?.image_url;
+  const categoryImage = project.services?.categories?.image_url;
+  const displayImage = serviceImage || categoryImage || categoryImages.default;
+
+  // Utiliser l'icône de la catégorie
   const categoryId = project.services?.category_id || 'default';
-  const categoryImage = project.services?.image_url || categoryImages[categoryId] || categoryImages.default;
   const categoryIcon = categoryIcons[categoryId] || categoryIcons.default;
 
   return (
@@ -105,7 +114,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     >
       <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
         <Image
-          src={categoryImage}
+          src={displayImage}
           alt={project.services?.title || "Image du projet"}
           fill
           className="object-cover"
@@ -118,10 +127,10 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
         <div className="flex items-start justify-between gap-2">
           <div>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              project.services?.category_id ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
+              project.services?.categories ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
             }`}>
               {categoryIcon}
-              <span className="ml-1">{project.services?.title?.split(' - ')[0] || "Service"}</span>
+              <span className="ml-1">{project.services?.categories?.name || "Service"}</span>
             </span>
           </div>
           <span className={`whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}>
