@@ -19,7 +19,7 @@ import Image from 'next/image'
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
   services?: {
-    title: string;
+    name: string;
     category_id: string;
     image_url?: string;
     description?: string;
@@ -115,7 +115,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
       <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
         <Image
           src={displayImage}
-          alt={project.services?.title || "Image du projet"}
+          alt={project.services?.name || "Image du projet"}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
