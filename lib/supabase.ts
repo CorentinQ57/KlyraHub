@@ -148,7 +148,7 @@ export async function fetchProjects(userId: string) {
       .from('projects')
       .select(`
         *,
-        services!inner (
+        services (
           id,
           name,
           description,
@@ -156,7 +156,7 @@ export async function fetchProjects(userId: string) {
           price,
           duration,
           image_url,
-          category:categories!inner (
+          category:categories (
             id,
             name,
             image_url
@@ -189,7 +189,7 @@ export async function fetchAllProjects() {
       .from('projects')
       .select(`
         *,
-        services!inner (
+        services (
           id,
           name,
           description,
@@ -197,7 +197,7 @@ export async function fetchAllProjects() {
           price,
           duration,
           image_url,
-          category:categories!inner (
+          categories (
             id,
             name,
             image_url
