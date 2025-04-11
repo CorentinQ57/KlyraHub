@@ -10,15 +10,24 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Image from 'next/image'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
-  services?: { title: string; category_id: number } | null;
-  profiles?: { full_name: string | null; email: string | null } | null;
+  services?: {
+    title: string;
+    category_id: string;
+    image_url?: string;
+    description?: string;
+  } | null;
+  profiles?: {
+    full_name: string | null;
+    email: string | null;
+  } | null;
 }
 
 // Types additionnels
@@ -37,6 +46,24 @@ type ProjectStats = {
   activeProjects: number
   totalInvestment: number
 }
+
+// Mapping des icônes par catégorie
+const categoryIcons: Record<string, JSX.Element> = {
+  branding: <PenTool className="h-6 w-6" />,
+  web_design: <Layout className="h-6 w-6" />,
+  development: <Code className="h-6 w-6" />,
+  strategy: <LineChart className="h-6 w-6" />,
+  default: <Store className="h-6 w-6" />
+};
+
+// Mapping des images par catégorie
+const categoryImages: Record<string, string> = {
+  branding: "/images/categories/branding.jpg",
+  web_design: "/images/categories/web-design.jpg",
+  development: "/images/categories/development.jpg",
+  strategy: "/images/categories/strategy.jpg",
+  default: "/images/categories/default.jpg"
+};
 
 // Dynamic import with preload functionality 
 const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
@@ -64,33 +91,53 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     },
   }
 
+  // Déterminer la catégorie du projet
+  const categoryId = project.services?.category_id || 'default';
+  const categoryImage = project.services?.image_url || categoryImages[categoryId] || categoryImages.default;
+  const categoryIcon = categoryIcons[categoryId] || categoryIcons.default;
+
   return (
     <motion.div 
-      className="card border border-gray-100 hover:shadow-md transition-shadow h-[180px] flex flex-col"
+      className="card border border-gray-100 hover:shadow-md transition-shadow rounded-lg overflow-hidden flex flex-col"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1 mr-3">
-          <h3 className="text-xl font-semibold tracking-snug line-clamp-1">{project.title}</h3>
-          {project.services && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Service: {project.services.title}
-            </p>
-          )}
-        </div>
-        <span
-          className={`badge whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}
-        >
-          {statusLabels[project.status].label}
-        </span>
+      <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
+        <Image
+          src={categoryImage}
+          alt={project.services?.title || "Image du projet"}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
       </div>
-      <div className="mt-auto flex justify-between items-center pt-4">
-        <span className="text-sm text-muted-foreground">
-          {new Date(project.created_at).toLocaleDateString()}
-        </span>
-        <div className="space-x-2">
+
+      <div className="p-4 flex-1 flex flex-col">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              project.services?.category_id ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
+            }`}>
+              {categoryIcon}
+              <span className="ml-1">{project.services?.title?.split(' - ')[0] || "Service"}</span>
+            </span>
+          </div>
+          <span className={`whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}>
+            {statusLabels[project.status].label}
+          </span>
+        </div>
+
+        <h3 className="text-lg font-semibold mt-2 line-clamp-1">{project.title}</h3>
+        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+          {project.description || "Description du projet"}
+        </p>
+
+        <div className="mt-4 pt-4 border-t flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">
+            {new Date(project.created_at).toLocaleDateString()}
+          </span>
           <Link href={`/dashboard/projects/${project.id}`}>
             <Button size="sm" variant="outline">Voir les détails</Button>
           </Link>
