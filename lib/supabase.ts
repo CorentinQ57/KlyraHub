@@ -159,6 +159,7 @@ export async function fetchProjects(userId: string) {
           categories (
             id,
             name,
+            description,
             image_url
           )
         ),
@@ -195,7 +196,14 @@ export async function fetchAllProjects() {
           description,
           category_id,
           price,
-          duration
+          duration,
+          image_url,
+          categories (
+            id,
+            name,
+            description,
+            image_url
+          )
         ),
         client:client_id (
           id,

@@ -19,15 +19,16 @@ import Image from 'next/image'
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
   services?: {
-    title: string;
+    name: string;
     category_id: string;
     image_url?: string;
     description?: string;
-    categories?: {
+    categories: {
       id: string;
       name: string;
       image_url?: string;
-    } | null;
+      description?: string;
+    };
   } | null;
   profiles?: {
     full_name: string | null;
@@ -96,11 +97,12 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     },
   }
 
-  // Déterminer la catégorie du projet
-  const category = project.services?.categories || null;
+  // Récupérer les informations de la catégorie
+  const service = project.services;
+  const category = service?.categories;
   const categoryImage = category?.image_url || categoryImages.default;
   const categoryName = category?.name || "Service";
-  const categoryIcon = categoryIcons[category?.id || 'default'] || categoryIcons.default;
+  const categoryIcon = categoryIcons[service?.category_id || 'default'] || categoryIcons.default;
 
   return (
     <motion.div 
@@ -137,7 +139,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 
         <h3 className="text-lg font-semibold mt-2 line-clamp-1">{project.title}</h3>
         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-          {project.description || "Description du projet"}
+          {project.description || service?.description || "Description du projet"}
         </p>
 
         <div className="mt-4 pt-4 border-t flex justify-between items-center">
