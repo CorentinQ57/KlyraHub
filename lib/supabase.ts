@@ -144,7 +144,8 @@ export async function updateProfile(userId: string, updates: Partial<User>) {
 
 export async function fetchProjects(userId: string) {
   try {
-    const { data, error } = await supabase
+    // Première requête pour obtenir les projets avec leurs services
+    const { data: projectsData, error: projectsError } = await supabase
       .from('projects')
       .select(`
         *,
@@ -155,13 +156,7 @@ export async function fetchProjects(userId: string) {
           category_id,
           price,
           duration,
-          image_url,
-          categories (
-            id,
-            name,
-            description,
-            image_url
-          )
+          image_url
         ),
         client:client_id (
           id,
@@ -170,23 +165,51 @@ export async function fetchProjects(userId: string) {
         )
       `)
       .eq('client_id', userId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
     
-    if (error) {
-      console.error('Error fetching projects:', error)
-      return []
+    if (projectsError) {
+      console.error('Error fetching projects:', projectsError);
+      return [];
+    }
+
+    // Récupérer toutes les catégories en une seule requête
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select('*');
+    
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError);
+      return projectsData || [];
     }
     
-    return data || []
+    // Mapper les catégories aux services des projets
+    const projectsWithCategories = projectsData?.map(project => {
+      if (project.services && project.services.category_id) {
+        const category = categories?.find(c => c.id === project.services.category_id);
+        if (category) {
+          return {
+            ...project,
+            services: {
+              ...project.services,
+              categories: category
+            }
+          };
+        }
+      }
+      return project;
+    });
+    
+    return projectsWithCategories || [];
   } catch (error) {
-    console.error('Exception in fetchProjects:', error)
-    return []
+    console.error('Exception in fetchProjects:', error);
+    return [];
   }
 }
 
 export async function fetchAllProjects() {
   try {
-    const { data, error } = await supabase
+    // Première requête pour obtenir les projets avec leurs services
+    const { data: projectsData, error: projectsError } = await supabase
       .from('projects')
       .select(`
         *,
@@ -197,13 +220,7 @@ export async function fetchAllProjects() {
           category_id,
           price,
           duration,
-          image_url,
-          categories (
-            id,
-            name,
-            description,
-            image_url
-          )
+          image_url
         ),
         client:client_id (
           id,
@@ -211,17 +228,44 @@ export async function fetchAllProjects() {
           email
         )
       `)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
     
-    if (error) {
-      console.error('Error fetching all projects:', error)
-      return []
+    if (projectsError) {
+      console.error('Error fetching all projects:', projectsError);
+      return [];
+    }
+
+    // Récupérer toutes les catégories en une seule requête
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select('*');
+    
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError);
+      return projectsData || [];
     }
     
-    return data || []
+    // Mapper les catégories aux services des projets
+    const projectsWithCategories = projectsData?.map(project => {
+      if (project.services && project.services.category_id) {
+        const category = categories?.find(c => c.id === project.services.category_id);
+        if (category) {
+          return {
+            ...project,
+            services: {
+              ...project.services,
+              categories: category
+            }
+          };
+        }
+      }
+      return project;
+    });
+    
+    return projectsWithCategories || [];
   } catch (error) {
-    console.error('Exception in fetchAllProjects:', error)
-    return []
+    console.error('Exception in fetchAllProjects:', error);
+    return [];
   }
 }
 

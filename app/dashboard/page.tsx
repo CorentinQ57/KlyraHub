@@ -76,6 +76,16 @@ const categoryImages: Record<string, string> = {
 
 // Dynamic import with preload functionality 
 const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
+  // Debug logs
+  console.log('Project data:', {
+    project_id: project.id,
+    service: project.services,
+    category_id: project.services?.category_id,
+    category: project.services?.categories,
+    service_image: project.services?.image_url,
+    category_image: project.services?.categories?.image_url
+  });
+
   // Status labels
   const statusLabels = {
     pending: {
