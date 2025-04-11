@@ -116,13 +116,13 @@ export default function CategoriesManagementPage() {
         const filePath = `categories/${fileName}`
 
         const { error: uploadError } = await supabase.storage
-          .from('images')
+          .from('public')
           .upload(filePath, formData.image)
 
         if (uploadError) throw uploadError
 
         const { data: urlData } = supabase.storage
-          .from('images')
+          .from('public')
           .getPublicUrl(filePath)
 
         imageUrl = urlData.publicUrl
