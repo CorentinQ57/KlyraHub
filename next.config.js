@@ -3,7 +3,12 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['localhost', 'supabase.io', 'supabase.com'],
+    domains: [
+      'localhost', 
+      'supabase.io', 
+      'supabase.com',
+      'ecfccsjjfrweqzhkveku.supabase.co'  // Ajout du domaine Supabase du projet
+    ],
   },
   async rewrites() {
     return [

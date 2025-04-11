@@ -113,16 +113,16 @@ export default function CategoriesManagementPage() {
       if (formData.image) {
         const fileExt = formData.image.name.split('.').pop()
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-        const filePath = `categories/${fileName}`
+        const filePath = fileName // Pas besoin de sous-dossier car nous avons un bucket dédié
 
         const { error: uploadError } = await supabase.storage
-          .from('public')
+          .from('klyra-categories')
           .upload(filePath, formData.image)
 
         if (uploadError) throw uploadError
 
         const { data: urlData } = supabase.storage
-          .from('public')
+          .from('klyra-categories')
           .getPublicUrl(filePath)
 
         imageUrl = urlData.publicUrl
