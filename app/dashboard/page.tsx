@@ -100,7 +100,9 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
   // Récupérer les informations de la catégorie
   const service = project.services;
   const category = service?.categories;
-  const categoryImage = category?.image_url || categoryImages.default;
+  const serviceImage = service?.image_url;
+  const categoryImage = category?.image_url;
+  const finalImage = serviceImage || categoryImage || '/images/categories/default.jpg';
   const categoryName = category?.name || "Service";
   const categoryIcon = categoryIcons[service?.category_id || 'default'] || categoryIcons.default;
 
@@ -113,7 +115,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     >
       <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
         <Image
-          src={categoryImage}
+          src={finalImage}
           alt={categoryName}
           fill
           className="object-cover"
