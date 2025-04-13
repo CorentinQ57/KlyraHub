@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
 import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
 import { docCategories } from "@/components/docs/DocsNav";
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
 import {
   BookOpen,
   Clock,
@@ -73,7 +73,7 @@ export default function DocsHomePage() {
   }, []);
 
   return (
-    <PageContainer>
+    <div className="w-full">
       <PageHeader
         title="Documentation"
         description="Bienvenue dans la documentation complète de Klyra Design"
@@ -203,27 +203,22 @@ export default function DocsHomePage() {
             </div>
           </PageSection>
         </div>
-
-        {/* Barre latérale droite */}
+        
+        {/* Colonne latérale droite */}
         <div className="lg:w-64 lg:flex-shrink-0 space-y-6">
           <div className="lg:sticky lg:top-6">
             <TableOfContents items={tocItems} />
             
-            <div className="mt-8">
-              <LinkCard
-                title="Support"
-                links={supportLinks}
-                className="mb-6"
-              />
-              
-              <LinkCard
-                title="Ressources"
-                links={resourceLinks}
-              />
+            <div className="mt-6">
+              <LinkCard title="Support" links={supportLinks} />
+            </div>
+            
+            <div className="mt-6">
+              <LinkCard title="Ressources" links={resourceLinks} />
             </div>
           </div>
         </div>
       </div>
-    </PageContainer>
+    </div>
   );
 } 

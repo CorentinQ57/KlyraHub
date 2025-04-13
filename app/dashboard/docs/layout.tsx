@@ -59,7 +59,8 @@ export default function DocsLayout({
         {/* Navigation latérale gauche (desktop) */}
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-10 w-full max-w-xs transform overflow-auto border-r bg-background lg:static lg:block lg:w-64 lg:translate-x-0",
+            "fixed inset-y-0 left-0 z-10 w-full max-w-xs transform overflow-auto border-r bg-background",
+            "lg:static lg:block lg:w-64 lg:min-w-[16rem] lg:max-w-[16rem] lg:translate-x-0",
             isNavOpen ? "translate-x-0" : "-translate-x-full",
             "transition-transform duration-200 ease-in-out"
           )}
@@ -87,8 +88,8 @@ export default function DocsLayout({
         )}
 
         {/* Contenu principal */}
-        <main className="flex-1 overflow-auto">
-          <div className="container py-6 lg:py-10 max-w-5xl">
+        <main className="flex-1 overflow-auto pl-0">
+          <div className="py-6 lg:py-10 px-4 lg:pr-8 lg:pl-4">
             {children}
           </div>
         </main>
