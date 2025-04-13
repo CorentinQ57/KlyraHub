@@ -2,12 +2,9 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
-import { OnboardingData, Badge, StepProps } from '../types'
 import {
   DragDropContext,
   Droppable,
@@ -15,44 +12,28 @@ import {
   DropResult
 } from '@hello-pangea/dnd'
 
-interface Priority {
-  id: string
-  content: string
-}
-
-interface Skill {
-  id: string
-  label: string
-  icon: string
-}
-
 interface StepAmbitionsProps {
   data: any
   onComplete: (data: any) => void
 }
 
-const businessPriorities: Priority[] = [
-  { id: 'brand', content: 'Developper ma marque 🎯' },
+const businessPriorities = [
+  { id: 'brand', content: 'Développer ma marque 🎯' },
   { id: 'clients', content: 'Attirer plus de clients 🤝' },
-  { id: 'digital', content: 'Accelerer ma transformation digitale 🚀' },
-  { id: 'experience', content: 'Ameliorer l\'experience client ⭐' },
+  { id: 'digital', content: 'Accélérer ma transformation digitale 🚀' },
+  { id: 'experience', content: 'Améliorer l'expérience client ⭐' },
   { id: 'innovation', content: 'Innover dans mon secteur 💡' }
 ]
 
-const skills: Skill[] = [
+const skills = [
   { id: 'design', label: 'Design & UX', icon: '🎨' },
   { id: 'marketing', label: 'Marketing Digital', icon: '📢' },
   { id: 'tech', label: 'Technologies', icon: '💻' },
   { id: 'business', label: 'Business & Stratégie', icon: '📊' }
 ]
 
-interface FormData {
-  priorities: string[]
-  skills: Record<string, number>
-}
-
 export default function StepAmbitions({ data, onComplete }: StepAmbitionsProps) {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     priorities: data.priorities || businessPriorities.map(p => p.id),
     skills: data.skills || Object.fromEntries(skills.map(s => [s.id, 1]))
   })
@@ -98,7 +79,7 @@ export default function StepAmbitions({ data, onComplete }: StepAmbitionsProps) 
                   ref={provided.innerRef}
                   className="space-y-3"
                 >
-                  {formData.priorities.map((priorityId: string, index: number) => {
+                  {formData.priorities.map((priorityId, index) => {
                     const priority = businessPriorities.find(p => p.id === priorityId)
                     if (!priority) return null
                     

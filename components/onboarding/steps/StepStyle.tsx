@@ -2,135 +2,174 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Card } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Palette, MessageSquare, Heart, Sparkles } from 'lucide-react'
-import { OnboardingData, Badge, StepProps } from '../types'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-export default function StepStyle({ data, onComplete, badges }: StepProps) {
+interface StepStyleProps {
+  data: any
+  onComplete: (data: any) => void
+}
+
+const visualStyles = [
+  {
+    id: 'minimal',
+    name: 'Minimaliste',
+    icon: '⚪',
+    description: 'Épuré, moderne, efficace'
+  },
+  {
+    id: 'bold',
+    name: 'Audacieux',
+    icon: '🎨',
+    description: 'Coloré, expressif, unique'
+  },
+  {
+    id: 'classic',
+    name: 'Classique',
+    icon: '✨',
+    description: 'Élégant, professionnel, intemporel'
+  },
+  {
+    id: 'playful',
+    name: 'Ludique',
+    icon: '🎮',
+    description: 'Fun, dynamique, engageant'
+  }
+]
+
+const communicationStyles = [
+  { value: 'direct', label: 'Direct et concis' },
+  { value: 'detailed', label: 'Détaillé et explicatif' },
+  { value: 'casual', label: 'Décontracté et amical' },
+  { value: 'formal', label: 'Formel et professionnel' }
+]
+
+const timeManagementStyles = [
+  { value: 'flexible', label: 'Flexible et adaptable' },
+  { value: 'structured', label: 'Structuré et planifié' },
+  { value: 'deadline', label: 'Focalisé sur les deadlines' },
+  { value: 'proactive', label: 'Proactif et anticipatif' }
+]
+
+export default function StepStyle({ data, onComplete }: StepStyleProps) {
   const [formData, setFormData] = useState({
-    communication: data.style?.communication || '',
-    timeManagement: data.style?.timeManagement || '',
-    visualPreference: data.style?.visualPreference || ''
+    visualPreferences: data.visualPreferences || [],
+    communicationStyle: data.communicationStyle || '',
+    timeManagement: data.timeManagement || ''
   })
+
+  const toggleVisualStyle = (styleId: string) => {
+    const current = formData.visualPreferences
+    const updated = current.includes(styleId)
+      ? current.filter(id => id !== styleId)
+      : [...current, styleId]
+    setFormData({ ...formData, visualPreferences: updated })
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onComplete({
-      ...data,
-      style: formData
-    })
+    onComplete(formData)
   }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-6"
+      transition={{ duration: 0.5 }}
     >
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="space-y-4">
-          <Label>Communication Style</Label>
-          <RadioGroup
-            value={formData.communication}
-            onValueChange={(value) => setFormData({ ...formData, communication: value })}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-          >
-            <Label
-              htmlFor="formal"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
-            >
-              <RadioGroupItem value="formal" id="formal" className="sr-only" />
-              <MessageSquare className="mb-3 h-6 w-6" />
-              <div className="space-y-1">
-                <h3 className="font-semibold">Formal</h3>
-                <p className="text-sm text-muted-foreground">Professional and structured communication</p>
-              </div>
-            </Label>
-            <Label
-              htmlFor="casual"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
-            >
-              <RadioGroupItem value="casual" id="casual" className="sr-only" />
-              <Heart className="mb-3 h-6 w-6" />
-              <div className="space-y-1">
-                <h3 className="font-semibold">Casual</h3>
-                <p className="text-sm text-muted-foreground">Friendly and relaxed communication</p>
-              </div>
-            </Label>
-          </RadioGroup>
+        <div>
+          <Label className="text-lg mb-4 block">
+            Ton style visuel préféré (choisis-en 1 ou 2)
+          </Label>
+          <div className="grid grid-cols-2 gap-4">
+            {visualStyles.map((style) => (
+              <Card
+                key={style.id}
+                className={`cursor-pointer transition-all ${
+                  formData.visualPreferences.includes(style.id)
+                    ? 'border-primary bg-primary/5'
+                    : 'hover:border-primary/50'
+                }`}
+                onClick={() => toggleVisualStyle(style.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="text-2xl mb-2">{style.icon}</div>
+                  <div className="font-medium mb-1">{style.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {style.description}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <Label>Time Management Approach</Label>
-          <RadioGroup
-            value={formData.timeManagement}
-            onValueChange={(value) => setFormData({ ...formData, timeManagement: value })}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-          >
-            <Label
-              htmlFor="structured"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
-            >
-              <RadioGroupItem value="structured" id="structured" className="sr-only" />
-              <Sparkles className="mb-3 h-6 w-6" />
-              <div className="space-y-1">
-                <h3 className="font-semibold">Structured</h3>
-                <p className="text-sm text-muted-foreground">Fixed schedules and deadlines</p>
-              </div>
+        <div className="space-y-6">
+          <div>
+            <Label htmlFor="communication" className="text-lg mb-2 block">
+              Ton style de communication préféré
             </Label>
-            <Label
-              htmlFor="flexible"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
+            <Select
+              value={formData.communicationStyle}
+              onValueChange={(value) =>
+                setFormData({ ...formData, communicationStyle: value })
+              }
             >
-              <RadioGroupItem value="flexible" id="flexible" className="sr-only" />
-              <Palette className="mb-3 h-6 w-6" />
-              <div className="space-y-1">
-                <h3 className="font-semibold">Flexible</h3>
-                <p className="text-sm text-muted-foreground">Adaptable to changing priorities</p>
-              </div>
+              <SelectTrigger>
+                <SelectValue placeholder="Choisis ton style de communication" />
+              </SelectTrigger>
+              <SelectContent>
+                {communicationStyles.map((style) => (
+                  <SelectItem key={style.value} value={style.value}>
+                    {style.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="timeManagement" className="text-lg mb-2 block">
+              Ta relation avec les délais
             </Label>
-          </RadioGroup>
+            <Select
+              value={formData.timeManagement}
+              onValueChange={(value) =>
+                setFormData({ ...formData, timeManagement: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choisis ton approche des délais" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeManagementStyles.map((style) => (
+                  <SelectItem key={style.value} value={style.value}>
+                    {style.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <Label>Visual Preference</Label>
-          <RadioGroup
-            value={formData.visualPreference}
-            onValueChange={(value) => setFormData({ ...formData, visualPreference: value })}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-          >
-            <Label
-              htmlFor="minimal"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
-            >
-              <RadioGroupItem value="minimal" id="minimal" className="sr-only" />
-              <Palette className="mb-3 h-6 w-6" />
-              <div className="space-y-1">
-                <h3 className="font-semibold">Minimal</h3>
-                <p className="text-sm text-muted-foreground">Clean and simple design</p>
-              </div>
-            </Label>
-            <Label
-              htmlFor="expressive"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
-            >
-              <RadioGroupItem value="expressive" id="expressive" className="sr-only" />
-              <Sparkles className="mb-3 h-6 w-6" />
-              <div className="space-y-1">
-                <h3 className="font-semibold">Expressive</h3>
-                <p className="text-sm text-muted-foreground">Bold and creative design</p>
-              </div>
-            </Label>
-          </RadioGroup>
-        </div>
-
-        <Button type="submit" className="w-full">
-          Continue
+        <Button
+          type="submit"
+          className="w-full"
+          size="lg"
+        >
+          Parfait ! 🎨
         </Button>
       </form>
     </motion.div>
