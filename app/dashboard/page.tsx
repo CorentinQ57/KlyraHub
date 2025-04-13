@@ -661,7 +661,7 @@ export default function DashboardPage() {
   }, [projects])
 
   return (
-    <AuroraBackground intensity="subtle" showRadialGradient={true}>
+    <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
       <PageContainer>
         <PageHeader 
           title="Tableau de bord" 
