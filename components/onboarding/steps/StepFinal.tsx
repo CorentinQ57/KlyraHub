@@ -11,15 +11,17 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Trophy, Upload, Linkedin, Twitter, Instagram, Globe, Clock } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
+interface SocialLinks {
+  linkedin?: string
+  twitter?: string
+  instagram?: string
+}
+
 interface StepFinalProps {
   data: {
     avatarUrl?: string
     companyBio?: string
-    socialLinks?: {
-      linkedin?: string
-      twitter?: string
-      instagram?: string
-    }
+    socialLinks?: SocialLinks
     timezone?: string
     availability?: string[]
   }
@@ -58,11 +60,11 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
     }
   }
 
-  const handleSocialLinkChange = (network: keyof typeof data.socialLinks, value: string) => {
+  const handleSocialLinkChange = (network: keyof SocialLinks, value: string) => {
     setData({
       ...data,
       socialLinks: {
-        ...data.socialLinks,
+        ...(data.socialLinks || {}),
         [network]: value
       }
     })
