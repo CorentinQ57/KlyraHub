@@ -57,6 +57,7 @@ export interface OnboardingData {
   keyRoles?: string[]
   validationProcess?: string
   communicationFrequency?: string
+  collaborationStyles?: string[]
   
   // Étape 5 - Finalisation
   avatarUrl?: string
