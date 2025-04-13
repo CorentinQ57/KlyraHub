@@ -33,6 +33,7 @@ type ProjectWithRelations = Project & {
     full_name: string | null;
     email: string | null;
   } | null;
+  category_image_url?: string;
 }
 
 // Types additionnels
@@ -98,7 +99,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 
   // Utiliser l'image du service ou de la catégorie
   const serviceImage = project.services?.image_url;
-  const categoryImage = project.services?.category?.image_url;
+  const categoryImage = project.category_image_url || project.services?.category?.image_url;
   const displayImage = serviceImage || categoryImage || categoryImages.default;
 
   // Utiliser l'icône de la catégorie

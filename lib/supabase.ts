@@ -62,6 +62,7 @@ export type Project = {
   status: 'pending' | 'validated' | 'in_progress' | 'delivered' | 'completed'
   current_phase?: string
   price: number
+  category_image_url?: string
   created_at: string
   updated_at: string
 }
@@ -400,17 +401,28 @@ export async function createProject(
       return existingProjects[0] as Project;
     }
 
-    // Vérifier si le service existe
-    const { data: service, error: serviceError } = await supabase
+    // Récupérer le service et la catégorie associée pour l'image
+    const { data: serviceWithCategory, error: serviceError } = await supabase
       .from('services')
-      .select('id')
+      .select(`
+        id,
+        category_id,
+        category:categories!category_id (
+          id,
+          name,
+          image_url
+        )
+      `)
       .eq('id', serviceId)
       .single();
 
-    if (serviceError || !service) {
+    if (serviceError || !serviceWithCategory) {
       console.error('Le service spécifié n\'existe pas:', serviceId);
       throw new Error('Le service spécifié n\'existe pas');
     }
+
+    // Récupérer l'image de la catégorie
+    const categoryImageUrl = serviceWithCategory.category?.image_url || null;
 
     // Créer le projet
     console.log('Création du projet dans Supabase...');
@@ -422,6 +434,7 @@ export async function createProject(
         title,
         price,
         status: 'pending',
+        category_image_url: categoryImageUrl,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
