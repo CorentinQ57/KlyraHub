@@ -108,14 +108,11 @@ export default function ProfilePage() {
   const [userPoints, setUserPoints] = useState(75); // Simuler les points de l'utilisateur
 
   useEffect(() => {
-    // Simulate loading user data
     const loadUserData = async () => {
       try {
-        // Check if user has completed onboarding
         const hasCompletedOnboarding = localStorage.getItem("hasCompletedOnboarding");
         setIsOnboarding(!hasCompletedOnboarding);
         
-        // Load user profile if exists
         const savedProfile = localStorage.getItem("userProfile");
         if (savedProfile) {
           setProfile(JSON.parse(savedProfile));
@@ -199,297 +196,131 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Mon Profil</h1>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="flex items-center gap-2"
-          >
-            <FiLogOut className="h-4 w-4" />
-            Déconnexion
-          </Button>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Profile Header */}
+      <div className="flex items-start gap-6">
+        <div className="relative">
+          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+            {profile?.profilePicture ? (
+              <img
+                src={profile.profilePicture}
+                alt="Profile"
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-2xl font-semibold text-primary">
+                {profile?.firstName?.[0]}
+                {profile?.lastName?.[0]}
+              </span>
+            )}
+          </div>
+          <div className="absolute -bottom-2 -right-2 bg-background rounded-full p-1">
+            <div className="bg-primary/10 text-primary rounded-full p-1">
+              <Trophy className="h-4 w-4" />
+            </div>
+          </div>
         </div>
         
-        <Tabs defaultValue="account">
-          <TabsList className="mb-6">
-            <TabsTrigger value="account">Compte</TabsTrigger>
-            <TabsTrigger value="security">Sécurité</TabsTrigger>
-            <TabsTrigger value="customization">Personnalisation</TabsTrigger>
-            <TabsTrigger value="achievements">Succès</TabsTrigger>
-          </TabsList>
+        <div className="flex-1">
+          <h1 className="text-2xl font-semibold">
+            {profile?.firstName} {profile?.lastName}
+          </h1>
+          <p className="text-muted-foreground">{profile?.company}</p>
           
-          <TabsContent value="account">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations du compte</CardTitle>
-                <CardDescription>
-                  Mettez à jour vos informations personnelles ici.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleUpdateProfile}>
-                  <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                      <div className="relative h-24 w-24 rounded-full overflow-hidden border">
-                        <NextImage
-                          src={user?.profilePicture || "/assets/avatar-placeholder.png"}
-                          alt="Avatar"
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{user?.firstName} {user?.lastName}</h3>
-                        <p className="text-sm text-muted-foreground">{user?.company}</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                        >
-                          Changer d'avatar
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="name">Nom complet</Label>
-                        <Input
-                          id="name"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleChange}
-                        />
-                      </div>
-                      
-                      <div className="grid gap-2">
-                        <Label htmlFor="email">Adresse e-mail</Label>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6">
-                    <Button 
-                      type="submit" 
-                      disabled={isUpdating}
-                    >
-                      {isUpdating ? "Enregistrement..." : "Enregistrer les modifications"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="security">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sécurité</CardTitle>
-                <CardDescription>
-                  Gérez les paramètres de sécurité de votre compte.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid gap-2">
-                    <Label htmlFor="current-password">Mot de passe actuel</Label>
-                    <Input id="current-password" type="password" />
-                  </div>
-                  
-                  <div className="grid gap-2">
-                    <Label htmlFor="new-password">Nouveau mot de passe</Label>
-                    <Input id="new-password" type="password" />
-                  </div>
-                  
-                  <div className="grid gap-2">
-                    <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
-                    <Input id="confirm-password" type="password" />
-                  </div>
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {profile?.badges.map((badge) => (
+              <Badge key={badge} variant="secondary">
+                {badge}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Level Progress */}
+      <Card className="p-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Niveau {profile?.level}</span>
+            <span>{profile?.xp} / 1000 XP</span>
+          </div>
+          <Progress value={(profile?.xp || 0) / 10} className="h-2" />
+        </div>
+      </Card>
+
+      {/* Profile Sections */}
+      <div className="grid gap-6">
+        {/* Professional Info */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Ton univers pro</h2>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Secteur</p>
+                <p className="font-medium">{profile?.sector}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Expérience</p>
+                <p className="font-medium">{profile?.experience}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Présence web</p>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {profile?.webPresence.map((presence) => (
+                  <Badge key={presence} variant="outline">
+                    {presence}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Skills & Priorities */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Tes compétences</h2>
+          <div className="space-y-4">
+            {Object.entries(profile?.skills || {}).map(([skill, level]) => (
+              <div key={skill} className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>{skill}</span>
+                  <span>{level}%</span>
                 </div>
-                
-                <div className="mt-6">
-                  <Button>Mettre à jour le mot de passe</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="customization">
-            <Card>
-              <CardHeader>
-                <CardTitle>Personnalisation</CardTitle>
-                <CardDescription>
-                  Personnalisez l'apparence de votre profil et débloquez de nouvelles fonctionnalités.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ProfileCustomization 
-                  userId={user?.firstName || "user-123"} 
-                  onUpdate={(data) => {
-                    // Here you would implement the logic to save customization data
-                    console.log("Customization data:", data);
-                    return Promise.resolve();
-                  }} 
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="achievements">
-            <Card>
-              <CardHeader>
-                <CardTitle>Récompenses et Badges</CardTitle>
-                <CardDescription>
-                  Suivez votre progression et débloquez des badges en utilisant Klyra.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* En-tête avec points et progression */}
-                  <div className="bg-muted/40 rounded-lg p-4 border">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="bg-primary/10 text-primary rounded-full p-1.5">
-                          <Trophy className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">Explorateur Klyra</h3>
-                          <p className="text-sm text-muted-foreground">{userPoints} points</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-medium">
-                          {Math.min(100, Math.floor((userPoints / 300) * 100))}%
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          vers badge Expert
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <Progress value={Math.min(100, Math.floor((userPoints / 300) * 100))} className="h-2" />
-                  </div>
-                  
-                  {/* Filtres de badges par catégorie */}
-                  <div className="flex flex-wrap gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="rounded-full"
-                    >
-                      Tous
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="rounded-full"
-                    >
-                      Profil
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="rounded-full"
-                    >
-                      Projets
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="rounded-full"
-                    >
-                      Activité
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="rounded-full"
-                    >
-                      Social
-                    </Button>
-                  </div>
-                  
-                  {/* Grille de badges */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {achievements.map((achievement) => (
-                      <motion.div
-                        key={achievement.id}
-                        whileHover={{ scale: 1.03 }}
-                        className={cn(
-                          "border rounded-lg p-4 flex flex-col items-center text-center",
-                          achievement.unlockedAt ? "bg-green-50" : "bg-muted/20"
-                        )}
-                      >
-                        <div className="relative mb-2">
-                          <div className={cn(
-                            "rounded-full p-3",
-                            achievement.unlockedAt 
-                              ? "bg-green-100" 
-                              : "bg-muted/40 opacity-60"
-                          )}>
-                            {achievement.icon}
-                          </div>
-                          {!achievement.unlockedAt && (
-                            <div className="absolute -top-2 -right-2 bg-muted/80 rounded-full p-1">
-                              <Lock className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                        
-                        <h3 className="font-medium">{achievement.title}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {achievement.description}
-                        </p>
-                        
-                        {achievement.unlockedAt ? (
-                          <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>
-                              Débloqué le {achievement.unlockedAt.toLocaleDateString("fr-FR")}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="mt-2">
-                            {achievement.requiredPoints && (
-                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-primary/40"
-                                  style={{ 
-                                    width: `${Math.min(100, Math.floor((userPoints / achievement.requiredPoints) * 100))}%` 
-                                  }}
-                                ></div>
-                              </div>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {achievement.requiredPoints ? 
-                                `${userPoints}/${achievement.requiredPoints} points` : 
-                                "Complétez l'objectif pour débloquer"
-                              }
-                            </p>
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <Progress value={level} className="h-2" />
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Style Preferences */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Ton style</h2>
+          <div className="grid gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Préférences visuelles</p>
+              <p className="font-medium">{profile?.visualStyle}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Style de communication</p>
+              <p className="font-medium">{profile?.communicationStyle}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Avec les deadlines</p>
+              <p className="font-medium">{profile?.deadlineStyle}</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Fun Fact */}
+        {profile?.funFact && (
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold mb-4">Fun fact</h2>
+            <p className="text-muted-foreground">{profile.funFact}</p>
+          </Card>
+        )}
       </div>
     </div>
   );
-} 
+}
