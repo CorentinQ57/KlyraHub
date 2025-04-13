@@ -18,15 +18,12 @@ interface SocialLinks {
   instagram?: string
 }
 
-interface StepFinalProps {
-  data: {
-    avatarUrl?: string
-    companyBio?: string
-    socialLinks?: SocialLinks
-    timezone?: string
-    availability?: string[]
-  }
-  setData: (data: any) => void
+interface ExtendedOnboardingData extends OnboardingData {
+  avatarUrl?: string
+  companyBio?: string
+  socialLinks?: SocialLinks
+  timezone?: string
+  availability?: string[]
 }
 
 const timezones = [
@@ -43,10 +40,18 @@ const availabilitySlots = [
   { value: 'evening', label: 'Soir (17h-19h)' }
 ]
 
-export default function StepFinal({ data, setData }: StepFinalProps) {
-  const [previewUrl, setPreviewUrl] = useState<string>(data.avatarUrl || '')
+export default function StepFinal({ data, onComplete, badges }: StepProps) {
+  const [formData, setFormData] = useState<ExtendedOnboardingData>({
+    ...data,
+    avatarUrl: (data as ExtendedOnboardingData).avatarUrl || '',
+    companyBio: (data as ExtendedOnboardingData).companyBio || '',
+    socialLinks: (data as ExtendedOnboardingData).socialLinks || {},
+    timezone: (data as ExtendedOnboardingData).timezone || '',
+    availability: (data as ExtendedOnboardingData).availability || []
+  })
+  const [previewUrl, setPreviewUrl] = useState<string>((data as ExtendedOnboardingData).avatarUrl || '')
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [selectedSlots, setSelectedSlots] = useState<string[]>(data.availability || [])
+  const [selectedSlots, setSelectedSlots] = useState<string[]>((data as ExtendedOnboardingData).availability || [])
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -55,17 +60,17 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
       reader.onloadend = () => {
         const result = reader.result as string
         setPreviewUrl(result)
-        setData({ ...data, avatarUrl: result })
+        setFormData({ ...formData, avatarUrl: result })
       }
       reader.readAsDataURL(file)
     }
   }
 
   const handleSocialLinkChange = (network: keyof SocialLinks, value: string) => {
-    setData({
-      ...data,
+    setFormData({
+      ...formData,
       socialLinks: {
-        ...(data.socialLinks || {}),
+        ...(formData.socialLinks || {}),
         [network]: value
       }
     })
@@ -76,7 +81,11 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
       ? selectedSlots.filter(s => s !== slot)
       : [...selectedSlots, slot]
     setSelectedSlots(newSlots)
-    setData({ ...data, availability: newSlots })
+    setFormData({ ...formData, availability: newSlots })
+  }
+
+  const handleSubmit = () => {
+    onComplete(formData)
   }
 
   return (
@@ -117,8 +126,8 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
               Bio de l'entreprise
             </Label>
             <Textarea
-              value={data.companyBio || ''}
-              onChange={(e) => setData({ ...data, companyBio: e.target.value })}
+              value={formData.companyBio || ''}
+              onChange={(e) => setFormData({ ...formData, companyBio: e.target.value })}
               placeholder="Décrivez votre entreprise en quelques phrases..."
               className="resize-none"
               rows={3}
@@ -144,7 +153,7 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
               LinkedIn
             </Label>
             <Input
-              value={data.socialLinks?.linkedin || ''}
+              value={formData.socialLinks?.linkedin || ''}
               onChange={(e) => handleSocialLinkChange('linkedin', e.target.value)}
               placeholder="https://linkedin.com/in/..."
             />
@@ -155,7 +164,7 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
               Twitter
             </Label>
             <Input
-              value={data.socialLinks?.twitter || ''}
+              value={formData.socialLinks?.twitter || ''}
               onChange={(e) => handleSocialLinkChange('twitter', e.target.value)}
               placeholder="https://twitter.com/..."
             />
@@ -166,7 +175,7 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
               Instagram
             </Label>
             <Input
-              value={data.socialLinks?.instagram || ''}
+              value={formData.socialLinks?.instagram || ''}
               onChange={(e) => handleSocialLinkChange('instagram', e.target.value)}
               placeholder="https://instagram.com/..."
             />
@@ -186,8 +195,8 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
             Votre fuseau horaire
           </Label>
           <Select
-            value={data.timezone}
-            onValueChange={(value) => setData({ ...data, timezone: value })}
+            value={formData.timezone}
+            onValueChange={(value) => setFormData({ ...formData, timezone: value })}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Sélectionnez votre fuseau horaire" />
@@ -204,22 +213,17 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
 
         <div className="space-y-4">
           <Label className="text-lg font-medium">
-            Vos disponibilités préférées
+            Vos disponibilités habituelles
           </Label>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {availabilitySlots.map((slot) => (
               <Button
                 key={slot.value}
-                variant="outline"
-                size="sm"
-                className={`flex items-center gap-2 transition-all ${
-                  selectedSlots.includes(slot.value)
-                    ? 'bg-primary text-primary-foreground'
-                    : ''
-                }`}
+                variant={selectedSlots.includes(slot.value) ? "default" : "outline"}
                 onClick={() => handleAvailabilityChange(slot.value)}
+                className="w-full"
               >
-                <Clock className="w-4 h-4" />
+                <Clock className="w-4 h-4 mr-2" />
                 {slot.label}
               </Button>
             ))}
@@ -227,29 +231,11 @@ export default function StepFinal({ data, setData }: StepFinalProps) {
         </div>
       </motion.div>
 
-      {/* Message final */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.5 }}
-        className="space-y-4"
-      >
-        <Card className="p-6 bg-primary/5 border-primary/20">
-          <div className="flex items-start gap-4">
-            <Trophy className="w-8 h-8 text-primary shrink-0" />
-            <div>
-              <h3 className="text-lg font-semibold mb-2">
-                Félicitations ! Vous avez complété votre profil
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Votre profil est maintenant configuré pour une expérience optimale avec Klyra.
-                Notre équipe a hâte de collaborer avec vous sur vos projets passionnants.
-                N'hésitez pas à explorer votre tableau de bord personnalisé !
-              </p>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
+      <div className="flex justify-end">
+        <Button onClick={handleSubmit} className="w-full md:w-auto">
+          Terminer
+        </Button>
+      </div>
     </div>
   )
 } 

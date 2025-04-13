@@ -14,12 +14,12 @@ import { Badge as UIBadge } from '@/components/ui/badge'
 import { Badge, OnboardingData, StepProps } from './types'
 
 // Étapes de l'onboarding
-import StepIntroduction from './steps/StepIntroduction'
-import StepProfessional from './steps/StepProfessional'
-import StepAmbitions from './steps/StepAmbitions'
-import StepStyle from './steps/StepStyle'
-import StepFinal from './steps/StepFinal'
-import StepTeam from './steps/StepTeam'
+import StepIntroduction from '@/components/onboarding/steps/StepIntroduction'
+import StepProfessional from '@/components/onboarding/steps/StepProfessional'
+import StepTeam from '@/components/onboarding/steps/StepTeam'
+import StepAmbitions from '@/components/onboarding/steps/StepAmbitions'
+import StepStyle from '@/components/onboarding/steps/StepStyle'
+import StepFinal from '@/components/onboarding/steps/StepFinal'
 
 interface Step {
   title: string
