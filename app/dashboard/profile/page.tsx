@@ -22,6 +22,8 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Lock, Trophy, Award, Crown, Rocket, Zap, Target, Star } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { Badge } from "@/components/ui/badge";
 
 // Crée un composant personnalisé pour Palette si l'icône n'est pas disponible
 const Palette = (props: any) => (
@@ -56,11 +58,24 @@ const Loading = () => (
 );
 
 interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  image: string;
-  role: string;
+  firstName: string;
+  lastName: string;
+  company: string;
+  teamSize: number;
+  sector: string;
+  experience: string;
+  webPresence: string[];
+  priorities: string[];
+  skills: Record<string, number>;
+  visualStyle: string;
+  communicationStyle: string;
+  deadlineStyle: string;
+  profilePicture: string;
+  socialLinks: Record<string, string>;
+  funFact: string;
+  badges: string[];
+  level: number;
+  xp: number;
 }
 
 // Type pour les badges/réalisations
@@ -75,6 +90,9 @@ interface Achievement {
 }
 
 export default function ProfilePage() {
+  const [isOnboarding, setIsOnboarding] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -89,99 +107,35 @@ export default function ProfilePage() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [userPoints, setUserPoints] = useState(75); // Simuler les points de l'utilisateur
 
-  // Simuler le chargement des données utilisateur
   useEffect(() => {
-    // Dans une application réelle, vous feriez un appel API ici
-    const fetchUserData = async () => {
+    // Simulate loading user data
+    const loadUserData = async () => {
       try {
-        // Simulation d'un délai de chargement
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Check if user has completed onboarding
+        const hasCompletedOnboarding = localStorage.getItem("hasCompletedOnboarding");
+        setIsOnboarding(!hasCompletedOnboarding);
         
-        // Données utilisateur fictives
-        const userData = {
-          id: "user-123",
-          name: "John Doe",
-          email: "john.doe@example.com",
-          image: "/assets/avatar.png",
-          role: "Administrateur"
-        };
-        
-        setUser(userData);
-        setFormData({
-          name: userData.name,
-          email: userData.email,
-        });
-        
-        // Charger les réalisations de l'utilisateur
-        const mockAchievements: Achievement[] = [
-          {
-            id: "profile-complete",
-            title: "Profil Complet",
-            description: "Remplir toutes les informations de votre profil",
-            icon: <CheckCircle2 className="h-10 w-10 text-green-500" />,
-            unlockedAt: new Date(2023, 5, 15),
-            category: 'profile'
-          },
-          {
-            id: "first-project",
-            title: "Premier Projet",
-            description: "Lancer votre premier projet sur Klyra",
-            icon: <Rocket className="h-10 w-10 text-blue-500" />,
-            unlockedAt: new Date(2023, 6, 2),
-            category: 'projects'
-          },
-          {
-            id: "customization-master",
-            title: "Maître de la Personnalisation",
-            description: "Personnaliser entièrement votre profil",
-            icon: <Palette className="h-10 w-10 text-purple-500" />,
-            unlockedAt: new Date(2023, 6, 10),
-            category: 'profile'
-          },
-          {
-            id: "three-projects",
-            title: "Triple Projet",
-            description: "Lancer trois projets sur Klyra",
-            icon: <Award className="h-10 w-10 text-yellow-500" />,
-            unlockedAt: null,
-            category: 'projects',
-            requiredPoints: 150
-          },
-          {
-            id: "community-star",
-            title: "Étoile de la Communauté",
-            description: "Obtenir cinq commentaires positifs sur vos projets",
-            icon: <Star className="h-10 w-10 text-yellow-500" />,
-            unlockedAt: null,
-            category: 'social',
-            requiredPoints: 200
-          },
-          {
-            id: "expert-user",
-            title: "Utilisateur Expert",
-            description: "Atteindre 6 mois d'activité continue sur la plateforme",
-            icon: <Crown className="h-10 w-10 text-orange-500" />,
-            unlockedAt: null,
-            category: 'activity',
-            requiredPoints: 300
-          },
-        ];
-        
-        setAchievements(mockAchievements);
+        // Load user profile if exists
+        const savedProfile = localStorage.getItem("userProfile");
+        if (savedProfile) {
+          setProfile(JSON.parse(savedProfile));
+        }
       } catch (error) {
-        console.error("Erreur lors du chargement des données utilisateur", error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger votre profil",
-          variant: "destructive",
-        });
+        console.error("Error loading user data:", error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchUserData();
-  }, [toast]);
+    loadUserData();
+  }, []);
+
+  const handleOnboardingComplete = (profileData: UserProfile) => {
+    setProfile(profileData);
+    setIsOnboarding(false);
+    localStorage.setItem("userProfile", JSON.stringify(profileData));
+    localStorage.setItem("hasCompletedOnboarding", "true");
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,16 +190,13 @@ export default function ProfilePage() {
     router.push("/login");
   };
 
-  if (loading) {
-    return <Loading />;
+  if (isLoading) {
+    return <div>Chargement...</div>;
   }
 
-  // Function to handle customization updates
-  const handleCustomizationUpdate = async (data: any) => {
-    // Here you would implement the logic to save customization data
-    console.log("Customization data:", data);
-    return Promise.resolve();
-  };
+  if (isOnboarding) {
+    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -284,15 +235,15 @@ export default function ProfilePage() {
                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                       <div className="relative h-24 w-24 rounded-full overflow-hidden border">
                         <NextImage
-                          src={user?.image || "/assets/avatar-placeholder.png"}
+                          src={user?.profilePicture || "/assets/avatar-placeholder.png"}
                           alt="Avatar"
                           fill
                           className="object-cover"
                         />
                       </div>
                       <div>
-                        <h3 className="font-medium">{user?.name}</h3>
-                        <p className="text-sm text-muted-foreground">{user?.role}</p>
+                        <h3 className="font-medium">{user?.firstName} {user?.lastName}</h3>
+                        <p className="text-sm text-muted-foreground">{user?.company}</p>
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -385,8 +336,12 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <ProfileCustomization 
-                  userId={user?.id || "user-123"} 
-                  onUpdate={handleCustomizationUpdate} 
+                  userId={user?.firstName || "user-123"} 
+                  onUpdate={(data) => {
+                    // Here you would implement the logic to save customization data
+                    console.log("Customization data:", data);
+                    return Promise.resolve();
+                  }} 
                 />
               </CardContent>
             </Card>
