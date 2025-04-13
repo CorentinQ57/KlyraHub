@@ -447,5 +447,10 @@
 }
 
 .category-label-primary {
-  @apply bg-[#EBF2FF] text-[#467FF7] border-[#D1E0FD];
+  @apply bg-[#EBF2FF] text-[#467FF7] border-[#D1E0FD] shadow-sm;
+}
+
+/* Enhanced category label for overlays */
+.category-label-primary.overlay {
+  @apply bg-[#EBF2FF]/95 backdrop-blur-sm border-[#D1E0FD] shadow-md text-[#467FF7] font-semibold;
 } 

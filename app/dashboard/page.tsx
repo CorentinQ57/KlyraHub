@@ -10,7 +10,30 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus } from 'lucide-react'
+import { 
+  ArrowRight, 
+  Calendar, 
+  CheckCircle, 
+  Clock, 
+  X, 
+  Store, 
+  ShoppingCart, 
+  Bell, 
+  Activity, 
+  Award, 
+  CreditCard, 
+  MessageSquare, 
+  Package, 
+  PenTool, 
+  Layout, 
+  Code, 
+  LineChart, 
+  FileText, 
+  FolderPlus,
+  TrendingUp, 
+  Image as ImageIcon, 
+  CalendarIcon
+} from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -20,7 +43,9 @@ import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
 import { Badge } from "@/components/ui/badge"
-import { FolderOpenIcon, CalendarIcon, ChevronRightIcon } from "lucide-react"
+import { FolderOpenIcon, ChevronRightIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -79,8 +104,22 @@ const categoryImages: Record<string, string> = {
 
 // Dynamic import with preload functionality 
 const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
-  // Get the service category details
-  const category = project.services?.category;
+  // Helper function to get the category name
+  const getCategoryName = () => {
+    // If project has services with a category, use the category name
+    if (project.services?.category) {
+      return project.services.category.name;
+    }
+    // Fallback to service name if available
+    if (project.services?.name) {
+      return project.services.name;
+    }
+    // Default fallback
+    return "Uncategorized";
+  };
+
+  // Get category ID for icon selection
+  const categoryId = project.services?.category?.id || project.services?.category_id || "";
   
   // Status labels with color mapping
   const statusColors = {
@@ -91,59 +130,69 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
   };
   
   return (
-    <Link href={`/dashboard/projects/${project.id}`}>
-      <Card className="h-full overflow-hidden flex flex-col border-0 hover:shadow-md transition-all">
-        {project.services?.image_url ? (
-          <div className="relative w-full h-40">
+    <Card className="shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
+      <div className="relative overflow-hidden">
+        <div className="h-40 min-h-40 bg-white flex items-center justify-center overflow-hidden">
+          {project.services?.image_url ? (
             <Image
               src={project.services.image_url}
               alt={project.title}
-              className="rounded-t-lg object-cover"
-              fill
+              width={300}
+              height={160}
+              className="h-40 w-full object-cover rounded-t-lg"
             />
-            <div className="absolute top-3 right-3">
-              <Badge className={`${statusColors[project.status as keyof typeof statusColors]} border`}>
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
-              </Badge>
-            </div>
-          </div>
-        ) : (
-          <div className="relative flex items-center justify-center bg-gray-100 w-full h-40 rounded-t-lg">
-            <FolderOpenIcon className="h-16 w-16 text-gray-400" />
-            <div className="absolute top-3 right-3">
-              <Badge className={`${statusColors[project.status as keyof typeof statusColors]} border`}>
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
-              </Badge>
-            </div>
-          </div>
-        )}
-        
-        <CardContent className="flex flex-col flex-1 p-4">
-          {/* Category displayed prominently at the top */}
-          {category && (
-            <div className="mb-2">
-              <span className="category-label-primary">
-                {category.image_url && (
-                  <span className="mr-1">{categoryIcons[category.id] || categoryIcons.default}</span>
-                )}
-                {category.name}
-              </span>
+          ) : (
+            <div className="text-muted-foreground flex items-center justify-center h-full w-full bg-gray-50">
+              <ImageIcon className="h-10 w-10 opacity-50" />
             </div>
           )}
-          
-          <h3 className="font-semibold text-lg mb-1 line-clamp-1">{project.title}</h3>
-          <p className="text-sm text-gray-500 mb-2 line-clamp-2">{project.description}</p>
-          
-          <div className="mt-auto pt-2 flex justify-between items-center">
-            <div className="flex items-center text-sm text-gray-500">
-              <CalendarIcon className="mr-1 h-4 w-4" />
-              {new Date(project.created_at).toLocaleDateString()}
-            </div>
-            <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+        </div>
+        
+        {/* Category overlay */}
+        <div className="absolute top-3 left-3">
+          <div className="category-label category-label-primary overlay flex items-center">
+            {categoryIcons[categoryId] ? (
+              <span className="mr-1">{categoryIcons[categoryId]}</span>
+            ) : (
+              <span className="mr-1"><TrendingUp className="h-3.5 w-3.5" /></span>
+            )}
+            {getCategoryName()}
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </div>
+        
+        {/* Project status label */}
+        <div className="absolute top-3 right-3">
+          <span 
+            className={cn(
+              "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
+              statusColors[project.status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"
+            )}
+          >
+            {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
+          </span>
+        </div>
+      </div>
+      
+      <div className="p-3 flex-1 flex flex-col">
+        <h3 className="font-medium text-base mb-1 line-clamp-1">{project.title}</h3>
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+          {project.description || "No description provided"}
+        </p>
+        
+        <div className="mt-auto flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CalendarIcon className="h-3.5 w-3.5" />
+            <span>{format(new Date(project.created_at), "MMM d, yyyy")}</span>
+          </div>
+          
+          <Link href={`/dashboard/projects/${project.id}`}>
+            <Button variant="ghost" size="sm" className="gap-1 text-xs">
+              View <ArrowRight className="h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </Card>
   )
 }
 

@@ -5,6 +5,7 @@ import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import AuthProvider from '@/lib/auth'
 import { NavigationProvider } from '@/contexts/navigation-context'
+import { usePathname } from 'next/navigation'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -13,8 +14,8 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'Klyra',
-  description: 'Plateforme de services de design',
+  title: 'KlyraDesign',
+  description: 'Design, branding et stratégie digitale pour TPE/PME tech',
 }
 
 export default function RootLayout({
