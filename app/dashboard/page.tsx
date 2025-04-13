@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from 'next/image'
+import { AuroraBackground } from "@/components/ui/aurora-background"
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -633,54 +634,56 @@ export default function DashboardPage() {
   }, [projects])
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
-          <p className="text-muted-foreground">
-            Bienvenue {user?.user_metadata?.full_name || 'sur votre espace client'}
-          </p>
+    <AuroraBackground intensity="subtle" showRadialGradient={true}>
+      <div className="container mx-auto p-6 relative z-10">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
+            <p className="text-muted-foreground">
+              Bienvenue {user?.user_metadata?.full_name || 'sur votre espace client'}
+            </p>
+          </div>
+          <Link href="/dashboard/marketplace">
+            <Button>
+              <Store className="mr-2 h-4 w-4" /> Explorer les services
+            </Button>
+          </Link>
         </div>
-        <Link href="/dashboard/marketplace">
-          <Button>
-            <Store className="mr-2 h-4 w-4" /> Explorer les services
-          </Button>
-        </Link>
+
+        <StatsOverview stats={stats} />
+
+        <Tabs defaultValue="projects" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="projects">Projets</TabsTrigger>
+            <TabsTrigger value="activity">Activité</TabsTrigger>
+          </TabsList>
+          <TabsContent value="projects" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          </TabsContent>
+          <TabsContent value="activity" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <NotificationsPanel notifications={notifications} />
+              {/* Autres panneaux d'activité à ajouter */}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {showTutorial && (
+          <TutorialStep
+            step={tutorialStep}
+            title={tutorialSteps[tutorialStep - 1].title}
+            description={tutorialSteps[tutorialStep - 1].description}
+            onNext={nextTutorialStep}
+            onClose={closeTutorial}
+            isLast={tutorialStep === 5}
+            icon={tutorialSteps[tutorialStep - 1].icon}
+          />
+        )}
       </div>
-
-      <StatsOverview stats={stats} />
-
-      <Tabs defaultValue="projects" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="projects">Projets</TabsTrigger>
-          <TabsTrigger value="activity">Activité</TabsTrigger>
-        </TabsList>
-        <TabsContent value="projects" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        </TabsContent>
-        <TabsContent value="activity" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <NotificationsPanel notifications={notifications} />
-            {/* Autres panneaux d'activité à ajouter */}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {showTutorial && (
-        <TutorialStep
-          step={tutorialStep}
-          title={tutorialSteps[tutorialStep - 1].title}
-          description={tutorialSteps[tutorialStep - 1].description}
-          onNext={nextTutorialStep}
-          onClose={closeTutorial}
-          isLast={tutorialStep === 5}
-          icon={tutorialSteps[tutorialStep - 1].icon}
-        />
-      )}
-    </div>
+    </AuroraBackground>
   )
 } 
