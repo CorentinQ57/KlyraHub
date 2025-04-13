@@ -1,104 +1,99 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from 'react';
-import { X, ExternalLink, Play } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Play, X, Maximize2, Volume2, VolumeX } from 'lucide-react'
 
-type VideoWalkthroughProps = {
-  videoUrl?: string;
-  learnMoreUrl?: string;
-  showDelay?: number; // en millisecondes
-};
+interface VideoWalkthroughProps {
+  videoSrc?: string
+  videoTitle?: string
+}
 
-export default function VideoWalkthrough({
-  videoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ", // URL par défaut à remplacer
-  learnMoreUrl = "/dashboard/docs",
-  showDelay = 500, // Délai avant l'affichage
+export default function VideoWalkthrough({ 
+  videoSrc = "https://www.youtube.com/embed/xxxxxxxx?autoplay=0&rel=0", 
+  videoTitle = "Guide d'utilisation de Klyra Hub" 
 }: VideoWalkthroughProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
-
-  // Vérifier si la carte a déjà été fermée dans cette session
-  useEffect(() => {
-    const hasBeenDismissed = localStorage.getItem('videoWalkthroughDismissed');
-    if (hasBeenDismissed === 'true') {
-      setIsDismissed(true);
-    } else {
-      // Afficher la carte après un délai
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, showDelay);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [showDelay]);
-
-  // Fermer la carte
-  const dismissCard = () => {
-    setIsVisible(false);
-    // Marquer comme fermée pour cette session
-    localStorage.setItem('videoWalkthroughDismissed', 'true');
-    setTimeout(() => {
-      setIsDismissed(true);
-    }, 300);
-  };
-
-  if (isDismissed) {
-    return null;
-  }
+  const [isOpen, setIsOpen] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   return (
-    <AnimatePresence>
-      {isVisible && (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, delay: 1 }}
+      className="fixed bottom-6 left-6 z-40"
+    >
+      {!isOpen ? (
         <motion.div
-          className="fixed left-4 bottom-4 z-50 w-72 rounded-lg border bg-white shadow-md"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          transition={{ duration: 0.3 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="rounded-full shadow-lg bg-white p-3 cursor-pointer flex items-center"
+          onClick={() => setIsOpen(true)}
         >
-          <div className="px-4 py-3 border-b">
-            <div className="flex justify-between items-center">
-              <h3 className="font-medium text-sm">Video Walkthrough</h3>
-              <button 
-                onClick={dismissCard}
-                className="p-1 hover:bg-gray-100 rounded-full"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4 text-gray-500" />
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Watch how the new dashboard works.
-            </p>
+          <div className="bg-primary/10 rounded-full p-2 mr-3">
+            <Play className="h-5 w-5 text-primary fill-current" />
           </div>
-          
-          <div className="relative aspect-video w-full cursor-pointer group">
-            <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-              <div className="rounded-full bg-white/90 p-2 shadow-md group-hover:scale-110 transition-transform">
-                <Play className="h-5 w-5 text-primary" fill="currentColor" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="px-4 py-2 flex justify-between items-center">
-            <button 
-              onClick={dismissCard}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Dismiss
-            </button>
-            
-            <Link 
-              href={learnMoreUrl}
-              className="text-sm text-primary hover:text-primary/80 flex items-center"
-            >
-              Learn more <ExternalLink className="ml-1 h-3 w-3" />
-            </Link>
-          </div>
+          <span className="text-sm font-medium pr-2">Vidéo explicative</span>
         </motion.div>
+      ) : (
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            className={`shadow-xl rounded-lg overflow-hidden ${isExpanded ? 'fixed inset-4 z-50' : 'w-80'}`}
+          >
+            <Card className="overflow-hidden border-0">
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-white py-3 px-4 flex justify-between items-center">
+                <h3 className="font-medium text-sm">{videoTitle}</h3>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-white hover:bg-white/10 rounded-full"
+                    onClick={() => setIsMuted(!isMuted)}
+                  >
+                    {isMuted ? 
+                      <VolumeX className="h-4 w-4" /> : 
+                      <Volume2 className="h-4 w-4" />
+                    }
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-white hover:bg-white/10 rounded-full"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-white hover:bg-white/10 rounded-full"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className={`aspect-video w-full ${isExpanded ? 'h-[calc(100vh-10rem)]' : ''}`}>
+                <iframe
+                  src={`${videoSrc}${isMuted ? '&mute=1' : ''}`}
+                  title={videoTitle}
+                  frameBorder="0"
+                  allowFullScreen
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                ></iframe>
+              </div>
+            </Card>
+          </motion.div>
+        </AnimatePresence>
       )}
-    </AnimatePresence>
-  );
+    </motion.div>
+  )
 } 
