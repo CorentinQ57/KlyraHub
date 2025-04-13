@@ -1,326 +1,260 @@
 "use client"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
-import NextImage from "next/image";
-import { FiLogOut } from "react-icons/fi";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import ProfileCustomization from "@/components/ProfileCustomization";
-import { motion } from "framer-motion";
-import { CheckCircle2, Lock, Trophy, Award, Crown, Rocket, Zap, Target, Star } from 'lucide-react';
-import { cn } from "@/lib/utils";
-import { Progress } from "@/components/ui/progress";
-import { OnboardingWizard } from "@/components/OnboardingWizard";
-import { Badge } from "@/components/ui/badge";
-
-// Crée un composant personnalisé pour Palette si l'icône n'est pas disponible
-const Palette = (props: any) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <circle cx="13.5" cy="6.5" r="2.5" />
-    <circle cx="19" cy="12" r="2.5" />
-    <circle cx="13.5" cy="17.5" r="2.5" />
-    <circle cx="6.5" cy="6.5" r="2.5" />
-    <path d="M6.5 17.5v-11" />
-  </svg>
-);
-
-// Import the Loading component or create a simple one if it doesn't exist
-const Loading = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="text-center">
-      <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
-      <p className="mt-4 text-lg">Chargement des données de profil...</p>
-    </div>
-  </div>
-);
-
-interface UserProfile {
-  firstName: string;
-  lastName: string;
-  company: string;
-  teamSize: number;
-  sector: string;
-  experience: string;
-  webPresence: string[];
-  priorities: string[];
-  skills: Record<string, number>;
-  visualStyle: string;
-  communicationStyle: string;
-  deadlineStyle: string;
-  profilePicture: string;
-  socialLinks: Record<string, string>;
-  funFact: string;
-  badges: string[];
-  level: number;
-  xp: number;
-}
-
-// Type pour les badges/réalisations
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  unlockedAt: Date | null;
-  category: 'profile' | 'projects' | 'activity' | 'social';
-  requiredPoints?: number;
-}
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth'
+import { supabase, getProfileData, updateProfile } from '@/lib/supabase'
+import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 
 export default function ProfilePage() {
-  const [isOnboarding, setIsOnboarding] = useState(true);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-  });
-  const router = useRouter();
-  const { toast } = useToast();
-  
-  // État pour les succès et réalisations
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [userPoints, setUserPoints] = useState(75); // Simuler les points de l'utilisateur
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null)
+  const router = useRouter()
+  const { user, signOut } = useAuth()
+  const { toast } = useToast()
 
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const hasCompletedOnboarding = localStorage.getItem("hasCompletedOnboarding");
-        setIsOnboarding(!hasCompletedOnboarding);
-        
-        const savedProfile = localStorage.getItem("userProfile");
-        if (savedProfile) {
-          setProfile(JSON.parse(savedProfile));
-        }
-      } catch (error) {
-        console.error("Error loading user data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (user) {
+      loadProfile()
+      checkOnboardingStatus()
+    }
+  }, [user])
 
-    loadUserData();
-  }, []);
-
-  const handleOnboardingComplete = (profileData: UserProfile) => {
-    setProfile(profileData);
-    setIsOnboarding(false);
-    localStorage.setItem("userProfile", JSON.stringify(profileData));
-    localStorage.setItem("hasCompletedOnboarding", "true");
-  };
-
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating(true);
-    
+  async function loadProfile() {
+    setIsLoading(true)
     try {
-      // Simuler un délai d'enregistrement
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      // Mettre à jour l'état utilisateur local
-      if (user) {
-        const updatedUser = {
-          ...user,
-          name: formData.name,
-          email: formData.email,
-        };
-        setUser(updatedUser);
+      // Vérifier que user existe
+      if (!user) {
+        return;
       }
       
-      toast({
-        title: "Profil mis à jour",
-        description: "Vos informations ont été enregistrées avec succès.",
-      });
+      // Set email from auth data
+      setEmail(user.email || '')
+
+      // Get additional profile data
+      const profileData = await getProfileData(user.id)
+      if (profileData) {
+        setFullName(profileData.full_name || '')
+        setAvatarUrl(profileData.avatar_url || '')
+      }
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du profil", error);
+      console.error('Error loading profile:', error)
       toast({
         title: "Erreur",
-        description: "Impossible de mettre à jour votre profil",
+        description: "Impossible de charger les données du profil",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsUpdating(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  async function checkOnboardingStatus() {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', user?.id)
+        .single()
+
+      setHasCompletedOnboarding(profile?.onboarding_completed || false)
+    } catch (error) {
+      console.error('Error checking onboarding status:', error)
+      setHasCompletedOnboarding(false)
+    }
+  }
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!user) return
+    
+    setIsUpdating(true)
+    
+    try {
+      const updates = {
+        id: user.id,
+        full_name: fullName,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      }
+      
+      const updatedProfile = await updateProfile(user.id, updates)
+      
+      if (updatedProfile) {
+        toast({
+          title: "Profil mis à jour",
+          description: "Vos informations ont été mises à jour avec succès",
+        })
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour le profil",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   const handleLogout = async () => {
-    // Dans une application réelle, vous effectueriez la déconnexion ici
-    toast({
-      title: "Déconnexion",
-      description: "Vous avez été déconnecté avec succès.",
-    });
-    
-    // Rediriger vers la page de connexion
-    router.push("/login");
-  };
+    try {
+      await signOut()
+      router.push('/')
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
+  }
 
   if (isLoading) {
-    return <div>Chargement...</div>;
-  }
-
-  if (isOnboarding) {
-    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Profile Header */}
-      <div className="flex items-start gap-6">
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-            {profile?.profilePicture ? (
-              <img
-                src={profile.profilePicture}
-                alt="Profile"
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              <span className="text-2xl font-semibold text-primary">
-                {profile?.firstName?.[0]}
-                {profile?.lastName?.[0]}
-              </span>
-            )}
-          </div>
-          <div className="absolute -bottom-2 -right-2 bg-background rounded-full p-1">
-            <div className="bg-primary/10 text-primary rounded-full p-1">
-              <Trophy className="h-4 w-4" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold">
-            {profile?.firstName} {profile?.lastName}
-          </h1>
-          <p className="text-muted-foreground">{profile?.company}</p>
-          
-          {/* Badges */}
-          <div className="flex flex-wrap gap-2 mt-2">
-            {profile?.badges.map((badge) => (
-              <Badge key={badge} variant="secondary">
-                {badge}
-              </Badge>
-            ))}
-          </div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg">Chargement des données de profil...</p>
         </div>
       </div>
+    )
+  }
 
-      {/* Level Progress */}
-      <Card className="p-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Niveau {profile?.level}</span>
-            <span>{profile?.xp} / 1000 XP</span>
-          </div>
-          <Progress value={(profile?.xp || 0) / 10} className="h-2" />
+  if (hasCompletedOnboarding === null) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg">Chargement...</p>
         </div>
-      </Card>
+      </div>
+    )
+  }
 
-      {/* Profile Sections */}
-      <div className="grid gap-6">
-        {/* Professional Info */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Ton univers pro</h2>
-          <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Secteur</p>
-                <p className="font-medium">{profile?.sector}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Expérience</p>
-                <p className="font-medium">{profile?.experience}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Présence web</p>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {profile?.webPresence.map((presence) => (
-                  <Badge key={presence} variant="outline">
-                    {presence}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Skills & Priorities */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Tes compétences</h2>
+  return hasCompletedOnboarding ? (
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Votre profil</h1>
+        <p className="text-muted-foreground">
+          Gérez vos informations personnelles et vos préférences
+        </p>
+      </div>
+      
+      <div className="border rounded-lg p-6 space-y-6">
+        <form onSubmit={handleUpdate} className="space-y-6">
           <div className="space-y-4">
-            {Object.entries(profile?.skills || {}).map(([skill, level]) => (
-              <div key={skill} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>{skill}</span>
-                  <span>{level}%</span>
-                </div>
-                <Progress value={level} className="h-2" />
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-medium overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                ) : (
+                  fullName?.charAt(0) || email?.charAt(0) || 'U'
+                )}
               </div>
-            ))}
+              <div>
+                <h2 className="text-xl font-semibold">{fullName || 'Utilisateur'}</h2>
+                <p className="text-muted-foreground">{email}</p>
+              </div>
+            </div>
+            
+            <div className="grid gap-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Pour changer votre email, contactez le support
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Nom complet</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={isUpdating}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="avatarUrl">URL de l'avatar</Label>
+                <Input
+                  id="avatarUrl"
+                  type="url"
+                  placeholder="https://exemple.com/avatar.jpg"
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  disabled={isUpdating}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Entrez l'URL d'une image pour votre avatar
+                </p>
+              </div>
+            </div>
           </div>
-        </Card>
-
-        {/* Style Preferences */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Ton style</h2>
-          <div className="grid gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Préférences visuelles</p>
-              <p className="font-medium">{profile?.visualStyle}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Style de communication</p>
-              <p className="font-medium">{profile?.communicationStyle}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Avec les deadlines</p>
-              <p className="font-medium">{profile?.deadlineStyle}</p>
-            </div>
+          
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              disabled={isUpdating}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={isUpdating}
+            >
+              {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
+            </Button>
           </div>
-        </Card>
-
-        {/* Fun Fact */}
-        {profile?.funFact && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Fun fact</h2>
-            <p className="text-muted-foreground">{profile.funFact}</p>
-          </Card>
-        )}
+        </form>
+      </div>
+      
+      <div className="border rounded-lg p-6 mt-8">
+        <h2 className="text-xl font-semibold mb-4">Sécurité du compte</h2>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-medium">Changer de mot de passe</h3>
+              <p className="text-sm text-muted-foreground">
+                Mettez à jour votre mot de passe pour sécuriser votre compte
+              </p>
+            </div>
+            <Link href="/reset-password">
+              <Button variant="outline">Changer</Button>
+            </Link>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-medium">Supprimer le compte</h3>
+              <p className="text-sm text-muted-foreground">
+                Supprimez définitivement votre compte et toutes vos données
+              </p>
+            </div>
+            <Button variant="outline" className="text-destructive hover:text-destructive">
+              Supprimer
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
-  );
-}
+  ) : (
+    <OnboardingFlow />
+  )
+} 
