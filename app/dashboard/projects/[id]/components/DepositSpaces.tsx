@@ -119,13 +119,13 @@ export default function DepositSpaces({ projectId }: DepositSpacesProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-800">En attente</Badge>
+        return <Badge className="bg-yellow-50 text-yellow-800 border-none">En attente</Badge>
       case 'completed':
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Complété</Badge>
+        return <Badge className="bg-green-50 text-green-700 border-none">Complété</Badge>
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700">Rejeté</Badge>
+        return <Badge className="bg-red-50 text-red-700 border-none">Rejeté</Badge>
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge className="border-none">{status}</Badge>
     }
   }
 
@@ -148,7 +148,7 @@ export default function DepositSpaces({ projectId }: DepositSpacesProps) {
           <p className="mt-2 text-sm text-muted-foreground">Chargement des espaces de dépôt...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {requests.map(request => (
             <Card key={request.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between space-y-0">
@@ -174,9 +174,13 @@ export default function DepositSpaces({ projectId }: DepositSpacesProps) {
                 
                 {request.status === 'pending' ? (
                   <div className="space-y-4">
-                    <FileUpload 
-                      onChange={(files) => handleFileChange(request.id, files)} 
-                    />
+                    <div className="file-upload-wrapper">
+                      <FileUpload 
+                        onChange={(files) => handleFileChange(request.id, files)}
+                        titleText="Télécharger un fichier"
+                        subtitleText="Glissez ou déposez vos fichiers ici ou cliquez pour télécharger"
+                      />
+                    </div>
                     
                     <Button
                       onClick={() => handleSubmitFile(request.id)}
