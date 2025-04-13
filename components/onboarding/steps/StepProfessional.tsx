@@ -10,12 +10,35 @@ import {
 } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 
+interface Sector {
+  id: string
+  name: string
+  icon: string
+}
+
+interface Experience {
+  id: string
+  label: string
+  icon: string
+}
+
+interface WebPresenceItem {
+  id: string
+  label: string
+}
+
 interface StepProfessionalProps {
   data: any
   onComplete: (data: any) => void
 }
 
-const sectors = [
+interface FormData {
+  sector: string
+  experience: string
+  webPresence: string[]
+}
+
+const sectors: Sector[] = [
   { id: 'tech', name: 'Tech & Digital', icon: '💻' },
   { id: 'retail', name: 'Commerce & Distribution', icon: '🏪' },
   { id: 'health', name: 'Santé & Bien-être', icon: '⚕️' },
@@ -26,14 +49,14 @@ const sectors = [
   { id: 'other', name: 'Autre secteur', icon: '🌟' }
 ]
 
-const experiences = [
+const experiences: Experience[] = [
   { id: '0-2', label: 'Débutant (0-2 ans)', icon: '🌱' },
   { id: '2-5', label: 'Confirmé (2-5 ans)', icon: '🌿' },
   { id: '5-10', label: 'Expert (5-10 ans)', icon: '🌳' },
   { id: '10+', label: 'Vétéran (10+ ans)', icon: '🎓' }
 ]
 
-const webPresence = [
+const webPresence: WebPresenceItem[] = [
   { id: 'website', label: 'Site web' },
   { id: 'social', label: 'Réseaux sociaux' },
   { id: 'marketplace', label: 'Places de marché' },
@@ -42,7 +65,7 @@ const webPresence = [
 ]
 
 export default function StepProfessional({ data, onComplete }: StepProfessionalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     sector: data.sector || '',
     experience: data.experience || '',
     webPresence: data.webPresence || []
@@ -59,7 +82,7 @@ export default function StepProfessional({ data, onComplete }: StepProfessionalP
   const handleWebPresenceToggle = (id: string) => {
     const current = formData.webPresence
     const updated = current.includes(id)
-      ? current.filter(item => item !== id)
+      ? current.filter((item: string) => item !== id)
       : [...current, id]
     setFormData({ ...formData, webPresence: updated })
   }
