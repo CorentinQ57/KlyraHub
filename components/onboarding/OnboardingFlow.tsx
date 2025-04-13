@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
+import confetti from 'canvas-confetti'
 
 // Étapes de l'onboarding
 import StepIntroduction from './steps/StepIntroduction'
@@ -31,6 +32,14 @@ interface OnboardingData {
   avatarUrl: string
   socialLinks: Record<string, string>
   funFact: string
+}
+
+const badgeDescriptions = {
+  "Nouveau Membre": "Bienvenue dans l'aventure Klyra ! 🎉",
+  "Aventurier du Business": "Tu as partagé ton univers professionnel 🚀",
+  "Visionnaire Cool": "Tu as défini tes objectifs stratégiques 🎯",
+  "Style Guru": "Tu as exprimé ton style unique 🎨",
+  "Membre de la famille Klyra": "Tu fais maintenant partie de la famille ! 💙"
 }
 
 export default function OnboardingFlow() {
@@ -59,27 +68,32 @@ export default function OnboardingFlow() {
     {
       component: StepIntroduction,
       title: "Faisons connaissance ! 👋",
-      badge: "Nouveau Membre"
+      badge: "Nouveau Membre",
+      description: "Première étape vers une identité visuelle unique"
     },
     {
       component: StepProfessional,
       title: "Ton univers pro 🚀",
-      badge: "Aventurier du Business"
+      badge: "Aventurier du Business",
+      description: "Comprendre ton secteur et tes besoins"
     },
     {
       component: StepAmbitions,
       title: "Tes ambitions 🎯",
-      badge: "Visionnaire Cool"
+      badge: "Visionnaire Cool",
+      description: "Définir tes objectifs stratégiques"
     },
     {
       component: StepStyle,
       title: "Ton style 🎨",
-      badge: "Style Guru"
+      badge: "Style Guru",
+      description: "Exprimer ta personnalité visuelle"
     },
     {
       component: StepFinal,
       title: "On y est presque ! 🎉",
-      badge: "Membre de la famille Klyra"
+      badge: "Membre de la famille Klyra",
+      description: "Finaliser ton profil unique"
     }
   ]
 
@@ -90,6 +104,7 @@ export default function OnboardingFlow() {
         onboarding_data: { ...data, ...stepData },
         onboarding_step: currentStep,
         badges,
+        onboarding_completed: currentStep === steps.length - 1,
         updated_at: new Date().toISOString()
       }
       
@@ -116,6 +131,17 @@ export default function OnboardingFlow() {
     const newBadge = steps[currentStep].badge
     if (!badges.includes(newBadge)) {
       setBadges([...badges, newBadge])
+      // Lancer les confettis pour le nouveau badge
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      })
+      // Afficher un toast pour le badge
+      toast({
+        title: `🏆 Nouveau badge débloqué !`,
+        description: badgeDescriptions[newBadge as keyof typeof badgeDescriptions],
+      })
     }
 
     await saveProgress(stepData)
@@ -130,10 +156,30 @@ export default function OnboardingFlow() {
   return (
     <div className="max-w-2xl mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
           {steps[currentStep].title}
         </h1>
-        <Progress value={(currentStep + 1) * (100 / steps.length)} className="h-2" />
+        <p className="text-muted-foreground mb-4">
+          {steps[currentStep].description}
+        </p>
+        <div className="relative">
+          <Progress 
+            value={(currentStep + 1) * (100 / steps.length)} 
+            className="h-2" 
+          />
+          <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-xs text-muted-foreground">
+            {steps.map((_, index) => (
+              <div 
+                key={index}
+                className={`flex items-center justify-center w-6 h-6 rounded-full ${
+                  index <= currentStep ? 'bg-primary text-white' : 'bg-muted'
+                }`}
+              >
+                {index + 1}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -144,7 +190,7 @@ export default function OnboardingFlow() {
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="p-6">
+          <Card className="p-6 border-2 hover:border-primary/50 transition-all">
             <CurrentStepComponent
               data={data}
               onComplete={handleStepComplete}
@@ -155,19 +201,30 @@ export default function OnboardingFlow() {
       </AnimatePresence>
 
       {badges.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-4">Tes badges 🏆</h3>
-          <div className="flex gap-4 flex-wrap">
+        <motion.div 
+          className="mt-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            Tes badges 
+            <span className="text-2xl">🏆</span>
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {badges.map((badge) => (
-              <div
+              <motion.div
                 key={badge}
-                className="px-4 py-2 bg-primary/10 rounded-full text-primary font-medium"
+                className="p-4 bg-primary/5 rounded-lg border border-primary/10 hover:border-primary/30 transition-all"
+                whileHover={{ scale: 1.02 }}
               >
-                {badge}
-              </div>
+                <div className="font-medium text-primary mb-1">{badge}</div>
+                <p className="text-sm text-muted-foreground">
+                  {badgeDescriptions[badge as keyof typeof badgeDescriptions]}
+                </p>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   )
