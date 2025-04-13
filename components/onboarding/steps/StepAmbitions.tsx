@@ -21,7 +21,7 @@ const businessPriorities = [
   { id: 'brand', content: 'Développer ma marque 🎯' },
   { id: 'clients', content: 'Attirer plus de clients 🤝' },
   { id: 'digital', content: 'Accélérer ma transformation digitale 🚀' },
-  { id: 'experience', content: 'Améliorer l'expérience client ⭐' },
+  { id: 'experience', content: 'Améliorer l\'expérience client ⭐' },
   { id: 'innovation', content: 'Innover dans mon secteur 💡' }
 ]
 
@@ -79,7 +79,7 @@ export default function StepAmbitions({ data, onComplete }: StepAmbitionsProps) 
                   ref={provided.innerRef}
                   className="space-y-3"
                 >
-                  {formData.priorities.map((priorityId, index) => {
+                  {formData.priorities.map((priorityId: string, index: number) => {
                     const priority = businessPriorities.find(p => p.id === priorityId)
                     if (!priority) return null
                     
