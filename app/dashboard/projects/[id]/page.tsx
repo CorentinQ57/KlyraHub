@@ -8,8 +8,9 @@ import { useAuth } from '@/lib/auth'
 import { fetchProjectById, fetchComments, addComment, fetchDeliverables, supabase } from '@/lib/supabase'
 import { Project, Comment, Deliverable } from '@/lib/supabase'
 import { motion } from 'framer-motion'
-import DepositSpaces, { DepositSpacesSkeleton } from './components/DepositSpaces'
-import { Skeleton } from '@/components/ui/skeleton'
+import DepositSpaces from './components/DepositSpaces'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { ArrowLeft, MessageSquare, FileText, ChevronRight, Clock, Settings, Download } from 'lucide-react'
 
 // Définition des types étendus
 type ProjectWithRelations = Project & {
@@ -23,18 +24,18 @@ const CommentItem = ({ comment, userName }: { comment: Comment & { userName?: st
   
   return (
     <motion.div 
-      className="border rounded-lg p-4 mb-4 bg-background"
+      className="border border-[#E2E8F0] rounded-lg p-4 mb-4 bg-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
       <div className="flex justify-between items-center mb-2">
-        <div className="font-medium">{userName}</div>
-        <div className="text-sm text-muted-foreground">
+        <div className="font-medium text-[14px]">{userName}</div>
+        <div className="text-[12px] text-[#64748B]">
           {date.toLocaleDateString()} à {date.toLocaleTimeString().slice(0, 5)}
         </div>
       </div>
-      <p className="text-gray-600">{comment.content}</p>
+      <p className="text-[14px] text-[#1A2333]">{comment.content}</p>
     </motion.div>
   )
 }
@@ -43,14 +44,14 @@ const CommentItem = ({ comment, userName }: { comment: Comment & { userName?: st
 const DeliverableItem = ({ deliverable }: { deliverable: Deliverable }) => {
   return (
     <motion.div 
-      className="flex items-center justify-between border rounded-lg p-4 mb-2 bg-background"
+      className="flex items-center justify-between border border-[#E2E8F0] rounded-lg p-4 mb-2 bg-white"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
     >
       <div>
-        <div className="font-medium">{deliverable.name}</div>
-        <div className="text-sm text-muted-foreground">
+        <div className="font-medium text-[14px]">{deliverable.name}</div>
+        <div className="text-[12px] text-[#64748B]">
           Ajouté le {new Date(deliverable.created_at).toLocaleDateString()}
         </div>
       </div>
@@ -58,92 +59,12 @@ const DeliverableItem = ({ deliverable }: { deliverable: Deliverable }) => {
         href={deliverable.url} 
         target="_blank" 
         rel="noopener noreferrer" 
-        className="bg-klyra text-white px-4 py-2 rounded-md text-sm hover:bg-klyra/90 transition-colors"
+        className="flex items-center text-[#467FF7] hover:text-[#3A6FE0] transition-colors"
       >
-        Télécharger
+        <Download className="mr-2 h-4 w-4" />
+        <span className="text-sm">Télécharger</span>
       </a>
     </motion.div>
-  )
-}
-
-// Skeleton components
-const ProjectDetailsSkeleton = () => {
-  return (
-    <div className="space-y-8">
-      <div className="h-4 w-24">
-        <Skeleton className="h-full w-full" />
-      </div>
-      
-      <div className="space-y-2">
-        <Skeleton className="h-10 w-3/4" />
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-5 w-24 rounded-full" />
-        </div>
-      </div>
-      
-      <div className="space-y-4">
-        <Skeleton className="h-7 w-48" />
-        <div className="relative">
-          <div className="absolute left-5 top-0 h-full w-0.5 bg-muted"></div>
-          <div className="space-y-8 relative">
-            {Array(5).fill(0).map((_, i) => (
-              <div key={i} className="flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted z-10">
-                  <Skeleton className="h-6 w-6 rounded-full" />
-                </div>
-                <div className="space-y-1 w-full">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      
-      <div className="space-y-4">
-        <Skeleton className="h-7 w-32" />
-        <div className="space-y-2">
-          {Array(3).fill(0).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-lg" />
-          ))}
-        </div>
-      </div>
-      
-      {/* Deposit Spaces Skeleton */}
-      <DepositSpacesSkeleton />
-      
-      <div className="space-y-4">
-        <Skeleton className="h-7 w-32" />
-        <div className="space-y-4">
-          {Array(2).fill(0).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-lg" />
-          ))}
-        </div>
-        <Skeleton className="h-24 w-full rounded-lg" />
-        <Skeleton className="h-10 w-40" />
-      </div>
-    </div>
-  )
-}
-
-const ProjectSidebarSkeleton = () => {
-  return (
-    <div className="rounded-lg border bg-background p-6 shadow-sm">
-      <div className="space-y-4">
-        <Skeleton className="h-7 w-40" />
-        
-        <div className="space-y-4">
-          {Array(5).fill(0).map((_, i) => (
-            <div key={i} className="flex justify-between items-center">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-32" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -290,30 +211,34 @@ export default function ProjectPage({
       setIsLoading(false)
     }
   }
-  
+
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !project || !newComment.trim()) return
+    
+    if (!user || !newComment.trim() || !project) {
+      return
+    }
     
     try {
       setIsCommenting(true)
-      const projectId = project.id
-      const comment = await addComment(projectId, user.id, newComment)
       
-      if (comment) {
-        // Get user name
-        const userName = user.user_metadata?.full_name || user.email || 'Vous'
-        
-        // Add optimistically
+      // Add comment - vérifions si la fonction addComment attend des paramètres séparés ou un objet
+      const commentResult = await addComment(project.id, user.id, newComment)
+      
+      if (commentResult) {
+        // Update comments list
         setComments([
           ...comments,
           {
-            ...comment,
-            userName
+            ...commentResult,
+            userName: user.user_metadata?.full_name || user.email || 'Vous'
           }
         ])
-        setNewComment('')
       }
+      
+      // Clear input
+      setNewComment('')
+      
     } catch (error) {
       console.error('Error adding comment:', error)
     } finally {
@@ -321,249 +246,245 @@ export default function ProjectPage({
     }
   }
 
-  if (authLoading || isLoading) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <main className="flex-1 container py-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
-            {/* Main content skeleton */}
-            <div className="lg:w-2/3">
-              <ProjectDetailsSkeleton />
-            </div>
-            
-            {/* Sidebar skeleton */}
-            <div className="lg:w-1/3 space-y-6">
-              <ProjectSidebarSkeleton />
-            </div>
+      <PageContainer>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
+            <p className="mt-4 text-[14px]">Chargement du projet...</p>
           </div>
-        </main>
-      </div>
+        </div>
+      </PageContainer>
     )
   }
 
   if (!project) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Projet non trouvé</h1>
-          <p className="mt-2 text-muted-foreground">Le projet demandé n'existe pas ou vous n'avez pas les droits pour y accéder.</p>
-          <Button className="mt-4" onClick={() => router.push('/dashboard')}>
-            Retour au dashboard
-          </Button>
+      <PageContainer>
+        <div className="text-center py-10">
+          <h2 className="text-[18px] font-semibold mb-2">Projet non trouvé</h2>
+          <p className="text-[14px] text-[#64748B] mb-6">
+            Ce projet n'existe pas ou vous n'avez pas les autorisations nécessaires.
+          </p>
+          <Link href="/dashboard">
+            <Button>
+              Retour au tableau de bord
+            </Button>
+          </Link>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex-1 container py-10">
-        <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
-          {/* Main content */}
-          <div className="lg:w-2/3">
-            <div className="space-y-8">
-              <Link 
-                href="/dashboard" 
-                className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-              >
-                ← Retour au dashboard
-              </Link>
-              
-              <div className="flex items-center justify-between">
+    <PageContainer>
+      <PageHeader
+        title={project.title}
+        description={`Projet #${project.id} - ${statusLabels[project.status]?.label || project.status}`}
+      >
+        <div className="flex items-center space-x-2">
+          <Link href="/dashboard">
+            <Button variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Retour
+            </Button>
+          </Link>
+          {isAdmin && (
+            <Link href={`/dashboard/admin/projects/${project.id}/edit`}>
+              <Button>
+                <Settings className="mr-2 h-4 w-4" /> Gérer le projet
+              </Button>
+            </Link>
+          )}
+        </div>
+      </PageHeader>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Colonne principale - Informations et commentaires */}
+        <div className="lg:col-span-2 space-y-6">
+          <PageSection title="Détails du projet">
+            <ContentCard>
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight">{project.title}</h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm text-muted-foreground">Projet #{project.id}</span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusLabels[project.status].color}`}
-                    >
-                      {statusLabels[project.status].label}
-                    </span>
+                  <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Service</h3>
+                  <p className="text-[16px]">{project.services?.title || 'Non spécifié'}</p>
+                </div>
+                <div>
+                  <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Client</h3>
+                  <p className="text-[16px]">{project.profiles?.full_name || project.profiles?.email || 'Non assigné'}</p>
+                </div>
+                <div>
+                  <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Statut</h3>
+                  <div className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${statusLabels[project.status]?.color}`}>
+                    {statusLabels[project.status]?.label || project.status}
                   </div>
                 </div>
-                
-                {isAdmin && (
-                  <Link href={`/dashboard/admin/projects/${project.id}/edit`}>
-                    <Button>Modifier le projet</Button>
-                  </Link>
-                )}
-              </div>
-              
-              {/* Project timeline */}
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold">Progression du projet</h2>
-                <div className="relative">
-                  <div className="absolute left-5 top-0 h-full w-0.5 bg-muted"></div>
-                  <div className="space-y-8 relative">
-                    {/* Status step: Pending */}
-                    <div className={`flex items-start gap-4 ${project.status === 'pending' ? 'opacity-100' : project.status === 'validated' || project.status === 'in_progress' || project.status === 'delivered' || project.status === 'completed' ? 'opacity-70' : 'opacity-30'}`}>
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${project.status === 'pending' || project.status === 'validated' || project.status === 'in_progress' || project.status === 'delivered' || project.status === 'completed' ? 'bg-klyra text-white' : 'bg-muted text-muted-foreground'} z-10`}>
-                        1
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="font-medium">En attente de validation</h3>
-                        <p className="text-sm text-muted-foreground">Le projet a été soumis et est en attente de validation par notre équipe.</p>
-                      </div>
-                    </div>
-                    
-                    {/* Status step: Validated */}
-                    <div className={`flex items-start gap-4 ${project.status === 'validated' ? 'opacity-100' : project.status === 'in_progress' || project.status === 'delivered' || project.status === 'completed' ? 'opacity-70' : 'opacity-30'}`}>
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${project.status === 'validated' || project.status === 'in_progress' || project.status === 'delivered' || project.status === 'completed' ? 'bg-klyra text-white' : 'bg-muted text-muted-foreground'} z-10`}>
-                        2
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="font-medium">Projet validé</h3>
-                        <p className="text-sm text-muted-foreground">Votre projet a été validé et est maintenant dans notre pipeline de production.</p>
-                      </div>
-                    </div>
-                    
-                    {/* Status step: In progress */}
-                    <div className={`flex items-start gap-4 ${project.status === 'in_progress' ? 'opacity-100' : project.status === 'delivered' || project.status === 'completed' ? 'opacity-70' : 'opacity-30'}`}>
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${project.status === 'in_progress' || project.status === 'delivered' || project.status === 'completed' ? 'bg-klyra text-white' : 'bg-muted text-muted-foreground'} z-10`}>
-                        3
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="font-medium">En cours de réalisation</h3>
-                        <p className="text-sm text-muted-foreground">Notre équipe travaille actuellement sur votre projet.</p>
-                      </div>
-                    </div>
-                    
-                    {/* Status step: Delivered */}
-                    <div className={`flex items-start gap-4 ${project.status === 'delivered' ? 'opacity-100' : project.status === 'completed' ? 'opacity-70' : 'opacity-30'}`}>
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${project.status === 'delivered' || project.status === 'completed' ? 'bg-klyra text-white' : 'bg-muted text-muted-foreground'} z-10`}>
-                        4
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="font-medium">Livrables disponibles</h3>
-                        <p className="text-sm text-muted-foreground">Les livrables de votre projet sont disponibles. Veuillez vérifier et valider.</p>
-                      </div>
-                    </div>
-                    
-                    {/* Status step: Completed */}
-                    <div className={`flex items-start gap-4 ${project.status === 'completed' ? 'opacity-100' : 'opacity-30'}`}>
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${project.status === 'completed' ? 'bg-klyra text-white' : 'bg-muted text-muted-foreground'} z-10`}>
-                        5
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="font-medium">Projet terminé</h3>
-                        <p className="text-sm text-muted-foreground">Le projet est terminé. Merci pour votre confiance !</p>
-                      </div>
-                    </div>
-                  </div>
+                <div>
+                  <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Date de création</h3>
+                  <p className="text-[16px] flex items-center">
+                    <Clock className="mr-1.5 h-4 w-4 text-[#64748B]" />
+                    {new Date(project.created_at).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
               
-              {/* Deliverables */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Livrables</h2>
-                {deliverables.length > 0 ? (
-                  <div className="space-y-2">
-                    {deliverables.map((deliverable) => (
-                      <DeliverableItem key={deliverable.id} deliverable={deliverable} />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">Aucun livrable n'est disponible pour le moment.</p>
-                )}
+              <div className="mt-6 pt-4 border-t border-[#E2E8F0]">
+                <h3 className="text-[14px] font-medium text-[#64748B] mb-2">Description</h3>
+                <p className="text-[14px]">{project.description || 'Aucune description disponible pour ce projet.'}</p>
               </div>
-              
-              {/* Upload Requests */}
+            </ContentCard>
+          </PageSection>
+
+          <PageSection 
+            title="Espaces de dépôt" 
+            description="Déposez vos fichiers dans les espaces dédiés"
+          >
+            <ContentCard>
               <DepositSpaces projectId={project.id} />
+            </ContentCard>
+          </PageSection>
+          
+          <PageSection 
+            title="Commentaires" 
+            description="Échanger avec l'équipe du projet"
+          >
+            <ContentCard>
+              <div className="space-y-2">
+                {comments.length > 0 ? (
+                  comments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(comment => (
+                    <CommentItem 
+                      key={comment.id} 
+                      comment={comment} 
+                      userName={comment.userName || 'Utilisateur'}
+                    />
+                  ))
+                ) : (
+                  <p className="text-[14px] text-[#64748B] py-4">Aucun commentaire pour le moment.</p>
+                )}
+              </div>
               
-              {/* Comments */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Commentaires</h2>
-                
-                {/* Comment list */}
-                <div className="space-y-4">
-                  {comments.length > 0 ? (
-                    comments.map((comment) => (
-                      <CommentItem 
-                        key={comment.id} 
-                        comment={comment} 
-                        userName={comment.userName || 'Utilisateur'} 
-                      />
-                    ))
-                  ) : (
-                    <p className="text-muted-foreground">Aucun commentaire pour le moment.</p>
-                  )}
-                </div>
-                
-                {/* Comment form */}
-                <form onSubmit={handleSubmitComment} className="mt-6">
-                  <div className="space-y-4">
+              <div className="mt-4 pt-4 border-t border-[#E2E8F0]">
+                <form onSubmit={handleSubmitComment}>
+                  <div className="flex flex-col space-y-2">
+                    <label htmlFor="comment" className="text-[14px] font-medium">
+                      Ajouter un commentaire
+                    </label>
                     <textarea
+                      id="comment"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Ajouter un commentaire..."
-                      className="w-full min-h-[100px] p-3 border rounded-lg"
-                      required
+                      className="min-h-[100px] p-3 border border-[#E2E8F0] rounded-md w-full text-[14px]"
+                      placeholder="Votre commentaire..."
                     />
-                    <Button 
-                      type="submit" 
-                      disabled={isCommenting || !newComment.trim()}
-                      className="w-full sm:w-auto"
-                    >
-                      {isCommenting ? 'Envoi en cours...' : 'Ajouter un commentaire'}
-                    </Button>
+                    <div className="flex justify-end">
+                      <Button 
+                        type="submit"
+                        disabled={!newComment.trim() || isCommenting}
+                      >
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        {isCommenting ? 'Envoi...' : 'Envoyer'}
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </div>
-            </div>
-          </div>
+            </ContentCard>
+          </PageSection>
+        </div>
+        
+        {/* Colonne latérale - Livrables et statut */}
+        <div className="space-y-6">
+          <PageSection title="Livrables">
+            <ContentCard>
+              {deliverables.length > 0 ? (
+                <div className="space-y-3">
+                  {deliverables.map(deliverable => (
+                    <DeliverableItem key={deliverable.id} deliverable={deliverable} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <FileText className="mx-auto h-12 w-12 text-[#E2E8F0] mb-2" />
+                  <h3 className="text-[16px] font-medium mb-1">Aucun livrable</h3>
+                  <p className="text-[14px] text-[#64748B]">
+                    Les livrables seront ajoutés ici lorsqu'ils seront disponibles.
+                  </p>
+                </div>
+              )}
+            </ContentCard>
+          </PageSection>
           
-          {/* Sidebar */}
-          <div className="lg:w-1/3 space-y-6">
-            <div className="rounded-lg border bg-background p-6 shadow-sm sticky top-24">
+          <PageSection title="Avancement">
+            <ContentCard>
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <h2 className="text-xl font-semibold">Détails du projet</h2>
+                <div className="relative pt-1">
+                  <div className="overflow-hidden h-2 text-xs flex rounded bg-[#E2E8F0]">
+                    <div
+                      style={{ width: getProgressPercentage(project.status) }}
+                      className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#467FF7]"
+                    ></div>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Service</span>
-                    <span className="font-medium">{project.title.split(' - ')[0]}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Statut</span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusLabels[project.status].color}`}
-                    >
-                      {statusLabels[project.status].label}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Date de création</span>
-                    <span>{new Date(project.created_at).toLocaleDateString()}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dernière mise à jour</span>
-                    <span>{new Date(project.updated_at).toLocaleDateString()}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Prix</span>
-                    <span className="font-medium">{project.price}€</span>
-                  </div>
-                  
-                  {isAdmin && project.profiles && (
-                    <div className="border-t pt-2 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Client</span>
-                        <span className="font-medium">{project.profiles.full_name || project.profiles.email}</span>
-                      </div>
-                    </div>
-                  )}
+                  {renderProjectSteps(project.status)}
                 </div>
               </div>
-            </div>
-          </div>
+            </ContentCard>
+          </PageSection>
         </div>
-      </main>
-    </div>
+      </div>
+    </PageContainer>
   )
+}
+
+function getProgressPercentage(status: string): string {
+  const progressMap: Record<string, string> = {
+    pending: '10%',
+    validated: '30%',
+    in_progress: '60%',
+    delivered: '90%',
+    completed: '100%',
+  }
+  
+  return progressMap[status] || '0%'
+}
+
+function renderProjectSteps(currentStatus: string) {
+  const steps = [
+    { key: 'pending', label: 'En attente' },
+    { key: 'validated', label: 'Validé' },
+    { key: 'in_progress', label: 'En cours' },
+    { key: 'delivered', label: 'Livré' },
+    { key: 'completed', label: 'Terminé' },
+  ]
+  
+  const statusOrder = steps.map(s => s.key)
+  const currentIndex = statusOrder.indexOf(currentStatus)
+  
+  return steps.map((step, index) => {
+    const isCompleted = index <= currentIndex
+    const isCurrent = step.key === currentStatus
+    
+    return (
+      <div 
+        key={step.key} 
+        className={`flex items-center p-2 rounded-md ${isCurrent ? 'bg-[#EBF2FF]' : ''}`}
+      >
+        <div className={`h-5 w-5 flex items-center justify-center rounded-full mr-3 
+          ${isCompleted ? 'bg-[#467FF7] text-white' : 'bg-[#E2E8F0] text-[#64748B]'}`}
+        >
+          {isCompleted ? '✓' : index + 1}
+        </div>
+        <div className="flex-1">
+          <p className={`text-[14px] font-medium ${isCurrent ? 'text-[#467FF7]' : ''}`}>
+            {step.label}
+          </p>
+        </div>
+        {isCurrent && (
+          <ChevronRight className="h-4 w-4 text-[#467FF7]" />
+        )}
+      </div>
+    )
+  })
 } 
