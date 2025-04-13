@@ -316,6 +316,65 @@
   .main-with-sidebar-collapsed {
     @apply pl-0 lg:pl-[var(--sidebar-collapsed-width)] transition-all duration-300;
   }
+
+  /* Layout de documentation à 3 colonnes */
+  .layout-docs {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    min-height: calc(100vh - 64px);
+  }
+
+  .layout-docs-with-sidebar {
+    display: grid;
+    grid-template-columns: 72px 280px 1fr;
+    min-height: calc(100vh - 64px);
+  }
+
+  @media (max-width: 1024px) {
+    .layout-docs-with-sidebar {
+      grid-template-columns: auto 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .layout-docs, 
+    .layout-docs-with-sidebar {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Styles pour les barres latérales de documentation */
+  .sidebar-main {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 72px;
+    border-right: 1px solid #E2E8F0;
+    z-index: 40;
+  }
+
+  .sidebar-docs {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    border-right: 1px solid #E2E8F0;
+    overflow-y: auto;
+    z-index: 30;
+  }
+
+  .sidebar-docs-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid #E2E8F0;
+  }
+
+  /* Documentation content */
+  .docs-content {
+    width: 100%;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 }
 
 /* Classes utilitaires directes */
@@ -380,4 +439,13 @@
 /* Standard transitions */
 .transition-standard {
   transition: all 0.2s ease-in-out;
+}
+
+/* Category label styling */
+.category-label {
+  @apply inline-flex items-center gap-1.5 text-sm font-medium py-1 px-2 rounded-md bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0];
+}
+
+.category-label-primary {
+  @apply bg-[#EBF2FF] text-[#467FF7] border-[#D1E0FD];
 } 

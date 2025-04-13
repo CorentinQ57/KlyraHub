@@ -19,6 +19,8 @@ import VideoWalkthrough from '@/components/VideoWalkthrough'
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { Badge } from "@/components/ui/badge"
+import { FolderOpenIcon, CalendarIcon, ChevronRightIcon } from "lucide-react"
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -77,110 +79,71 @@ const categoryImages: Record<string, string> = {
 
 // Dynamic import with preload functionality 
 const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
-  // Status labels
-  const statusLabels = {
-    pending: {
-      label: "En attente",
-      color: "bg-yellow-100 text-yellow-800"
-    },
-    validated: {
-      label: "Validé",
-      color: "bg-blue-100 text-blue-800"
-    },
-    in_progress: {
-      label: "En cours",
-      color: "bg-purple-100 text-purple-800"
-    },
-    delivered: {
-      label: "Livré",
-      color: "bg-green-100 text-green-800"
-    },
-    completed: {
-      label: "Terminé",
-      color: "bg-gray-100 text-gray-800"
-    },
-  }
-
-  // Utiliser l'image du service ou de la catégorie
-  const serviceImage = project.services?.image_url;
-  const categoryImage = project.category_image_url || project.services?.category?.image_url;
-  const displayImage = serviceImage || categoryImage || categoryImages.default;
-
-  // Utiliser l'icône de la catégorie
-  const categoryId = project.services?.category_id || 'default';
-  const categoryIcon = categoryIcons[categoryId] || categoryIcons.default;
-
-  // Récupération plus robuste du nom de la catégorie
-  const getCategoryName = () => {
-    // Cas 1: Accès via la structure correcte
-    if (project.services?.category?.name) {
-      return project.services.category.name;
-    }
-    
-    // Cas 2: Pour déboguer, afficher le category_id au moins
-    if (project.services?.category_id) {
-      const categoryKey = project.services.category_id.toLowerCase();
-      return categoryKey === "1b041ce2-1f9b-466f-8aa4-b94fec7d94ab" ? "Développement Web" :
-             categoryKey === "ba8f9878-d327-4b2d-8be5-ae95df23e1a0" ? "Branding" :
-             categoryKey === "7227a841-69e8-48bb-85fd-d65d49618245" ? "UI UX Design" :
-             categoryKey === "53b49d36-18c7-467f-89fc-cd78331dc0d7" ? "Social Media" : 
-             "Catégorie";
-    }
-    
-    // Cas par défaut
-    return "Catégorie";
+  // Get the service category details
+  const category = project.services?.category;
+  
+  // Status labels with color mapping
+  const statusColors = {
+    'in-progress': 'text-amber-500 bg-amber-50 border-amber-200',
+    'completed': 'text-green-500 bg-green-50 border-green-200',
+    'pending': 'text-blue-500 bg-blue-50 border-blue-200',
+    'cancelled': 'text-gray-500 bg-gray-50 border-gray-200',
   };
-
+  
   return (
-    <motion.div 
-      className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.05)] flex flex-col transition-all hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)]"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="relative aspect-video w-full overflow-hidden bg-[#F8FAFC]">
-        <Image
-          src={displayImage}
-          alt={project.services?.name || "Image du projet"}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+    <Link href={`/dashboard/projects/${project.id}`}>
+      <Card className="h-full overflow-hidden flex flex-col border-0 hover:shadow-md transition-all">
+        {project.services?.image_url ? (
+          <div className="relative w-full h-40">
+            <Image
+              src={project.services.image_url}
+              alt={project.title}
+              className="rounded-t-lg object-cover"
+              fill
+            />
+            <div className="absolute top-3 right-3">
+              <Badge className={`${statusColors[project.status as keyof typeof statusColors]} border`}>
+                {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
+              </Badge>
+            </div>
+          </div>
+        ) : (
+          <div className="relative flex items-center justify-center bg-gray-100 w-full h-40 rounded-t-lg">
+            <FolderOpenIcon className="h-16 w-16 text-gray-400" />
+            <div className="absolute top-3 right-3">
+              <Badge className={`${statusColors[project.status as keyof typeof statusColors]} border`}>
+                {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
+              </Badge>
+            </div>
+          </div>
+        )}
         
-        <div className="absolute top-3 right-3">
-          <span className={`whitespace-nowrap inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusLabels[project.status].color}`}>
-            {statusLabels[project.status].label}
-          </span>
-        </div>
-      </div>
-
-      <div className="p-6 flex-1 flex flex-col">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#EBF2FF] text-[#467FF7]">
-            {categoryIcon}
-            <span className="ml-1.5">{getCategoryName()}</span>
-          </span>
-        </div>
-
-        <h3 className="text-[16px] font-semibold mb-1 line-clamp-1">{project.title}</h3>
-        <p className="text-[13px] text-[#64748B] mb-4 line-clamp-2">
-          {project.description || "Description du projet"}
-        </p>
-
-        <div className="mt-auto pt-4 border-t border-[#E2E8F0] flex justify-between items-center">
-          <span className="text-[13px] text-[#64748B] flex items-center">
-            <Calendar className="h-3.5 w-3.5 mr-1.5" />
-            {new Date(project.created_at).toLocaleDateString()}
-          </span>
-          <Link href={`/dashboard/projects/${project.id}`}>
-            <Button size="sm" variant="outline" className="text-xs h-8">
-              Voir le projet
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </motion.div>
+        <CardContent className="flex flex-col flex-1 p-4">
+          {/* Category displayed prominently at the top */}
+          {category && (
+            <div className="mb-2">
+              <span className="category-label-primary">
+                {category.image_url && (
+                  <span className="mr-1">{categoryIcons[category.id] || categoryIcons.default}</span>
+                )}
+                {category.name}
+              </span>
+            </div>
+          )}
+          
+          <h3 className="font-semibold text-lg mb-1 line-clamp-1">{project.title}</h3>
+          <p className="text-sm text-gray-500 mb-2 line-clamp-2">{project.description}</p>
+          
+          <div className="mt-auto pt-2 flex justify-between items-center">
+            <div className="flex items-center text-sm text-gray-500">
+              <CalendarIcon className="mr-1 h-4 w-4" />
+              {new Date(project.created_at).toLocaleDateString()}
+            </div>
+            <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   )
 }
 
