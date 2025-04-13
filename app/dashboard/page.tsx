@@ -106,6 +106,27 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
   const categoryId = project.services?.category_id || 'default';
   const categoryIcon = categoryIcons[categoryId] || categoryIcons.default;
 
+  // Récupération plus robuste du nom de la catégorie
+  const getCategoryName = () => {
+    // Cas 1: Accès via la structure correcte
+    if (project.services?.category?.name) {
+      return project.services.category.name;
+    }
+    
+    // Cas 2: Pour déboguer, afficher le category_id au moins
+    if (project.services?.category_id) {
+      const categoryKey = project.services.category_id.toLowerCase();
+      return categoryKey === "1b041ce2-1f9b-466f-8aa4-b94fec7d94ab" ? "Développement Web" :
+             categoryKey === "ba8f9878-d327-4b2d-8be5-ae95df23e1a0" ? "Branding" :
+             categoryKey === "7227a841-69e8-48bb-85fd-d65d49618245" ? "UI UX Design" :
+             categoryKey === "53b49d36-18c7-467f-89fc-cd78331dc0d7" ? "Social Media" : 
+             "Catégorie";
+    }
+    
+    // Cas par défaut
+    return "Catégorie";
+  };
+
   return (
     <motion.div 
       className="card border border-gray-100 hover:shadow-md transition-shadow rounded-lg overflow-hidden flex flex-col"
@@ -131,7 +152,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
               project.services?.category ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
             }`}>
               {categoryIcon}
-              <span className="ml-1">{project.services?.category?.name || "Service"}</span>
+              <span className="ml-1">{getCategoryName()}</span>
             </span>
           </div>
           <span className={`whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}>
@@ -412,6 +433,18 @@ export default function DashboardPage() {
         const fetchedProjects = isAdmin 
           ? await fetchAllProjects()
           : await fetchProjects(user.id);
+        
+        // Débogage: afficher la structure d'un projet
+        if (fetchedProjects.length > 0) {
+          console.log('Structure du premier projet:', JSON.stringify(fetchedProjects[0], null, 2));
+          
+          // Vérifier spécifiquement la structure des services et de la catégorie
+          const firstProject = fetchedProjects[0];
+          console.log('Service du projet:', firstProject.services);
+          console.log('Category_id:', firstProject.services?.category_id);
+          console.log('Category:', firstProject.services?.category);
+        }
+        
         setProjects(fetchedProjects);
         
         // Si c'est la première connexion et qu'il n'y a pas de projets, afficher le tutoriel

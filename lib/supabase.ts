@@ -188,7 +188,10 @@ export async function fetchProjects(userId: string) {
       return []
     }
     
-    return data || []
+    // Normaliser les données des projets
+    const normalizedData = data ? normalizeProjectsData(data) : [];
+    
+    return normalizedData
   } catch (error) {
     console.error('Exception in fetchProjects:', error)
     return []
@@ -209,7 +212,7 @@ export async function fetchAllProjects() {
           price,
           duration,
           image_url,
-          categories (
+          category:categories (
             id,
             name,
             image_url
@@ -228,11 +231,37 @@ export async function fetchAllProjects() {
       return []
     }
     
-    return data || []
+    // Normaliser les données des projets
+    const normalizedData = data ? normalizeProjectsData(data) : [];
+    
+    return normalizedData
   } catch (error) {
     console.error('Exception in fetchAllProjects:', error)
     return []
   }
+}
+
+/**
+ * Fonction utilitaire pour normaliser les données des projets et assurer
+ * la cohérence de l'accès aux catégories
+ */
+function normalizeProjectsData(projects: any[]): any[] {
+  return projects.map(project => {
+    // Si le projet n'a pas de service, retourner tel quel
+    if (!project.services) return project;
+    
+    const services = project.services;
+    
+    // Vérifier si la catégorie existe mais est sous un format différent
+    if (!services.category && services.categories) {
+      services.category = services.categories;
+    }
+    
+    return {
+      ...project,
+      services
+    };
+  });
 }
 
 /**
