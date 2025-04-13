@@ -105,7 +105,7 @@ export function HeaderNav() {
   const navLinks = user || !isDocsRoute ? userNavLinks : docsVisitorLinks
   
   return (
-    <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
+    <header className="sticky top-0 z-[60] border-b bg-white shadow-sm">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
           <Logo />

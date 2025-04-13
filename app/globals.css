@@ -381,3 +381,14 @@
 .transition-standard {
   transition: all 0.2s ease-in-out;
 } 
+
+/* Z-index layers system */
+.z-layer-base { z-index: 0; }
+.z-layer-below { z-index: -10; }
+.z-layer-background { z-index: -5; }
+.z-layer-content { z-index: 10; }
+.z-layer-navigation { z-index: 60; }
+.z-layer-overlay { z-index: 80; }
+.z-layer-modal { z-index: 100; }
+.z-layer-toast { z-index: 150; }
+.z-layer-popover { z-index: 200; } 

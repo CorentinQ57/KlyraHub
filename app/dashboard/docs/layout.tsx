@@ -59,7 +59,7 @@ export default function DocsLayout({
         {/* Navigation latérale gauche (desktop) */}
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-10 w-full max-w-xs transform overflow-auto border-r bg-background",
+            "fixed inset-y-0 left-0 z-[20] w-full max-w-xs transform overflow-auto border-r bg-background",
             "lg:static lg:block lg:w-64 lg:min-w-[16rem] lg:max-w-[16rem] lg:translate-x-0",
             isNavOpen ? "translate-x-0" : "-translate-x-full",
             "transition-transform duration-200 ease-in-out"
@@ -82,7 +82,7 @@ export default function DocsLayout({
         {/* Overlay pour fermer la navigation sur mobile */}
         {isNavOpen && isMobile && (
           <div
-            className="fixed inset-0 z-10 bg-black/30 lg:hidden"
+            className="fixed inset-0 z-[15] bg-black/30 lg:hidden"
             onClick={() => setIsNavOpen(false)}
           />
         )}

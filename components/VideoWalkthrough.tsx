@@ -24,7 +24,7 @@ export default function VideoWalkthrough({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 1 }}
-      className="fixed bottom-6 left-6 z-40"
+      className="fixed bottom-6 left-6 z-50"
     >
       {!isOpen ? (
         <motion.div
@@ -45,7 +45,7 @@ export default function VideoWalkthrough({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ duration: 0.3 }}
-            className={`shadow-xl rounded-lg overflow-hidden ${isExpanded ? 'fixed inset-4 z-50' : 'w-80'}`}
+            className={`shadow-xl rounded-lg overflow-hidden ${isExpanded ? 'fixed inset-4 z-[100]' : 'w-80'}`}
           >
             <Card className="overflow-hidden border-0">
               <div className="bg-gradient-to-r from-primary to-primary/80 text-white py-3 px-4 flex justify-between items-center">

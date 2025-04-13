@@ -187,7 +187,7 @@ export function SidebarNav() {
   return (
     <>
       {/* Mobile Header & Trigger */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-[60] bg-white border-b px-4 py-3 flex items-center justify-between">
         <Logo />
         <Button
           variant="ghost"
@@ -206,7 +206,7 @@ export function SidebarNav() {
       {/* Overlay pour le menu mobile */}
       {isMobileOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/30 z-40"
+          className="lg:hidden fixed inset-0 bg-black/30 z-[55]"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
@@ -214,7 +214,7 @@ export function SidebarNav() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-[60] flex flex-col bg-white border-r transition-all duration-300 ease-in-out",
           isCollapsed ? "w-[70px]" : "w-[240px]",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
