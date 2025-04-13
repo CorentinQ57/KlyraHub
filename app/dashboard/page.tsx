@@ -147,28 +147,30 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-[#F8FAFC]">
-        <Image
-          src={displayImage}
-          alt={project.services?.name || "Image du projet"}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-        
-        <div className="absolute top-3 right-3">
-          <span className={`whitespace-nowrap inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusLabels[project.status].color}`}>
-            {statusLabels[project.status].label}
-          </span>
-        </div>
-        
-        {/* Ajout du badge de catégorie en haut à gauche de l'image */}
-        <div className="absolute top-3 left-3">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/90 text-[#467FF7] shadow-sm">
-            {categoryIcon}
-            <span className="ml-1.5 font-medium">{categoryName}</span>
-          </span>
+      <div className="relative aspect-video w-full overflow-hidden bg-[#F8FAFC] p-2">
+        <div className="relative w-full h-full rounded-lg overflow-hidden">
+          <Image
+            src={displayImage}
+            alt={project.services?.name || "Image du projet"}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          
+          <div className="absolute top-3 right-3">
+            <span className={`whitespace-nowrap inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusLabels[project.status].color}`}>
+              {statusLabels[project.status].label}
+            </span>
+          </div>
+          
+          {/* Ajout du badge de catégorie en haut à gauche de l'image */}
+          <div className="absolute top-3 left-3">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/90 text-[#467FF7] shadow-sm">
+              {categoryIcon}
+              <span className="ml-1.5 font-medium">{categoryName}</span>
+            </span>
+          </div>
         </div>
       </div>
 
