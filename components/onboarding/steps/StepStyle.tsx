@@ -2,202 +2,275 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Slider } from "@/components/ui/slider"
-
-interface Style {
-  id: string
-  name: string
-  description: string
-}
-
-interface CommunicationStyle {
-  id: string
-  label: string
-  description: string
-}
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Palette, MessageSquare, Heart, Sparkles } from 'lucide-react'
 
 interface StepStyleProps {
-  data: any
-  onComplete: (data: any) => void
+  data: {
+    visualStyle?: string
+    communicationTone?: string
+    companyValues?: string[]
+    inspirations?: string[]
+  }
+  setData: (data: any) => void
 }
 
-interface FormData {
-  visualPreferences: string[]
-  communicationStyle: string
-  timeManagement: number
-}
-
-const styles: Style[] = [
+const visualStyles = [
   {
-    id: 'minimal',
-    name: 'Minimaliste & Épuré',
-    description: 'Des designs simples, épurés, avec beaucoup d\'espace blanc'
+    value: 'minimal',
+    label: 'Minimaliste & Épuré',
+    description: 'Design simple et élégant, espaces blancs, typographie soignée',
+    icon: <Palette className="w-4 h-4" />
   },
   {
-    id: 'modern',
-    name: 'Moderne & Dynamique',
-    description: 'Des designs contemporains avec des animations et des interactions'
+    value: 'bold',
+    label: 'Bold & Impactant',
+    description: 'Couleurs vives, contrastes forts, éléments graphiques marqués',
+    icon: <Sparkles className="w-4 h-4" />
   },
   {
-    id: 'classic',
-    name: 'Classique & Élégant',
-    description: 'Des designs traditionnels avec une touche de sophistication'
+    value: 'creative',
+    label: 'Créatif & Innovant',
+    description: 'Designs uniques, animations originales, approche artistique',
+    icon: <Heart className="w-4 h-4" />
   },
   {
-    id: 'bold',
-    name: 'Audacieux & Expressif',
-    description: 'Des designs qui attirent l\'attention avec des couleurs vives'
+    value: 'corporate',
+    label: 'Corporate & Professionnel',
+    description: 'Style business, couleurs sobres, mise en page structurée',
+    icon: <MessageSquare className="w-4 h-4" />
   }
 ]
 
-const communicationStyles: CommunicationStyle[] = [
+const communicationTones = [
   {
-    id: 'direct',
-    label: 'Direct & Concis',
-    description: 'Je préfère une communication claire et directe'
+    value: 'professional',
+    label: 'Professionnel',
+    description: 'Ton formel et expert, vocabulaire technique précis'
   },
   {
-    id: 'detailed',
-    label: 'Détaillé & Complet',
-    description: 'J\'aime avoir tous les détails et le contexte'
+    value: 'friendly',
+    label: 'Amical & Accessible',
+    description: 'Communication chaleureuse et proche du client'
   },
   {
-    id: 'collaborative',
-    label: 'Collaboratif & Ouvert',
-    description: 'Je préfère un dialogue continu et des échanges réguliers'
+    value: 'innovative',
+    label: 'Innovant & Disruptif',
+    description: 'Ton moderne et avant-gardiste, vocabulaire tech'
   },
   {
-    id: 'autonomous',
-    label: 'Autonome & Flexible',
-    description: 'Je préfère une approche plus indépendante'
+    value: 'educational',
+    label: 'Pédagogique',
+    description: 'Explications claires, approche didactique'
   }
 ]
 
-export default function StepStyle({ data, onComplete }: StepStyleProps) {
-  const [formData, setFormData] = useState<FormData>({
-    visualPreferences: data.visualPreferences || [],
-    communicationStyle: data.communicationStyle || '',
-    timeManagement: data.timeManagement || 3
-  })
+const companyValues = [
+  'Innovation',
+  'Excellence',
+  'Authenticité',
+  'Collaboration',
+  'Créativité',
+  'Performance',
+  'Durabilité',
+  'Proximité'
+]
 
-  const handleStyleToggle = (styleId: string) => {
-    const current = formData.visualPreferences
-    const updated = current.includes(styleId)
-      ? current.filter((id: string) => id !== styleId)
-      : [...current, styleId]
-    setFormData({ ...formData, visualPreferences: updated })
+export default function StepStyle({ data, setData }: StepStyleProps) {
+  const [selectedValues, setSelectedValues] = useState<string[]>(data.companyValues || [])
+  const [newInspiration, setNewInspiration] = useState('')
+
+  const handleValueClick = (value: string) => {
+    setSelectedValues(prev => {
+      if (prev.includes(value)) {
+        const newValues = prev.filter(v => v !== value)
+        setData({ ...data, companyValues: newValues })
+        return newValues
+      }
+      if (prev.length < 3) {
+        const newValues = [...prev, value]
+        setData({ ...data, companyValues: newValues })
+        return newValues
+      }
+      return prev
+    })
   }
 
-  const handleCommunicationChange = (value: string) => {
-    setFormData({ ...formData, communicationStyle: value })
+  const handleAddInspiration = () => {
+    if (newInspiration.trim()) {
+      const newInspirations = [...(data.inspirations || []), newInspiration.trim()]
+      setData({ ...data, inspirations: newInspirations })
+      setNewInspiration('')
+    }
   }
 
-  const handleTimeManagementChange = (value: number[]) => {
-    setFormData({ ...formData, timeManagement: value[0] })
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onComplete(formData)
+  const removeInspiration = (index: number) => {
+    const newInspirations = (data.inspirations || []).filter((_, i) => i !== index)
+    setData({ ...data, inspirations: newInspirations })
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div>
-          <Label className="text-lg mb-4 block">Tes préférences visuelles</Label>
-          <div className="space-y-4">
-            {styles.map((style) => (
-              <div
-                key={style.id}
-                className="flex items-start space-x-3 p-4 rounded-lg border hover:border-primary/50"
-              >
-                <Checkbox
-                  id={style.id}
-                  checked={formData.visualPreferences.includes(style.id)}
-                  onCheckedChange={() => handleStyleToggle(style.id)}
-                />
-                <div className="space-y-1">
-                  <label
-                    htmlFor={style.id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {style.name}
-                  </label>
-                  <p className="text-sm text-muted-foreground">
-                    {style.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <Label className="text-lg mb-4 block">Ton style de communication</Label>
-          <RadioGroup
-            value={formData.communicationStyle}
-            onValueChange={handleCommunicationChange}
-            className="space-y-4"
-          >
-            {communicationStyles.map((style) => (
-              <div
-                key={style.id}
-                className="flex items-start space-x-3 p-4 rounded-lg border hover:border-primary/50"
-              >
-                <RadioGroupItem value={style.id} id={style.id} />
-                <div className="space-y-1">
-                  <label
-                    htmlFor={style.id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {style.label}
-                  </label>
-                  <p className="text-sm text-muted-foreground">
-                    {style.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
-
-        <div>
-          <Label className="text-lg mb-4 block">
-            Ton approche de la gestion du temps
-          </Label>
-          <div className="space-y-4">
-            <Slider
-              value={[formData.timeManagement]}
-              min={1}
-              max={5}
-              step={1}
-              onValueChange={handleTimeManagementChange}
-              className="py-2"
-            />
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Flexible</span>
-              <span>Strict</span>
-            </div>
-          </div>
-        </div>
-
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
+    <div className="space-y-8">
+      {/* Style visuel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-4"
+      >
+        <Label className="text-lg font-medium">
+          Quel style visuel correspond le mieux à votre marque ?
+        </Label>
+        <RadioGroup
+          value={data.visualStyle}
+          onValueChange={(value) => setData({ ...data, visualStyle: value })}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
-          Suivant 🎯
-        </Button>
-      </form>
-    </motion.div>
+          {visualStyles.map((style) => (
+            <Label
+              key={style.value}
+              className={`flex flex-col p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                data.visualStyle === style.value
+                  ? 'border-primary bg-primary/5'
+                  : 'border-muted hover:border-primary/50'
+              }`}
+            >
+              <RadioGroupItem value={style.value} id={style.value} className="sr-only" />
+              <div className="flex items-center justify-between mb-2">
+                {style.icon}
+                <span className="font-medium">{style.label}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">{style.description}</p>
+            </Label>
+          ))}
+        </RadioGroup>
+      </motion.div>
+
+      {/* Ton de communication */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="space-y-4"
+      >
+        <Label className="text-lg font-medium">
+          Quel ton de communication préférez-vous adopter ?
+        </Label>
+        <RadioGroup
+          value={data.communicationTone}
+          onValueChange={(value) => setData({ ...data, communicationTone: value })}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
+          {communicationTones.map((tone) => (
+            <Label
+              key={tone.value}
+              className={`flex flex-col p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                data.communicationTone === tone.value
+                  ? 'border-primary bg-primary/5'
+                  : 'border-muted hover:border-primary/50'
+              }`}
+            >
+              <RadioGroupItem value={tone.value} id={tone.value} className="sr-only" />
+              <div className="flex items-center justify-between mb-2">
+                <MessageSquare className="w-4 h-4" />
+                <span className="font-medium">{tone.label}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">{tone.description}</p>
+            </Label>
+          ))}
+        </RadioGroup>
+      </motion.div>
+
+      {/* Valeurs de l'entreprise */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="space-y-4"
+      >
+        <Label className="text-lg font-medium">
+          Sélectionnez jusqu'à 3 valeurs qui définissent votre entreprise
+        </Label>
+        <div className="flex flex-wrap gap-2">
+          {companyValues.map((value) => (
+            <Button
+              key={value}
+              variant="outline"
+              size="sm"
+              className={`transition-all ${
+                selectedValues.includes(value)
+                  ? 'bg-primary text-primary-foreground'
+                  : selectedValues.length >= 3
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
+              }`}
+              onClick={() => handleValueClick(value)}
+              disabled={selectedValues.length >= 3 && !selectedValues.includes(value)}
+            >
+              {value}
+            </Button>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Inspirations */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+        className="space-y-4"
+      >
+        <Label className="text-lg font-medium">
+          Ajoutez des références ou sources d'inspiration
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            value={newInspiration}
+            onChange={(e) => setNewInspiration(e.target.value)}
+            placeholder="Ex: Apple.com, Airbnb..."
+            className="flex-1"
+          />
+          <Button onClick={handleAddInspiration} disabled={!newInspiration.trim()}>
+            Ajouter
+          </Button>
+        </div>
+        {data.inspirations && data.inspirations.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {data.inspirations.map((inspiration, index) => (
+              <Button
+                key={index}
+                variant="secondary"
+                size="sm"
+                className="group"
+                onClick={() => removeInspiration(index)}
+              >
+                {inspiration}
+                <span className="ml-2 opacity-0 group-hover:opacity-100">×</span>
+              </Button>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Message de conseil */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+        className="mt-8"
+      >
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <p className="text-sm text-muted-foreground">
+            Parfait ! Ces choix nous permettront de créer une identité visuelle et une
+            communication parfaitement alignées avec vos valeurs et votre vision.
+            Notre équipe créative s'inspirera de ces éléments pour donner vie à votre marque.
+          </p>
+        </Card>
+      </motion.div>
+    </div>
   )
 } 
