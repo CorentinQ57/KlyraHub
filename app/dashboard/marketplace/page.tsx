@@ -12,6 +12,7 @@ import { Home, Building2, ImageIcon, Code2, Edit3, Sparkles, ScanLine, BarChart3
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ServiceIcon from '@/components/ServiceIcon'
 import { motion } from 'framer-motion'
 import IconHoverEffect from '@/components/IconHoverEffect'
@@ -188,283 +189,290 @@ export default function MarketplacePage() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       <ServiceIconAnimation />
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar - Left column with filters */}
-        <div className="w-64 border-r bg-background p-4 flex-shrink-0 overflow-y-auto">
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Recherche</h3>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button 
-                    className="absolute right-2 top-2.5"
-                    onClick={() => setSearchQuery('')}
-                  >
-                    <X className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Catégories</h3>
-              <div className="space-y-1">
-                {categories.map((cat) => (
-                  <motion.button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`w-full text-left px-3 py-2 rounded-md flex items-center ${
-                      cat === selectedCategory 
-                        ? 'bg-primary text-white' 
-                        : 'hover:bg-secondary'
-                    }`}
-                    whileHover={{ x: 2 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {cat !== 'Tous' ? (
-                      <span className="mr-2 flex-shrink-0">{getCategoryIcon(cat)}</span>
-                    ) : (
-                      <span className="mr-2 flex-shrink-0 w-4 h-4">•</span>
-                    )}
-                    <span>{cat}</span>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between mb-2">
-                <h3 className="text-lg font-semibold">Prix</h3>
-                <span className="text-sm text-muted-foreground">
-                  {selectedPrice[0]}€ - {selectedPrice[1]}€
-                </span>
-              </div>
-              <Slider
-                defaultValue={[0, 5000]}
-                max={5000}
-                step={100}
-                value={selectedPrice}
-                onValueChange={setSelectedPrice}
-                className="py-4"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>0€</span>
-                <span>5000€</span>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Résultats</h3>
-              <p className="text-sm text-muted-foreground">
-                {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''} trouvé{filteredServices.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Middle column - Service listing */}
-        <div className="flex-1 overflow-y-auto border-r bg-muted/20">
-          <div className="p-4">
-            <h2 className="text-2xl font-bold mb-4">Nos Services</h2>
-            
-            <div className="space-y-3">
-              {filteredServices.map((service, index) => (
-                <motion.div 
-                  key={service.id} 
-                  className={`group rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer service-card ${
-                    selectedService?.id === service.id ? 'border-primary bg-primary/5' : 'bg-background'
-                  }`}
-                  onClick={() => handleSelectService(service)}
-                  variants={serviceItemVariants}
-                  initial="initial"
-                  animate="animate"
-                  whileHover="hover"
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <div className="flex justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <div className="mr-3">
-                          <IconHoverEffect isActive={selectedService?.id === service.id}>
-                            <ServiceIcon 
-                              serviceName={service.name} 
-                              size="md"
-                              animate={true}
-                              variant="outline"
-                              className={selectedService?.id === service.id ? 'text-primary' : 'text-primary/80'}
-                            />
-                          </IconHoverEffect>
-                        </div>
-                        <h3 className="text-lg font-medium leading-tight">{service.name}</h3>
-                      </div>
-                      <div className="flex items-center mb-2">
-                        <Badge variant="outline" className="mr-2">
-                          {getCategoryIcon(service.category || 'Autre')}
-                          <span className="ml-1">{service.category || 'Autre'}</span>
-                        </Badge>
-                        {service.duration && (
-                          <Badge variant="secondary">{service.duration} jours</Badge>
-                        )}
-                      </div>
-                      <p className="text-muted-foreground text-sm line-clamp-2">
-                        {service.description}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end justify-between ml-4">
-                      <p className="font-bold text-lg">{service.price}€</p>
-                      <motion.div
-                        animate={selectedService?.id === service.id ? { x: [0, 4, 0] } : {}}
-                        transition={{ repeat: Infinity, repeatDelay: 2 }}
+      <Tabs defaultValue="services">
+        <TabsList className="hidden">
+          <TabsTrigger value="services">Services</TabsTrigger>
+        </TabsList>
+        <TabsContent value="services">
+          <div className="flex-1 flex overflow-hidden">
+            {/* Sidebar - Left column with filters */}
+            <div className="w-64 border-r bg-background p-4 flex-shrink-0 overflow-y-auto">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Recherche</h3>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher..."
+                      className="pl-8"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <button 
+                        className="absolute right-2 top-2.5"
+                        onClick={() => setSearchQuery('')}
                       >
-                        <ChevronRight className={`h-5 w-5 mt-4 ${
-                          selectedService?.id === service.id ? 'text-primary' : 'text-muted-foreground'
-                        }`} />
-                      </motion.div>
-                    </div>
+                        <X className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    )}
                   </div>
-                </motion.div>
-              ))}
+                </div>
 
-              {filteredServices.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Aucun service ne correspond à votre recherche</p>
-                  <Button 
-                    variant="link" 
-                    onClick={() => {
-                      setSelectedCategory('Tous')
-                      setSelectedPrice([0, 5000])
-                      setSearchQuery('')
-                    }}
-                  >
-                    Réinitialiser les filtres
-                  </Button>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Catégories</h3>
+                  <div className="space-y-1">
+                    {categories.map((cat) => (
+                      <motion.button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`w-full text-left px-3 py-2 rounded-md flex items-center ${
+                          cat === selectedCategory 
+                            ? 'bg-primary text-white' 
+                            : 'hover:bg-secondary'
+                        }`}
+                        whileHover={{ x: 2 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {cat !== 'Tous' ? (
+                          <span className="mr-2 flex-shrink-0">{getCategoryIcon(cat)}</span>
+                        ) : (
+                          <span className="mr-2 flex-shrink-0 w-4 h-4">•</span>
+                        )}
+                        <span>{cat}</span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <h3 className="text-lg font-semibold">Prix</h3>
+                    <span className="text-sm text-muted-foreground">
+                      {selectedPrice[0]}€ - {selectedPrice[1]}€
+                    </span>
+                  </div>
+                  <Slider
+                    defaultValue={[0, 5000]}
+                    max={5000}
+                    step={100}
+                    value={selectedPrice}
+                    onValueChange={setSelectedPrice}
+                    className="py-4"
+                  />
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>0€</span>
+                    <span>5000€</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Résultats</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''} trouvé{filteredServices.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Middle column - Service listing */}
+            <div className="flex-1 overflow-y-auto border-r bg-muted/20">
+              <div className="p-4">
+                <h2 className="text-2xl font-bold mb-4">Nos Services</h2>
+                
+                <div className="space-y-3">
+                  {filteredServices.map((service, index) => (
+                    <motion.div 
+                      key={service.id} 
+                      className={`group rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer service-card ${
+                        selectedService?.id === service.id ? 'border-primary bg-primary/5' : 'bg-background'
+                      }`}
+                      onClick={() => handleSelectService(service)}
+                      variants={serviceItemVariants}
+                      initial="initial"
+                      animate="animate"
+                      whileHover="hover"
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <div className="flex justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <div className="mr-3">
+                              <IconHoverEffect isActive={selectedService?.id === service.id}>
+                                <ServiceIcon 
+                                  serviceName={service.name} 
+                                  size="md"
+                                  animate={true}
+                                  variant="outline"
+                                  className={selectedService?.id === service.id ? 'text-primary' : 'text-primary/80'}
+                                />
+                              </IconHoverEffect>
+                            </div>
+                            <h3 className="text-lg font-medium leading-tight">{service.name}</h3>
+                          </div>
+                          <div className="flex items-center mb-2">
+                            <Badge variant="outline" className="mr-2">
+                              {getCategoryIcon(service.category || 'Autre')}
+                              <span className="ml-1">{service.category || 'Autre'}</span>
+                            </Badge>
+                            {service.duration && (
+                              <Badge variant="secondary">{service.duration} jours</Badge>
+                            )}
+                          </div>
+                          <p className="text-muted-foreground text-sm line-clamp-2">
+                            {service.description}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end justify-between ml-4">
+                          <p className="font-bold text-lg">{service.price}€</p>
+                          <motion.div
+                            animate={selectedService?.id === service.id ? { x: [0, 4, 0] } : {}}
+                            transition={{ repeat: Infinity, repeatDelay: 2 }}
+                          >
+                            <ChevronRight className={`h-5 w-5 mt-4 ${
+                              selectedService?.id === service.id ? 'text-primary' : 'text-muted-foreground'
+                            }`} />
+                          </motion.div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+
+                  {filteredServices.length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Aucun service ne correspond à votre recherche</p>
+                      <Button 
+                        variant="link" 
+                        onClick={() => {
+                          setSelectedCategory('Tous')
+                          setSelectedPrice([0, 5000])
+                          setSearchQuery('')
+                        }}
+                      >
+                        Réinitialiser les filtres
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right column - Selected service details */}
+            <div className="w-96 bg-background overflow-y-auto">
+              {selectedService ? (
+                <div className="p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <motion.div 
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="mr-4"
+                      >
+                        <ServiceIcon 
+                          serviceName={selectedService.name} 
+                          size="lg" 
+                          animate={true}
+                          variant="bold"
+                          className="text-primary"
+                        />
+                      </motion.div>
+                      <motion.h2 
+                        className="text-2xl font-bold"
+                        initial={{ y: -10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.1, duration: 0.3 }}
+                      >
+                        {selectedService.name}
+                      </motion.h2>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="flex items-center">
+                        {getCategoryIcon(selectedService.category || 'Autre')}
+                        <span className="ml-1">{selectedService.category || 'Autre'}</span>
+                      </Badge>
+                      <Badge variant="secondary">{selectedService.duration} jours</Badge>
+                    </div>
+                    
+                    <motion.p 
+                      className="text-muted-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2, duration: 0.3 }}
+                    >
+                      {selectedService.description}
+                    </motion.p>
+                    
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3, duration: 0.4 }}
+                    >
+                      <Card>
+                        <CardHeader className="py-3">
+                          <CardTitle className="text-xl">Détails</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-1">
+                          <div className="space-y-3">
+                            <div>
+                              <h4 className="font-medium">Inclus</h4>
+                              <ul className="mt-1 space-y-1">
+                                {(selectedService.features || []).map((feature, i) => (
+                                  <motion.li 
+                                    key={i} 
+                                    className="flex items-start"
+                                    initial={{ opacity: 0, x: -5 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.3 + i * 0.1 }}
+                                  >
+                                    <span className="mr-2 text-primary">✓</span> 
+                                    <span>{feature}</span>
+                                  </motion.li>
+                                ))}
+                              </ul>
+                            </div>
+                            
+                            {selectedService.timeline && (
+                              <div>
+                                <h4 className="font-medium">Calendrier</h4>
+                                <p className="text-sm text-muted-foreground mt-1">{selectedService.timeline}</p>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex flex-col items-stretch pt-0">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm text-muted-foreground">Prix</p>
+                            <p className="text-xl font-bold">{selectedService.price}€</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <Link href={`/dashboard/marketplace/${getSlug(selectedService.name)}`}>
+                              <Button className="w-full" variant="outline">Détails complets</Button>
+                            </Link>
+                            <Button 
+                              className="w-full"
+                              onClick={(e) => handleBuyNow(selectedService, e)}
+                              disabled={processingPayment === selectedService.id}
+                            >
+                              {processingPayment === selectedService.id ? 'Traitement...' : 'Acheter'}
+                            </Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    </motion.div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">Sélectionnez un service pour voir les détails</p>
                 </div>
               )}
             </div>
           </div>
-        </div>
-
-        {/* Right column - Selected service details */}
-        <div className="w-96 bg-background overflow-y-auto">
-          {selectedService ? (
-            <div className="p-4">
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <motion.div 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="mr-4"
-                  >
-                    <ServiceIcon 
-                      serviceName={selectedService.name} 
-                      size="lg" 
-                      animate={true}
-                      variant="bold"
-                      className="text-primary"
-                    />
-                  </motion.div>
-                  <motion.h2 
-                    className="text-2xl font-bold"
-                    initial={{ y: -10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.1, duration: 0.3 }}
-                  >
-                    {selectedService.name}
-                  </motion.h2>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="flex items-center">
-                    {getCategoryIcon(selectedService.category || 'Autre')}
-                    <span className="ml-1">{selectedService.category || 'Autre'}</span>
-                  </Badge>
-                  <Badge variant="secondary">{selectedService.duration} jours</Badge>
-                </div>
-                
-                <motion.p 
-                  className="text-muted-foreground"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.3 }}
-                >
-                  {selectedService.description}
-                </motion.p>
-                
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3, duration: 0.4 }}
-                >
-                  <Card>
-                    <CardHeader className="py-3">
-                      <CardTitle className="text-xl">Détails</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-1">
-                      <div className="space-y-3">
-                        <div>
-                          <h4 className="font-medium">Inclus</h4>
-                          <ul className="mt-1 space-y-1">
-                            {(selectedService.features || []).map((feature, i) => (
-                              <motion.li 
-                                key={i} 
-                                className="flex items-start"
-                                initial={{ opacity: 0, x: -5 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.3 + i * 0.1 }}
-                              >
-                                <span className="mr-2 text-primary">✓</span> 
-                                <span>{feature}</span>
-                              </motion.li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        {selectedService.timeline && (
-                          <div>
-                            <h4 className="font-medium">Calendrier</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{selectedService.timeline}</p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col items-stretch pt-0">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm text-muted-foreground">Prix</p>
-                        <p className="text-xl font-bold">{selectedService.price}€</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        <Link href={`/dashboard/marketplace/${getSlug(selectedService.name)}`}>
-                          <Button className="w-full" variant="outline">Détails complets</Button>
-                        </Link>
-                        <Button 
-                          className="w-full"
-                          onClick={(e) => handleBuyNow(selectedService, e)}
-                          disabled={processingPayment === selectedService.id}
-                        >
-                          {processingPayment === selectedService.id ? 'Traitement...' : 'Acheter'}
-                        </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                </motion.div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground">Sélectionnez un service pour voir les détails</p>
-            </div>
-          )}
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 } 
