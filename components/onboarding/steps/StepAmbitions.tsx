@@ -12,12 +12,23 @@ import {
   DropResult
 } from '@hello-pangea/dnd'
 
+interface Priority {
+  id: string
+  content: string
+}
+
+interface Skill {
+  id: string
+  label: string
+  icon: string
+}
+
 interface StepAmbitionsProps {
   data: any
   onComplete: (data: any) => void
 }
 
-const businessPriorities = [
+const businessPriorities: Priority[] = [
   { id: 'brand', content: 'Developper ma marque 🎯' },
   { id: 'clients', content: 'Attirer plus de clients 🤝' },
   { id: 'digital', content: 'Accelerer ma transformation digitale 🚀' },
@@ -25,15 +36,20 @@ const businessPriorities = [
   { id: 'innovation', content: 'Innover dans mon secteur 💡' }
 ]
 
-const skills = [
+const skills: Skill[] = [
   { id: 'design', label: 'Design & UX', icon: '🎨' },
   { id: 'marketing', label: 'Marketing Digital', icon: '📢' },
   { id: 'tech', label: 'Technologies', icon: '💻' },
   { id: 'business', label: 'Business & Stratégie', icon: '📊' }
 ]
 
+interface FormData {
+  priorities: string[]
+  skills: Record<string, number>
+}
+
 export default function StepAmbitions({ data, onComplete }: StepAmbitionsProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     priorities: data.priorities || businessPriorities.map(p => p.id),
     skills: data.skills || Object.fromEntries(skills.map(s => [s.id, 1]))
   })
@@ -79,7 +95,7 @@ export default function StepAmbitions({ data, onComplete }: StepAmbitionsProps) 
                   ref={provided.innerRef}
                   className="space-y-3"
                 >
-                  {formData.priorities.map((priorityId, index) => {
+                  {formData.priorities.map((priorityId: string, index: number) => {
                     const priority = businessPriorities.find(p => p.id === priorityId)
                     if (!priority) return null
                     
