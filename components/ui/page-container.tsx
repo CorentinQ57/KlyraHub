@@ -18,7 +18,7 @@ export function PageContainer({
     <div className="bg-[#f9fafc] min-h-[calc(100vh-64px)] pt-8">
       <div 
         className={cn(
-          "mx-auto bg-white rounded-2xl shadow-sm pb-8 relative z-layer-content",
+          "mx-auto bg-white rounded-2xl shadow-sm pb-8 relative z-[2]",
           fullWidth ? "max-w-[calc(100%-64px)]" : "max-w-[1280px] px-8",
           className
         )}
