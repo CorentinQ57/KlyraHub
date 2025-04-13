@@ -185,7 +185,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen flex-col">
       <HeaderNav />
-      <main className="flex-1 container py-6">
+      <main className="flex-1">
         {children}
       </main>
     </div>
