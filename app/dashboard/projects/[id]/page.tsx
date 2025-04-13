@@ -8,7 +8,8 @@ import { useAuth } from '@/lib/auth'
 import { fetchProjectById, fetchComments, addComment, fetchDeliverables, supabase } from '@/lib/supabase'
 import { Project, Comment, Deliverable } from '@/lib/supabase'
 import { motion } from 'framer-motion'
-import DepositSpaces from './components/DepositSpaces'
+import DepositSpaces, { DepositSpacesSkeleton } from './components/DepositSpaces'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Définition des types étendus
 type ProjectWithRelations = Project & {
@@ -62,6 +63,87 @@ const DeliverableItem = ({ deliverable }: { deliverable: Deliverable }) => {
         Télécharger
       </a>
     </motion.div>
+  )
+}
+
+// Skeleton components
+const ProjectDetailsSkeleton = () => {
+  return (
+    <div className="space-y-8">
+      <div className="h-4 w-24">
+        <Skeleton className="h-full w-full" />
+      </div>
+      
+      <div className="space-y-2">
+        <Skeleton className="h-10 w-3/4" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-5 w-24 rounded-full" />
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        <Skeleton className="h-7 w-48" />
+        <div className="relative">
+          <div className="absolute left-5 top-0 h-full w-0.5 bg-muted"></div>
+          <div className="space-y-8 relative">
+            {Array(5).fill(0).map((_, i) => (
+              <div key={i} className="flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted z-10">
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                </div>
+                <div className="space-y-1 w-full">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        <Skeleton className="h-7 w-32" />
+        <div className="space-y-2">
+          {Array(3).fill(0).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+      
+      {/* Deposit Spaces Skeleton */}
+      <DepositSpacesSkeleton />
+      
+      <div className="space-y-4">
+        <Skeleton className="h-7 w-32" />
+        <div className="space-y-4">
+          {Array(2).fill(0).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-10 w-40" />
+      </div>
+    </div>
+  )
+}
+
+const ProjectSidebarSkeleton = () => {
+  return (
+    <div className="rounded-lg border bg-background p-6 shadow-sm">
+      <div className="space-y-4">
+        <Skeleton className="h-7 w-40" />
+        
+        <div className="space-y-4">
+          {Array(5).fill(0).map((_, i) => (
+            <div key={i} className="flex justify-between items-center">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -241,11 +323,20 @@ export default function ProjectPage({
 
   if (authLoading || isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-klyra mx-auto"></div>
-          <p className="mt-4 text-lg">Chargement du projet...</p>
-        </div>
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-1 container py-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+            {/* Main content skeleton */}
+            <div className="lg:w-2/3">
+              <ProjectDetailsSkeleton />
+            </div>
+            
+            {/* Sidebar skeleton */}
+            <div className="lg:w-1/3 space-y-6">
+              <ProjectSidebarSkeleton />
+            </div>
+          </div>
+        </main>
       </div>
     )
   }

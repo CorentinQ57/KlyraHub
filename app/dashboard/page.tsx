@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EmptyState } from "@/components/ui/empty-state"
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -374,6 +375,55 @@ const NotificationsPanel = ({ notifications }: { notifications: Notification[] }
   )
 }
 
+const ProjectCardSkeleton = () => (
+  <div className="card border border-gray-100 rounded-lg overflow-hidden flex flex-col p-sm">
+    <Skeleton className="aspect-video w-full rounded-lg" />
+    <div className="p-3 flex-1 flex flex-col">
+      <div className="flex items-start justify-between gap-2">
+        <Skeleton className="h-6 w-24" />
+        <Skeleton className="h-6 w-20" />
+      </div>
+      <Skeleton className="h-6 w-3/4 mt-2" />
+      <Skeleton className="h-4 w-full mt-1" />
+      <div className="mt-4 pt-4 border-t flex justify-between items-center">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-8 w-28" />
+      </div>
+    </div>
+  </div>
+)
+
+const StatsOverviewSkeleton = () => (
+  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    {[1, 2, 3, 4].map((i) => (
+      <Card key={i}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Skeleton className="h-4 w-[100px]" />
+          <Skeleton className="h-4 w-4" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-[60px]" />
+          <Skeleton className="h-4 w-[120px] mt-2" />
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+)
+
+const NotificationsPanelSkeleton = () => (
+  <div className="space-y-4">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="flex items-center gap-4">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <div className="flex-1">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2 mt-2" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
@@ -663,41 +713,47 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <StatsOverview stats={stats} />
-
-        <Tabs defaultValue="projects" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="projects">Projets</TabsTrigger>
-            <TabsTrigger value="activity">Activité</TabsTrigger>
-          </TabsList>
-          <TabsContent value="projects" className="space-y-4">
-            {projects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="col-span-4">
+            <div className="grid gap-4">
+              {isLoading ? <StatsOverviewSkeleton /> : <StatsOverview stats={stats} />}
+              
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {isLoading ? (
+                  Array(6).fill(0).map((_, i) => <ProjectCardSkeleton key={i} />)
+                ) : projects.length > 0 ? (
+                  projects.map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))
+                ) : (
+                  <EmptyState
+                    title="Aucun projet"
+                    description="Vous n'avez pas encore de projet. Commencez par en créer un !"
+                    action={{
+                      label: "Créer un projet",
+                      onClick: () => router.push('/dashboard/marketplace')
+                    }}
+                  />
+                )}
               </div>
-            ) : (
-              <div className="flex justify-center py-10">
-                <EmptyState
-                  title="Aucun projet pour le moment"
-                  description="Vous n'avez pas encore de projets. Explorez notre marketplace pour découvrir nos services et créer votre premier projet."
-                  icons={[FolderPlus, FileText, PenTool]}
-                  action={{
-                    label: "Créer un projet",
-                    onClick: () => router.push('/dashboard/marketplace')
-                  }}
-                />
-              </div>
-            )}
-          </TabsContent>
-          <TabsContent value="activity" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <NotificationsPanel notifications={notifications} />
-              {/* Autres panneaux d'activité à ajouter */}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+          
+          <div className="col-span-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notifications récentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <NotificationsPanelSkeleton />
+                ) : (
+                  <NotificationsPanel notifications={notifications} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {showTutorial && (
           <TutorialStep
