@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth'
 import { fetchProjectById, fetchComments, addComment, fetchDeliverables, supabase } from '@/lib/supabase'
 import { Project, Comment, Deliverable } from '@/lib/supabase'
 import { motion } from 'framer-motion'
-import ClientUploadRequests from './components/ClientUploadRequests'
+import DepositSpaces from './components/DepositSpaces'
 
 // Définition des types étendus
 type ProjectWithRelations = Project & {
@@ -377,7 +377,7 @@ export default function ProjectPage({
               </div>
               
               {/* Upload Requests */}
-              <ClientUploadRequests projectId={project.id} />
+              <DepositSpaces projectId={project.id} />
               
               {/* Comments */}
               <div className="space-y-4">
