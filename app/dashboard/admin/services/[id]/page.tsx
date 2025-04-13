@@ -223,7 +223,7 @@ export default function EditServicePage({
   }
 
   return (
-    <div className="container max-w-7xl mx-auto px-4 py-6">
+    <div className="container py-10">
       <div className="mb-8">
         <Link 
           href="/dashboard/admin/services" 
