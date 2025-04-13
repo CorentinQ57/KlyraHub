@@ -130,12 +130,12 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 
   return (
     <motion.div 
-      className="card border border-gray-100 hover:shadow-md transition-shadow rounded-lg overflow-hidden flex flex-col p-0"
+      className="card border border-gray-100 hover:shadow-md transition-shadow rounded-lg overflow-hidden flex flex-col p-sm"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-gray-100 rounded-t-lg">
+      <div className="relative aspect-video w-full overflow-hidden bg-gray-100 rounded-lg">
         <Image
           src={displayImage}
           alt={project.services?.name || "Image du projet"}
