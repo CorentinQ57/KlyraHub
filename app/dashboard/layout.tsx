@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
-import { HeaderNav } from '@/components/HeaderNav'
+import { SidebarNav } from '@/components/SidebarNav'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
-import VideoWalkthrough from '@/components/VideoWalkthrough'
+import { cn } from '@/lib/utils'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -17,9 +17,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [forceDisplay, setForceDisplay] = useState(false)
   const [userTypeError, setUserTypeError] = useState(false)
   const [isReloading, setIsReloading] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   
   // Vérifier si le chemin actuel est dans la section documentation
   const isDocsRoute = pathname.startsWith('/dashboard/docs')
+  
+  // Vérifier si la sidebar est repliée
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Vérifier l'état initial
+      const checkCollapsedState = () => {
+        const savedState = localStorage.getItem('sidebar-collapsed')
+        setIsSidebarCollapsed(savedState === 'true')
+      }
+      
+      // Vérifier à l'initialisation
+      checkCollapsedState()
+      
+      // Ajouter un écouteur d'événements pour les changements de localStorage
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'sidebar-collapsed') {
+          setIsSidebarCollapsed(e.newValue === 'true')
+        }
+      }
+      
+      window.addEventListener('storage', handleStorageChange)
+      
+      // Créer une fonction qui vérifie périodiquement l'état
+      const interval = setInterval(checkCollapsedState, 1000)
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange)
+        clearInterval(interval)
+      }
+    }
+  }, [])
   
   // Vérifier que l'utilisateur est valide et rediriger si nécessaire
   useEffect(() => {
@@ -101,41 +133,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }
   
-  // Si c'est une route de documentation, ignorer les vérifications d'authentification
-  if (isDocsRoute) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <HeaderNav />
-        <main className="flex-1 container py-6">
-          {children}
-        </main>
-      </div>
-    )
-  }
-  
-  // Afficher un message d'erreur si user n'est pas un objet valide
-  if (userTypeError) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="bg-red-50 p-4 rounded-lg text-red-700 mb-6 flex items-start">
-            <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium">Erreur d'authentification</p>
-              <p className="text-sm mt-1">Un problème est survenu avec votre session. Veuillez vous reconnecter.</p>
-            </div>
-          </div>
-          <Button 
-            onClick={handleForceSignOut}
-            className="w-full bg-red-600 hover:bg-red-700"
-          >
-            Se déconnecter
-          </Button>
-        </div>
-      </div>
-    )
-  }
-  
   // Afficher un état de chargement si on vérifie encore l'authentification
   if (isLoading && !forceDisplay) {
     return (
@@ -184,12 +181,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   // Afficher le layout avec la navigation pour les utilisateurs authentifiés
   return (
-    <div className="flex min-h-screen flex-col">
-      <HeaderNav />
-      <main className="flex-1">
+    <div className="flex min-h-screen">
+      <SidebarNav />
+      <main 
+        className={cn(
+          "flex-1 pt-16 lg:pt-0 transition-all duration-300 ease-in-out",
+          isSidebarCollapsed ? "lg:pl-[70px]" : "lg:pl-[240px]"
+        )}
+      >
         {children}
       </main>
-      {isValidUser && <VideoWalkthrough />}
     </div>
   )
 } 
