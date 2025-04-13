@@ -108,6 +108,17 @@ export type UploadRequest = {
   uploaded_by?: string
 }
 
+// Interface pour la réponse Supabase pour un service avec sa catégorie
+interface ServiceWithCategory {
+  id: string;
+  category_id: string;
+  category: {
+    id: string;
+    name: string;
+    image_url: string | null;
+  };
+}
+
 // Helper functions
 export async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser()
@@ -402,7 +413,7 @@ export async function createProject(
     }
 
     // Récupérer le service et la catégorie associée pour l'image
-    const { data: serviceWithCategory, error: serviceError } = await supabase
+    const { data, error: serviceError } = await supabase
       .from('services')
       .select(`
         id,
@@ -416,17 +427,26 @@ export async function createProject(
       .eq('id', serviceId)
       .single();
 
-    if (serviceError || !serviceWithCategory) {
+    if (serviceError || !data) {
       console.error('Le service spécifié n\'existe pas:', serviceId);
       throw new Error('Le service spécifié n\'existe pas');
     }
-
-    // Récupérer l'image de la catégorie
-    const categoryImageUrl = serviceWithCategory.category?.image_url || null;
+    
+    // Récupérer l'image de la catégorie de manière sécurisée
+    let categoryImageUrl = null;
+    if (data && 
+        data.category && 
+        Array.isArray(data.category) && 
+        data.category.length > 0 && 
+        data.category[0] && 
+        typeof data.category[0] === 'object' && 
+        'image_url' in data.category[0]) {
+      categoryImageUrl = data.category[0].image_url;
+    }
 
     // Créer le projet
     console.log('Création du projet dans Supabase...');
-    const { data, error } = await supabase
+    const { data: projectData, error } = await supabase
       .from('projects')
       .insert({
         client_id: userId,
@@ -451,8 +471,8 @@ export async function createProject(
       throw new Error(`Erreur lors de la création: ${error.message}`);
     }
 
-    console.log('Projet créé avec succès:', data);
-    return data;
+    console.log('Projet créé avec succès:', projectData);
+    return projectData;
   } catch (error) {
     console.error('Exception lors de la création du projet:', error);
     throw error;
