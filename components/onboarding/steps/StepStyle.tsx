@@ -72,7 +72,7 @@ export default function StepStyle({ data, onComplete }: StepStyleProps) {
   const toggleVisualStyle = (styleId: string) => {
     const current = formData.visualPreferences
     const updated = current.includes(styleId)
-      ? current.filter(id => id !== styleId)
+      ? current.filter((id: string) => id !== styleId)
       : [...current, styleId]
     setFormData({ ...formData, visualPreferences: updated })
   }
