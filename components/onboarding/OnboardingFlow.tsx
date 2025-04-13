@@ -34,7 +34,7 @@ interface OnboardingStep {
   }
 }
 
-interface OnboardingData {
+export interface OnboardingData {
   // Étape 1 - Introduction
   sector?: string
   companySize?: string
