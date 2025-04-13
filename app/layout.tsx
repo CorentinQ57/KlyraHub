@@ -4,6 +4,7 @@ import { Poppins } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import AuthProvider from '@/lib/auth'
+import { NavigationProvider } from '@/contexts/navigation-context'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -25,8 +26,10 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning className={poppins.variable}>
       <body className={poppins.className}>
         <AuthProvider>
-          {children}
-          <Toaster />
+          <NavigationProvider>
+            {children}
+            <Toaster />
+          </NavigationProvider>
         </AuthProvider>
       </body>
     </html>

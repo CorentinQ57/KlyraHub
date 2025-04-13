@@ -11,42 +11,9 @@ import type { UploadRequest } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import { FileUpload } from '@/components/ui/file-upload'
 import { CheckCircle, Clock, AlertTriangle } from 'lucide-react'
-import { Skeleton } from '@/components/ui/skeleton'
 
 type DepositSpacesProps = {
   projectId: string
-}
-
-// Skeleton component for deposit spaces
-export function DepositSpacesSkeleton() {
-  return (
-    <div className="space-y-4">
-      <Skeleton className="h-7 w-48" />
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Array(2).fill(0).map((_, i) => (
-          <Card key={i} className="overflow-hidden">
-            <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between space-y-0">
-              <div>
-                <Skeleton className="h-6 w-40" />
-              </div>
-              <Skeleton className="h-5 w-20 rounded-full" />
-            </CardHeader>
-            
-            <CardContent className="px-4 py-2">
-              <Skeleton className="h-4 w-full" />
-            </CardContent>
-            
-            <CardContent className="p-4 pt-2">
-              <Skeleton className="h-4 w-32 mb-3" />
-              <Skeleton className="h-24 w-full rounded-lg mb-4" />
-              <Skeleton className="h-10 w-full rounded-md" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 export default function DepositSpaces({ projectId }: DepositSpacesProps) {
@@ -176,7 +143,10 @@ export default function DepositSpaces({ projectId }: DepositSpacesProps) {
       <h2 className="text-xl font-semibold">Espaces de dépôt</h2>
       
       {isLoading ? (
-        <DepositSpacesSkeleton />
+        <div className="text-center py-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-klyra mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Chargement des espaces de dépôt...</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {requests.map(request => (
