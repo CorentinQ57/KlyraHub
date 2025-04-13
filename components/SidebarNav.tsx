@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/Logo'
+import { News, type NewsArticle } from '@/components/ui/sidebar-news'
 import { 
   LayoutDashboard, 
   User, 
@@ -37,6 +38,28 @@ interface NavGroup {
   title: string;
   links: NavLink[];
 }
+
+// Articles de news avec l'onboarding mis en avant
+const NEWS_ARTICLES: NewsArticle[] = [
+  {
+    href: "/dashboard/onboarding",
+    title: "Complétez votre onboarding",
+    summary: "Configurez votre profil et vos préférences pour une expérience personnalisée",
+    image: "/images/news/onboarding.jpg",
+  },
+  {
+    href: "/dashboard/marketplace",
+    title: "Nouveaux services disponibles",
+    summary: "Découvrez les derniers services ajoutés à notre marketplace",
+    image: "/images/news/marketplace.jpg",
+  },
+  {
+    href: "/dashboard/docs/getting-started",
+    title: "Guide de démarrage rapide",
+    summary: "Apprenez à utiliser Klyra Hub en quelques minutes",
+    image: "/images/news/documentation.jpg",
+  },
+];
 
 export function SidebarNav() {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -291,6 +314,13 @@ export function SidebarNav() {
             </div>
           </div>
         </div>
+        
+        {/* News Component - Ajouté au-dessus des liens d'action */}
+        {!isCollapsed && (
+          <div className="px-3 py-2">
+            <News articles={NEWS_ARTICLES} />
+          </div>
+        )}
         
         {/* Action Links */}
         <div className="border-t py-4">
