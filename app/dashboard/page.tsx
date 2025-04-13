@@ -393,7 +393,7 @@ export default function DashboardPage() {
   const title = searchParams.get('title')
   const price = searchParams.get('price')
   
-  // Vérifier si le tutoriel doit être affiché depuis l'URL
+  // Vérifier si le tutoriel doit être affiché depuis l'URL (bouton Aide)
   const showTutorialParam = searchParams.get('showTutorial')
   
   // Status labels
@@ -449,12 +449,16 @@ export default function DashboardPage() {
         
         setProjects(fetchedProjects);
         
-        // Si c'est la première connexion et qu'il n'y a pas de projets, afficher le tutoriel
-        if (fetchedProjects.length === 0) {
-          const hasSeenTutorial = localStorage.getItem('hasSeenTutorial')
-          if (!hasSeenTutorial) {
-            setShowTutorial(true)
-            localStorage.setItem('hasSeenTutorial', 'true')
+        // Vérifier si c'est la première connexion pour montrer le tutoriel
+        if (typeof window !== 'undefined') {
+          const isFirstLogin = localStorage.getItem('hasCompletedOnboarding') === null;
+          
+          // Si c'est la première connexion, afficher le tutoriel
+          if (isFirstLogin) {
+            console.log("Première connexion détectée, affichage du tutoriel d'onboarding");
+            setShowTutorial(true);
+            // Nous ne marquons pas encore le tutoriel comme terminé ici,
+            // cela sera fait lorsque l'utilisateur termine le tutoriel
           }
         }
       } catch (error) {
@@ -476,6 +480,10 @@ export default function DashboardPage() {
       setTutorialStep(tutorialStep + 1)
     } else {
       setShowTutorial(false)
+      // Marquer le tutoriel comme terminé dans localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hasCompletedOnboarding', 'true')
+      }
       // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
       if (showTutorialParam) {
         const newUrl = window.location.pathname
@@ -487,6 +495,10 @@ export default function DashboardPage() {
   // Fonction pour fermer le tutoriel
   const closeTutorial = () => {
     setShowTutorial(false)
+    // Marquer le tutoriel comme terminé même si fermé prématurément
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hasCompletedOnboarding', 'true')
+    }
     // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
     if (showTutorialParam) {
       const newUrl = window.location.pathname
