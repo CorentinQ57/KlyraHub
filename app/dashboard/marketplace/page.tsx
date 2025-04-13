@@ -191,14 +191,18 @@ export default function MarketplacePage() {
 
   return (
     <PageContainer fullWidth>
-      <PageHeader
-        title="Marketplace" 
-        description="Découvrez tous les services proposés par Klyra Design"
-      >
-        <Button onClick={() => router.push('/dashboard')}>
-          <ShoppingCart className="mr-2 h-4 w-4" /> Mes achats
-        </Button>
-      </PageHeader>
+      <div className="px-4">
+        <PageHeader
+          title="Marketplace" 
+          description="Découvrez tous les services proposés par Klyra Design"
+        >
+          <div className="pr-4">
+            <Button onClick={() => router.push('/dashboard')}>
+              <ShoppingCart className="mr-2 h-4 w-4" /> Mes achats
+            </Button>
+          </div>
+        </PageHeader>
+      </div>
 
       <ServiceIconAnimation />
       
