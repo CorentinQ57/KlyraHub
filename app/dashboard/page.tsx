@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EmptyState } from "@/components/ui/empty-state"
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -75,109 +76,76 @@ const categoryImages: Record<string, string> = {
 
 // Dynamic import with preload functionality 
 const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
-  // Status labels
-  const statusLabels = {
-    pending: {
-      label: "En attente",
-      color: "bg-yellow-100 text-yellow-800"
-    },
-    validated: {
-      label: "Validé",
-      color: "bg-blue-100 text-blue-800"
-    },
-    in_progress: {
-      label: "En cours",
-      color: "bg-purple-100 text-purple-800"
-    },
-    delivered: {
-      label: "Livré",
-      color: "bg-green-100 text-green-800"
-    },
-    completed: {
-      label: "Terminé",
-      color: "bg-gray-100 text-gray-800"
-    },
-  }
+  // Format the date in French format (DD Month)
+  const date = new Date(project.created_at);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('fr-FR', { month: 'long' });
+  const formattedDate = `${day} ${month}`;
 
-  // Utiliser l'image du service ou de la catégorie
-  const serviceImage = project.services?.image_url;
-  const categoryImage = project.category_image_url || project.services?.category?.image_url;
-  const displayImage = serviceImage || categoryImage || categoryImages.default;
-
-  // Utiliser l'icône de la catégorie
-  const categoryId = project.services?.category_id || 'default';
-  const categoryIcon = categoryIcons[categoryId] || categoryIcons.default;
-
-  // Récupération plus robuste du nom de la catégorie
-  const getCategoryName = () => {
-    // Cas 1: Accès via la structure correcte
-    if (project.services?.category?.name) {
-      return project.services.category.name;
-    }
-    
-    // Cas 2: Pour déboguer, afficher le category_id au moins
-    if (project.services?.category_id) {
-      const categoryKey = project.services.category_id.toLowerCase();
-      return categoryKey === "1b041ce2-1f9b-466f-8aa4-b94fec7d94ab" ? "Développement Web" :
-             categoryKey === "ba8f9878-d327-4b2d-8be5-ae95df23e1a0" ? "Branding" :
-             categoryKey === "7227a841-69e8-48bb-85fd-d65d49618245" ? "UI UX Design" :
-             categoryKey === "53b49d36-18c7-467f-89fc-cd78331dc0d7" ? "Social Media" : 
-             "Catégorie";
-    }
-    
-    // Cas par défaut
-    return "Catégorie";
+  // Status labels and colors with typed record
+  const statusLabels: Record<string, string> = {
+    pending: 'En attente',
+    validated: 'Validé',
+    in_progress: 'En cours',
+    delivered: 'Livré',
+    completed: 'Terminé',
   };
 
-  return (
-    <motion.div 
-      className="card border border-gray-100 hover:shadow-md transition-shadow rounded-lg overflow-hidden flex flex-col p-sm"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="relative aspect-video w-full overflow-hidden bg-gray-100 rounded-lg">
-        <Image
-          src={displayImage}
-          alt={project.services?.name || "Image du projet"}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-      </div>
+  const statusColors: Record<string, string> = {
+    pending: 'bg-amber-100 text-amber-800',
+    validated: 'bg-blue-100 text-blue-800',
+    in_progress: 'bg-purple-100 text-purple-800',
+    delivered: 'bg-green-100 text-green-800',
+    completed: 'bg-gray-100 text-gray-800',
+  };
 
-      <div className="p-3 flex-1 flex flex-col">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              project.services?.category ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
-            }`}>
-              {categoryIcon}
-              <span className="ml-1">{getCategoryName()}</span>
+  // Get category icon safely
+  const categoryId = project.services?.category_id || 'default';
+  const categoryIcon = categoryIcons[categoryId as keyof typeof categoryIcons] || categoryIcons.default;
+
+  return (
+    <div className="group">
+      <Card className="p-0 overflow-hidden transition-shadow hover:shadow-lg">
+        <div className="relative">
+          <div className="aspect-video overflow-hidden">
+            <Image
+              src={project.services?.image_url || project.category_image_url || categoryImages.default}
+              alt={project.title}
+              width={300}
+              height={169}
+              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            />
+          </div>
+          <div className="absolute bottom-3 left-3">
+            <span className={`${statusColors[project.status] || 'bg-gray-100 text-gray-800'} badge`}>
+              {statusLabels[project.status] || 'Statut'}
             </span>
           </div>
-          <span className={`whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}>
-            {statusLabels[project.status].label}
-          </span>
         </div>
 
-        <h3 className="text-lg font-semibold mt-2 line-clamp-1">{project.title}</h3>
-        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-          {project.description || "Description du projet"}
-        </p>
-
-        <div className="mt-4 pt-4 border-t flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">
-            {new Date(project.created_at).toLocaleDateString()}
-          </span>
-          <Link href={`/dashboard/projects/${project.id}`}>
-            <Button size="sm" variant="outline">Voir les détails</Button>
-          </Link>
+        <div className="p-4">
+          <div className="flex justify-between items-start mb-2">
+            <span className="category-label">
+              {categoryIcon && (
+                <span className="mr-1">{categoryIcon}</span>
+              )}
+              {project.services?.category?.name || project.services?.name || 'Catégorie'}
+            </span>
+            <span className="text-sm text-zinc-500">{formattedDate}</span>
+          </div>
+          <h3 className="font-semibold text-lg mb-1 line-clamp-2">{project.title}</h3>
+          <p className="text-zinc-600 text-sm line-clamp-2 mb-3">{project.description || "Description du projet"}</p>
+          <div className="flex justify-between items-center">
+            <Link href={`/dashboard/projects/${project.id}`}>
+              <Button variant="outline" size="sm" className="text-primary">
+                Voir détails
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
-    </motion.div>
-  )
+      </Card>
+    </div>
+  );
 }
 
 // Composant pour une étape du tutoriel
@@ -648,7 +616,7 @@ export default function DashboardPage() {
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>
-      <div className="container max-w-7xl mx-auto px-4 py-6 relative z-10">
+      <div className="container mx-auto p-6 relative z-10">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
