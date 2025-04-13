@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[#467FF7] text-white shadow-sm hover:bg-[#3A70E3]",
+          "relative border border-[#467FF7] text-white shadow-[0_10px_4px_rgba(70,127,247,0.25)] bg-gradient-to-b from-[#5b8ff8] via-[#467FF7] to-[#3a70e3] before:content-[''] before:absolute before:inset-0 before:rounded-[7px] before:opacity-25 before:bg-gradient-to-b before:from-white before:via-transparent before:to-transparent before:pointer-events-none before:h-[45%] hover:bg-gradient-to-b hover:from-[#6699ff] hover:via-[#5085f3] hover:to-[#3366e0]",
         destructive:
           "bg-red-500 text-white hover:bg-red-600",
         outline:
@@ -22,7 +22,7 @@ const buttonVariants = cva(
         link:
           "text-[#467FF7] underline-offset-4 hover:underline",
         brand:
-          "bg-[#467FF7] text-white hover:bg-[#3A70E3]",
+          "relative border border-[#467FF7] text-white shadow-[0_10px_4px_rgba(70,127,247,0.25)] bg-gradient-to-b from-[#5b8ff8] via-[#467FF7] to-[#3a70e3] before:content-[''] before:absolute before:inset-0 before:rounded-[7px] before:opacity-25 before:bg-gradient-to-b before:from-white before:via-transparent before:to-transparent before:pointer-events-none before:h-[45%] hover:bg-gradient-to-b hover:from-[#6699ff] hover:via-[#5085f3] hover:to-[#3366e0]",
       },
       size: {
         default: "h-10 px-4 py-2",
