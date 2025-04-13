@@ -10,10 +10,11 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { EmptyState } from "@/components/ui/empty-state"
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
 
@@ -658,11 +659,25 @@ export default function DashboardPage() {
             <TabsTrigger value="activity">Activité</TabsTrigger>
           </TabsList>
           <TabsContent value="projects" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {projects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
+            {projects.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {projects.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex justify-center py-10">
+                <EmptyState
+                  title="Aucun projet pour le moment"
+                  description="Vous n'avez pas encore de projets. Explorez notre marketplace pour découvrir nos services et créer votre premier projet."
+                  icons={[FolderPlus, FileText, PenTool]}
+                  action={{
+                    label: "Créer un projet",
+                    onClick: () => router.push('/dashboard/marketplace')
+                  }}
+                />
+              </div>
+            )}
           </TabsContent>
           <TabsContent value="activity" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
