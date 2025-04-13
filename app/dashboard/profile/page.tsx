@@ -17,7 +17,8 @@ interface Profile {
   id: string
   full_name: string
   avatar_url: string
-  onboarding_completed: boolean
+  onboarding_completed?: boolean
+  onboarding_answers?: Record<string, any>
   updated_at?: string
 }
 
@@ -89,11 +90,21 @@ export default function ProfilePage() {
       const updates = {
         full_name: profile.full_name,
         avatar_url: profile.avatar_url,
-        onboarding_completed: profile.onboarding_completed,
         updated_at: new Date().toISOString()
       }
       
       const data = await updateProfileApi(user.id, updates)
+      
+      if (profile.onboarding_completed !== undefined) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            onboarding_completed: profile.onboarding_completed
+          })
+          .eq('id', user.id)
+          
+        if (error) throw error
+      }
       
       if (!data) throw new Error('Failed to update profile')
       

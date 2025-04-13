@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
-import { updateProfile } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 type OnboardingStep = {
   id: string;
@@ -129,11 +129,18 @@ export default function ProfileOnboarding({ userId, onComplete }: { userId: stri
       // Onboarding completed
       setIsSubmitting(true);
       try {
-        await updateProfile(userId, {
-          onboarding_completed: true,
-          onboarding_answers: answers,
-          updated_at: new Date().toISOString(),
-        });
+        // Mettre à jour directement dans la table profiles avec supabase
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            onboarding_completed: true,
+            onboarding_answers: answers,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
+        
+        if (error) throw error;
+        
         toast({
           title: "Félicitations !",
           description: "Votre profil a été complété avec succès.",
