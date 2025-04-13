@@ -12,11 +12,11 @@ import {
   CardContent,
 } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface Sector {
   id: string
   name: string
-  icon: string
 }
 
 interface Experience {
@@ -30,9 +30,9 @@ interface WebPresenceItem {
   label: string
 }
 
-interface StepProfessionalProps {
-  data: any
-  onComplete: (data: any) => void
+interface Option {
+  id: string
+  name: string
 }
 
 interface FormData {
@@ -42,14 +42,14 @@ interface FormData {
 }
 
 const sectors: Sector[] = [
-  { id: 'tech', name: 'Tech & Digital', icon: '💻' },
-  { id: 'retail', name: 'Commerce & Distribution', icon: '🏪' },
-  { id: 'health', name: 'Santé & Bien-être', icon: '⚕️' },
-  { id: 'education', name: 'Éducation & Formation', icon: '📚' },
-  { id: 'food', name: 'Restauration & Food', icon: '🍽️' },
-  { id: 'creative', name: 'Créatif & Design', icon: '🎨' },
-  { id: 'construction', name: 'Construction & BTP', icon: '🏗️' },
-  { id: 'other', name: 'Autre secteur', icon: '🌟' }
+  { id: 'technology', name: 'Technology' },
+  { id: 'healthcare', name: 'Healthcare' },
+  { id: 'education', name: 'Education' },
+  { id: 'finance', name: 'Finance' },
+  { id: 'retail', name: 'Retail' },
+  { id: 'manufacturing', name: 'Manufacturing' },
+  { id: 'services', name: 'Services' },
+  { id: 'other', name: 'Other' }
 ]
 
 const experiences: Experience[] = [
@@ -67,112 +67,120 @@ const webPresence: WebPresenceItem[] = [
   { id: 'app', label: 'Application mobile' }
 ]
 
-export default function StepProfessional({ data, onComplete }: StepProfessionalProps) {
-  const [formData, setFormData] = useState<FormData>({
+const companySizes: Option[] = [
+  { id: 'solo', name: 'Solo' },
+  { id: '2-10', name: '2-10' },
+  { id: '11-50', name: '11-50' },
+  { id: '51-200', name: '51-200' },
+  { id: '201-1000', name: '201-1000' },
+  { id: '1000+', name: '1000+' }
+]
+
+const projectTypes: Option[] = [
+  { id: 'startup', name: 'Startup' },
+  { id: 'small-business', name: 'Small Business' },
+  { id: 'enterprise', name: 'Enterprise' },
+  { id: 'agency', name: 'Agency' },
+  { id: 'freelance', name: 'Freelance' },
+  { id: 'other', name: 'Other' }
+]
+
+export default function StepProfessional({ data, onComplete, badges }: StepProps) {
+  const [formData, setFormData] = useState({
+    role: data.role || '',
     sector: data.sector || '',
-    experience: data.experience || '',
-    webPresence: data.webPresence || []
+    companySize: data.companySize || '',
+    projectType: data.projectType || []
   })
-
-  const handleSectorSelect = (sectorId: string) => {
-    setFormData({ ...formData, sector: sectorId })
-  }
-
-  const handleExperienceSelect = (expId: string) => {
-    setFormData({ ...formData, experience: expId })
-  }
-
-  const handleWebPresenceToggle = (id: string) => {
-    const current = formData.webPresence
-    const updated = current.includes(id)
-      ? current.filter((item: string) => item !== id)
-      : [...current, id]
-    setFormData({ ...formData, webPresence: updated })
-  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onComplete(formData)
+    onComplete({
+      ...data,
+      ...formData
+    })
   }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
     >
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div>
-          <Label className="text-lg mb-4 block">Ton secteur d'activité</Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {sectors.map((sector) => (
-              <Card
-                key={sector.id}
-                className={`cursor-pointer transition-all ${
-                  formData.sector === sector.id
-                    ? 'border-primary bg-primary/5'
-                    : 'hover:border-primary/50'
-                }`}
-                onClick={() => handleSectorSelect(sector.id)}
-              >
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl mb-2">{sector.icon}</div>
-                  <div className="text-sm font-medium">{sector.name}</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        <div className="space-y-4">
+          <Label>Your Role</Label>
+          <Input
+            value={formData.role}
+            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            placeholder="e.g. CEO, Developer, Designer"
+            required
+          />
         </div>
 
-        <div>
-          <Label className="text-lg mb-4 block">Ton expérience</Label>
-          <div className="grid grid-cols-2 gap-4">
-            {experiences.map((exp) => (
-              <Card
-                key={exp.id}
-                className={`cursor-pointer transition-all ${
-                  formData.experience === exp.id
-                    ? 'border-primary bg-primary/5'
-                    : 'hover:border-primary/50'
-                }`}
-                onClick={() => handleExperienceSelect(exp.id)}
-              >
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="text-2xl">{exp.icon}</div>
-                  <div className="text-sm font-medium">{exp.label}</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        <div className="space-y-4">
+          <Label>Industry Sector</Label>
+          <Select
+            value={formData.sector}
+            onValueChange={(value) => setFormData({ ...formData, sector: value })}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select your industry" />
+            </SelectTrigger>
+            <SelectContent>
+              {sectors.map((sector) => (
+                <SelectItem key={sector.id} value={sector.id}>
+                  {sector.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div>
-          <Label className="text-lg mb-4 block">Ta présence en ligne</Label>
-          <div className="space-y-3">
-            {webPresence.map((item) => (
-              <div key={item.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={item.id}
-                  checked={formData.webPresence.includes(item.id)}
-                  onCheckedChange={() => handleWebPresenceToggle(item.id)}
-                />
-                <label
-                  htmlFor={item.id}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {item.label}
-                </label>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-4">
+          <Label>Company Size</Label>
+          <Select
+            value={formData.companySize}
+            onValueChange={(value) => setFormData({ ...formData, companySize: value })}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select company size" />
+            </SelectTrigger>
+            <SelectContent>
+              {companySizes.map((size) => (
+                <SelectItem key={size.id} value={size.id}>
+                  {size.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
-        >
-          Suivant 🎯
+        <div className="space-y-4">
+          <Label>Project Types</Label>
+          <Select
+            value={formData.projectType[0] || ''}
+            onValueChange={(value) => setFormData({ ...formData, projectType: [value] })}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select project type" />
+            </SelectTrigger>
+            <SelectContent>
+              {projectTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  {type.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button type="submit" className="w-full">
+          Continue
         </Button>
       </form>
     </motion.div>
