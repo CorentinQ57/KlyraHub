@@ -18,10 +18,10 @@ interface StepAmbitionsProps {
 }
 
 const businessPriorities = [
-  { id: 'brand', content: 'Développer ma marque 🎯' },
+  { id: 'brand', content: 'Developper ma marque 🎯' },
   { id: 'clients', content: 'Attirer plus de clients 🤝' },
-  { id: 'digital', content: 'Accélérer ma transformation digitale 🚀' },
-  { id: 'experience', content: 'Améliorer l'expérience client ⭐' },
+  { id: 'digital', content: 'Accelerer ma transformation digitale 🚀' },
+  { id: 'experience', content: 'Ameliorer l\'experience client ⭐' },
   { id: 'innovation', content: 'Innover dans mon secteur 💡' }
 ]
 
