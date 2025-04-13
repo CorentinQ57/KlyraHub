@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { supabase, getProfileData, updateProfile } from '@/lib/supabase'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
+import { OnboardingData } from '@/components/onboarding/types'
 
 export default function ProfilePage() {
   const [fullName, setFullName] = useState('')
@@ -18,6 +19,14 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null)
+  const [onboardingData, setOnboardingData] = useState<OnboardingData>({
+    name: '',
+    businessName: '',
+    role: '',
+    sector: '',
+    companySize: '',
+    projectType: []
+  })
   const router = useRouter()
   const { user, signOut } = useAuth()
   const { toast } = useToast()
@@ -32,19 +41,17 @@ export default function ProfilePage() {
   async function loadProfile() {
     setIsLoading(true)
     try {
-      // Vérifier que user existe
-      if (!user) {
-        return;
-      }
+      if (!user) return
       
-      // Set email from auth data
       setEmail(user.email || '')
 
-      // Get additional profile data
       const profileData = await getProfileData(user.id)
       if (profileData) {
         setFullName(profileData.full_name || '')
         setAvatarUrl(profileData.avatar_url || '')
+        if (profileData.onboarding_data) {
+          setOnboardingData(profileData.onboarding_data)
+        }
       }
     } catch (error) {
       console.error('Error loading profile:', error)
@@ -62,14 +69,51 @@ export default function ProfilePage() {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('onboarding_completed')
+        .select('onboarding_completed, onboarding_data')
         .eq('id', user?.id)
         .single()
 
       setHasCompletedOnboarding(profile?.onboarding_completed || false)
+      if (profile?.onboarding_data) {
+        setOnboardingData(profile.onboarding_data)
+      }
     } catch (error) {
       console.error('Error checking onboarding status:', error)
       setHasCompletedOnboarding(false)
+    }
+  }
+
+  const handleOnboardingComplete = async (data: OnboardingData) => {
+    try {
+      if (!user) return
+
+      const updates = {
+        id: user.id,
+        onboarding_completed: true,
+        onboarding_data: data,
+        updated_at: new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      setHasCompletedOnboarding(true)
+      setOnboardingData(data)
+      toast({
+        title: "Onboarding terminé",
+        description: "Votre profil a été configuré avec succès",
+      })
+    } catch (error) {
+      console.error('Error completing onboarding:', error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de terminer l'onboarding",
+        variant: "destructive",
+      })
     }
   }
 
@@ -117,18 +161,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg">Chargement des données de profil...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (hasCompletedOnboarding === null) {
+  if (isLoading || hasCompletedOnboarding === null) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -200,61 +233,33 @@ export default function ProfilePage() {
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   disabled={isUpdating}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Entrez l'URL d'une image pour votre avatar
-                </p>
               </div>
             </div>
           </div>
-          
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-              disabled={isUpdating}
-            >
-              Annuler
-            </Button>
+
+          <div className="flex justify-between items-center pt-4">
             <Button
               type="submit"
               disabled={isUpdating}
             >
-              {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
+              {isUpdating ? 'Mise à jour...' : 'Mettre à jour'}
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              type="button"
+            >
+              Se déconnecter
             </Button>
           </div>
         </form>
       </div>
-      
-      <div className="border rounded-lg p-6 mt-8">
-        <h2 className="text-xl font-semibold mb-4">Sécurité du compte</h2>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-medium">Changer de mot de passe</h3>
-              <p className="text-sm text-muted-foreground">
-                Mettez à jour votre mot de passe pour sécuriser votre compte
-              </p>
-            </div>
-            <Link href="/reset-password">
-              <Button variant="outline">Changer</Button>
-            </Link>
-          </div>
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-medium">Supprimer le compte</h3>
-              <p className="text-sm text-muted-foreground">
-                Supprimez définitivement votre compte et toutes vos données
-              </p>
-            </div>
-            <Button variant="outline" className="text-destructive hover:text-destructive">
-              Supprimer
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   ) : (
-    <OnboardingFlow />
+    <OnboardingFlow
+      data={onboardingData}
+      onComplete={handleOnboardingComplete}
+    />
   )
 } 
