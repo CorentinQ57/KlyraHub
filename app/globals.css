@@ -141,11 +141,6 @@
     @apply px-2 py-1 text-xs font-semibold uppercase tracking-badge rounded-full whitespace-nowrap overflow-hidden text-ellipsis;
   }
   
-  /* Category label used in project cards */
-  .category-label {
-    @apply bg-primary/10 text-primary font-semibold px-2.5 py-1 text-xs rounded-full inline-flex items-center;
-  }
-  
   /* Carte */
   .card {
     @apply bg-white rounded-large shadow-card;
