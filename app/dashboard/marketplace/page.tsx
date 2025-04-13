@@ -291,6 +291,13 @@ export default function MarketplacePage() {
                   whileHover="hover"
                   transition={{ delay: index * 0.05 }}
                 >
+                  <div className="flex justify-start mb-2">
+                    <Badge variant="outline" className="text-[11px] flex items-center p-1 h-5 rounded-full bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]/20">
+                      {getCategoryIcon(service.category || 'Autre')}
+                      <span className="ml-1 font-medium">{service.category || 'Autre'}</span>
+                    </Badge>
+                  </div>
+                
                   <div className="flex justify-between">
                     <div className="flex items-center">
                       <ServiceIcon 
@@ -301,11 +308,7 @@ export default function MarketplacePage() {
                       <div className="ml-3">
                         <h3 className="font-medium text-[14px] line-clamp-1">{service.name}</h3>
                         <div className="flex items-center mt-1">
-                          <Badge variant="outline" className="text-[10px] flex items-center p-1 h-5 rounded-full">
-                            {getCategoryIcon(service.category || 'Autre')}
-                            <span className="ml-1">{service.category || 'Autre'}</span>
-                          </Badge>
-                          <span className="text-[12px] text-[#64748B] ml-2">{service.duration} jours</span>
+                          <span className="text-[12px] text-[#64748B]">{service.duration} jours</span>
                         </div>
                       </div>
                     </div>

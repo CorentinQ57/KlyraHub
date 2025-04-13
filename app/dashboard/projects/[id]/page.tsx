@@ -10,11 +10,21 @@ import { Project, Comment, Deliverable } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import DepositSpaces from './components/DepositSpaces'
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { ArrowLeft, MessageSquare, FileText, ChevronRight, Clock, Settings, Download } from 'lucide-react'
+import { ArrowLeft, MessageSquare, FileText, ChevronRight, Clock, Settings, Download, Tag } from 'lucide-react'
 
 // Définition des types étendus
 type ProjectWithRelations = Project & {
-  services?: { title: string; category_id: number } | null;
+  services?: { 
+    title: string; 
+    name?: string;
+    category_id: number;
+    category?: {
+      id: string;
+      name: string;
+      description?: string;
+      image_url?: string;
+    } 
+  } | null;
   profiles?: { full_name: string | null; email: string | null } | null;
 }
 
@@ -246,6 +256,32 @@ export default function ProjectPage({
     }
   }
 
+  // Fonction pour obtenir le nom de la catégorie
+  const getCategoryName = (project: ProjectWithRelations): string => {
+    // Cas 1: Accès via la structure correcte
+    if (project.services?.category?.name) {
+      return project.services.category.name;
+    }
+    
+    // Cas 2: Utilisation des ID connus
+    if (project.services?.category_id) {
+      const categoryKey = String(project.services.category_id).toLowerCase();
+      return categoryKey === "1b041ce2-1f9b-466f-8aa4-b94fec7d94ab" ? "Développement Web" :
+             categoryKey === "ba8f9878-d327-4b2d-8be5-ae95df23e1a0" ? "Branding" :
+             categoryKey === "7227a841-69e8-48bb-85fd-d65d49618245" ? "UI UX Design" :
+             categoryKey === "53b49d36-18c7-467f-89fc-cd78331dc0d7" ? "Social Media" : 
+             "Catégorie";
+    }
+    
+    // Cas 3: Si on a le nom du service, l'utiliser comme fallback
+    if (project.services?.name || project.services?.title) {
+      return project.services.name || project.services.title || "Service";
+    }
+    
+    // Cas par défaut
+    return "Catégorie";
+  };
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -304,6 +340,13 @@ export default function ProjectPage({
         <div className="lg:col-span-2 space-y-6">
           <PageSection title="Détails du projet">
             <ContentCard>
+              <div className="mb-4">
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-[#EBF2FF] text-[#467FF7]">
+                  <Tag className="mr-2 h-4 w-4" />
+                  {getCategoryName(project)}
+                </span>
+              </div>
+              
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Service</h3>

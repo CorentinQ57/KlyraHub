@@ -151,8 +151,12 @@ export default function ServicePage({ params }: Props) {
                       <div className="flex items-center gap-4">
                         <div className="text-4xl">{service?.icon || '📋'}</div>
                         <div>
+                          <div className="mb-2">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#EBF2FF] text-[#467FF7]">
+                              {service?.category || 'Catégorie'}
+                            </span>
+                          </div>
                           <h1 className="text-3xl font-bold tracking-tight">{service?.name}</h1>
-                          <p className="text-muted-foreground">{service?.category}</p>
                         </div>
                       </div>
                     </div>
