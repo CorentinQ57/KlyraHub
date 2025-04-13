@@ -42,7 +42,7 @@ interface NavGroup {
 // Articles de news avec l'onboarding mis en avant
 const NEWS_ARTICLES: NewsArticle[] = [
   {
-    href: "/dashboard/onboarding",
+    href: "/onboarding",
     title: "Complétez votre onboarding",
     summary: "Configurez votre profil et vos préférences pour une expérience personnalisée",
     image: "/images/news/onboarding.jpg",

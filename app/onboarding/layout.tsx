@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { AuroraBackground } from '@/components/ui/aurora-background'
+import Link from 'next/link'
+import Image from 'next/image'
 
 export default function OnboardingLayout({
   children,
@@ -25,15 +27,19 @@ export default function OnboardingLayout({
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>
       <div className="flex flex-col min-h-screen">
-        <header className="py-4 border-b border-[#E2E8F0] bg-white/60 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container mx-auto px-4 flex justify-between items-center">
-            <div className="flex items-center">
-              <span className="text-xl font-semibold text-[#1A2333]">Klyra Hub</span>
-            </div>
-          </div>
+        <header className="py-6 border-b border-[#E2E8F0] bg-white/60 backdrop-blur-sm sticky top-0 z-10 flex justify-center">
+          <Link href="/" className="flex items-center justify-center">
+            <Image 
+              src="/images/logo.png" 
+              alt="Klyra" 
+              width={120} 
+              height={36} 
+              className="h-9 object-contain"
+            />
+          </Link>
         </header>
         
-        <main className="flex-grow container mx-auto px-4 py-8">
+        <main className="flex-grow container mx-auto px-4 py-8 overflow-x-hidden">
           {children}
         </main>
         

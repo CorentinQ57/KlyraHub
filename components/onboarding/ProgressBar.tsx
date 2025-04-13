@@ -9,12 +9,15 @@ interface ProgressBarProps {
 
 export default function ProgressBar({ steps, currentStep }: ProgressBarProps) {
   return (
-    <div className="w-full mb-8">
-      <div className="flex justify-between">
+    <div className="w-full mb-8 px-6 max-w-4xl mx-auto">
+      <div className="flex justify-between relative">
+        {/* Ligne de fond continue */}
+        <div className="absolute top-5 left-5 right-5 h-[2px] bg-slate-200"></div>
+        
         {steps.map((step, index) => (
           <div 
             key={index} 
-            className="relative flex flex-col items-center"
+            className="relative flex flex-col items-center flex-1"
           >
             <motion.div 
               className={`w-10 h-10 rounded-full flex items-center justify-center z-10 
@@ -50,30 +53,25 @@ export default function ProgressBar({ steps, currentStep }: ProgressBarProps) {
               )}
             </motion.div>
             <span 
-              className={`text-xs mt-2 font-medium ${
+              className={`text-xs mt-2 font-medium text-center ${
                 index <= currentStep ? 'text-primary' : 'text-slate-400'
               }`}
             >
               {step}
             </span>
             
-            {/* Connector line between steps */}
+            {/* Ligne de progression entre les étapes */}
             {index < steps.length - 1 && (
-              <div className="absolute top-5 w-full h-[2px] left-1/2">
-                <div className={`h-full bg-slate-200`} />
-                <motion.div 
-                  className="absolute top-0 left-0 h-full bg-primary"
-                  initial={{ width: '0%' }}
-                  animate={{ 
-                    width: index < currentStep 
-                      ? '100%' 
-                      : index === currentStep 
-                        ? '50%' 
-                        : '0%'
-                  }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                />
-              </div>
+              <motion.div 
+                className="absolute top-5 left-1/2 h-[2px] bg-primary"
+                style={{ width: "calc(100% - 10px)" }}
+                initial={{ width: 0, left: "50%" }}
+                animate={{ 
+                  width: index < currentStep ? "calc(100% - 10px)" : "0%",
+                  left: index < currentStep ? "50%" : "50%"
+                }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              />
             )}
           </div>
         ))}
