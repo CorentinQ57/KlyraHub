@@ -27,7 +27,7 @@ export default function ProfilePage() {
     } else if (!user && !isLoading) {
       router.push('/login')
     }
-  }, [user, isLoading, router])
+  }, [user, router])
 
   async function loadProfile() {
     setIsLoading(true)
