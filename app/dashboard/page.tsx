@@ -648,7 +648,7 @@ export default function DashboardPage() {
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>
-      <div className="container mx-auto p-6 relative z-10">
+      <div className="container max-w-7xl mx-auto px-4 py-6 relative z-10">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>

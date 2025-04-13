@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { HeaderNav } from '@/components/HeaderNav'
+import { Sidebar } from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
 
@@ -183,11 +184,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   // Afficher le layout avec la navigation pour les utilisateurs authentifiés
   return (
-    <div className="flex min-h-screen flex-col">
-      <HeaderNav />
-      <main className="flex-1">
-        {children}
-      </main>
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <div className="flex flex-col flex-1">
+        <HeaderNav />
+        <main className="flex-1 container max-w-7xl mx-auto px-4 py-6">
+          {children}
+        </main>
+      </div>
     </div>
   )
 } 

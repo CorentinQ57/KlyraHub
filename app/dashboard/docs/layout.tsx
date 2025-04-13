@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DocsNav } from "@/components/docs/DocsNav";
 import { ChevronLeft, Menu, X } from "lucide-react";
+import { Sidebar } from "@/components/Sidebar";
+import { HeaderNav } from "@/components/HeaderNav";
 
 export default function DocsLayout({
   children,
@@ -30,6 +32,21 @@ export default function DocsLayout({
       window.removeEventListener("resize", checkIfMobile);
     };
   }, []);
+
+  // Si c'est une route de documentation, ignorer les vérifications d'authentification
+  if (pathname === "/dashboard/docs") {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <div className="flex flex-col flex-1">
+          <HeaderNav />
+          <main className="flex-1 container max-w-7xl mx-auto px-4 py-6">
+            {children}
+          </main>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -88,7 +105,7 @@ export default function DocsLayout({
 
         {/* Contenu principal */}
         <main className="flex-1 overflow-auto">
-          <div className="container py-6 lg:py-10 max-w-5xl">
+          <div className="container max-w-7xl mx-auto px-4 py-6">
             {children}
           </div>
         </main>

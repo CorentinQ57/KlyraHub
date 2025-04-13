@@ -240,7 +240,7 @@ export default function CategoriesManagementPage() {
   }
 
   return (
-    <div className="container py-10">
+    <div className="container max-w-7xl mx-auto px-4 py-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8">
         <div>
           <Link 

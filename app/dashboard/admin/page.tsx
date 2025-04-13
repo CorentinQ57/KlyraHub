@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container max-w-7xl mx-auto px-4 py-6">
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Administration</h1>

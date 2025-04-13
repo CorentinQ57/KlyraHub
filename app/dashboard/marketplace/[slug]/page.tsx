@@ -136,7 +136,7 @@ export default function ServicePage({ params }: Props) {
             <TabsTrigger value="service">{service?.name}</TabsTrigger>
           </TabsList>
           <TabsContent value="service">
-            <div className="container py-10">
+            <div className="container max-w-7xl mx-auto px-4 py-6">
               <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
                 <div className="lg:w-2/3">
                   <div className="space-y-8">
