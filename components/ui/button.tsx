@@ -5,24 +5,29 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EBF2FF] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none",
   {
     variants: {
       variant: {
-        default: "bg-btn-primary text-white border border-[#467FF7] shadow-[0_10px_12px_-2px_rgba(70,127,247,0.25)] relative overflow-hidden after:content-[''] after:absolute after:inset-0 after:shadow-[inset_0_-12px_8px_-10px_rgba(255,255,255,0.5)] hover:shadow-[0_12px_16px_-2px_rgba(70,127,247,0.35)] active:translate-y-0.5 active:shadow-[0_5px_8px_-2px_rgba(70,127,247,0.25)]",
+        default:
+          "bg-[#467FF7] text-white shadow-sm hover:bg-[#3A70E3]",
         destructive:
-          "bg-destructive text-destructive-foreground border border-destructive hover:bg-destructive/90",
+          "bg-red-500 text-white hover:bg-red-600",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#1A2333]",
         secondary:
-          "bg-white text-[#467FF7] border border-[#467FF7] hover:bg-[#E6EDFD]",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-[#F8FAFC] text-[#1A2333] hover:bg-[#E2E8F0]",
+        ghost:
+          "hover:bg-[#F8FAFC] text-[#1A2333]",
+        link:
+          "text-[#467FF7] underline-offset-4 hover:underline",
+        brand:
+          "bg-[#467FF7] text-white hover:bg-[#3A70E3]",
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-12 rounded-md px-6",
         icon: "h-10 w-10",
       },
     },
@@ -30,7 +35,7 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  },
+  }
 )
 
 export interface ButtonProps
@@ -49,7 +54,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       />
     )
-  },
+  }
 )
 Button.displayName = "Button"
 

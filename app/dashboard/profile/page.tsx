@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { updateProfile, getProfileData } from '@/lib/supabase'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { User, KeyRound } from 'lucide-react'
 
 export default function ProfilePage() {
   const [fullName, setFullName] = useState('')
@@ -98,94 +100,119 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg">Chargement des données de profil...</p>
+      <PageContainer>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
+            <p className="mt-4 text-[14px]">Chargement des données de profil...</p>
+          </div>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Votre profil</h1>
-        <p className="text-muted-foreground">
-          Gérez vos informations personnelles
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Votre profil"
+        description="Gérez vos informations personnelles"
+      />
       
-      <div className="border rounded-lg p-6 space-y-6">
-        <form onSubmit={handleUpdate} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold mb-4">{fullName || 'Utilisateur'}</h2>
-              <p className="text-muted-foreground mb-4">{email}</p>
-            </div>
-            
-            <div className="grid gap-4 pt-2">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Pour changer votre email, contactez le support
-                </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <ContentCard>
+            <form onSubmit={handleUpdate} className="space-y-6">
+              <div>
+                <h3 className="text-[18px] font-semibold mb-4">Informations personnelles</h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-[14px] font-medium text-[#1A2333]">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      disabled
+                      className="bg-[#F8FAFC] h-10 rounded-lg border-[#E2E8F0]"
+                    />
+                    <p className="text-[13px] text-[#64748B]">
+                      Pour changer votre email, contactez le support
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-[14px] font-medium text-[#1A2333]">Nom d'utilisateur</Label>
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={isUpdating}
+                      className="h-10 rounded-lg border-[#E2E8F0]"
+                    />
+                  </div>
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nom d'utilisateur</Label>
-                <Input
-                  id="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+              <div className="pt-4 border-t border-[#E2E8F0] flex justify-end gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push('/dashboard')}
                   disabled={isUpdating}
-                />
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
+                </Button>
               </div>
+            </form>
+          </ContentCard>
+        </div>
+        
+        <div>
+          <ContentCard>
+            <div className="space-y-6">
+              <h3 className="text-[18px] font-semibold mb-4">Sécurité du compte</h3>
+              
+              <div className="flex items-start space-x-4 pb-6 border-b border-[#E2E8F0]">
+                <div className="h-10 w-10 rounded-lg bg-[#EBF2FF] flex items-center justify-center text-[#467FF7] flex-shrink-0">
+                  <KeyRound className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-[16px] font-medium">Changer de mot de passe</h4>
+                  <p className="text-[13px] text-[#64748B] mb-2">
+                    Mettez à jour votre mot de passe pour sécuriser votre compte
+                  </p>
+                  <Link href="/reset-password">
+                    <Button variant="outline" size="sm">Changer</Button>
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 pt-2">
+                <div className="h-10 w-10 rounded-lg bg-[#EBF2FF] flex items-center justify-center text-[#467FF7] flex-shrink-0">
+                  <User className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="space-y-1">
+                    <h4 className="text-[16px] font-medium">Information de compte</h4>
+                    <p className="text-[13px] text-[#64748B]">
+                      {email}
+                    </p>
+                    <p className="text-[13px] text-[#64748B]">
+                      Membre depuis {user ? new Date(user.created_at).toLocaleDateString() : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
             </div>
-          </div>
-          
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push('/dashboard')}
-              disabled={isUpdating}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              disabled={isUpdating}
-            >
-              {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
-            </Button>
-          </div>
-        </form>
-      </div>
-      
-      <div className="border rounded-lg p-6 mt-8">
-        <h2 className="text-xl font-semibold mb-4">Sécurité du compte</h2>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-medium">Changer de mot de passe</h3>
-              <p className="text-sm text-muted-foreground">
-                Mettez à jour votre mot de passe pour sécuriser votre compte
-              </p>
-            </div>
-            <Link href="/reset-password">
-              <Button variant="outline">Changer</Button>
-            </Link>
-          </div>
+          </ContentCard>
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 } 

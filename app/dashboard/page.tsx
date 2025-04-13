@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import VideoWalkthrough from '@/components/VideoWalkthrough'
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -132,12 +133,12 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 
   return (
     <motion.div 
-      className="card border border-gray-100 hover:shadow-md transition-shadow rounded-lg overflow-hidden flex flex-col p-sm"
+      className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.05)] flex flex-col transition-all hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)]"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-gray-100 rounded-lg">
+      <div className="relative aspect-video w-full overflow-hidden bg-[#F8FAFC]">
         <Image
           src={displayImage}
           alt={project.services?.name || "Image du projet"}
@@ -146,34 +147,36 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-      </div>
-
-      <div className="p-3 flex-1 flex flex-col">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              project.services?.category ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-800'
-            }`}>
-              {categoryIcon}
-              <span className="ml-1">{getCategoryName()}</span>
-            </span>
-          </div>
-          <span className={`whitespace-nowrap inline-flex ${statusLabels[project.status].color} px-2 py-1 rounded-full text-xs`}>
+        
+        <div className="absolute top-3 right-3">
+          <span className={`whitespace-nowrap inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusLabels[project.status].color}`}>
             {statusLabels[project.status].label}
           </span>
         </div>
+      </div>
 
-        <h3 className="text-lg font-semibold mt-2 line-clamp-1">{project.title}</h3>
-        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+      <div className="p-6 flex-1 flex flex-col">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#EBF2FF] text-[#467FF7]">
+            {categoryIcon}
+            <span className="ml-1.5">{getCategoryName()}</span>
+          </span>
+        </div>
+
+        <h3 className="text-[16px] font-semibold mb-1 line-clamp-1">{project.title}</h3>
+        <p className="text-[13px] text-[#64748B] mb-4 line-clamp-2">
           {project.description || "Description du projet"}
         </p>
 
-        <div className="mt-4 pt-4 border-t flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">
+        <div className="mt-auto pt-4 border-t border-[#E2E8F0] flex justify-between items-center">
+          <span className="text-[13px] text-[#64748B] flex items-center">
+            <Calendar className="h-3.5 w-3.5 mr-1.5" />
             {new Date(project.created_at).toLocaleDateString()}
           </span>
           <Link href={`/dashboard/projects/${project.id}`}>
-            <Button size="sm" variant="outline">Voir les détails</Button>
+            <Button size="sm" variant="outline" className="text-xs h-8">
+              Voir le projet
+            </Button>
           </Link>
         </div>
       </div>
@@ -649,56 +652,145 @@ export default function DashboardPage() {
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>
-      <div className="container mx-auto p-6 relative z-10">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
-            <p className="text-muted-foreground">
-              Bienvenue {user?.user_metadata?.full_name || 'sur votre espace client'}
-            </p>
-          </div>
+      <PageContainer>
+        <PageHeader 
+          title="Tableau de bord" 
+          description={`Bienvenue ${user?.user_metadata?.full_name || 'sur votre espace client'}`}
+        >
           <Link href="/dashboard/marketplace">
             <Button>
               <Store className="mr-2 h-4 w-4" /> Explorer les services
             </Button>
           </Link>
-        </div>
+        </PageHeader>
 
-        <StatsOverview stats={stats} />
+        <PageSection>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <ContentCard>
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[13px] font-medium text-[#64748B]">Projets Totaux</span>
+                  <Store className="h-4 w-4 text-[#64748B]" />
+                </div>
+                <span className="text-2xl font-bold">{stats.totalProjects}</span>
+                <span className="text-xs text-[#64748B] mt-1">
+                  {stats.activeProjects} projets actifs
+                </span>
+              </div>
+            </ContentCard>
+            
+            <ContentCard>
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[13px] font-medium text-[#64748B]">Projets Complétés</span>
+                  <CheckCircle className="h-4 w-4 text-[#64748B]" />
+                </div>
+                <span className="text-2xl font-bold">{stats.completedProjects}</span>
+                <Progress value={(stats.completedProjects / stats.totalProjects) * 100} className="h-2 mt-2" />
+              </div>
+            </ContentCard>
+            
+            <ContentCard>
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[13px] font-medium text-[#64748B]">Badges Débloqués</span>
+                  <Award className="h-4 w-4 text-[#64748B]" />
+                </div>
+                <span className="text-2xl font-bold">3</span>
+                <span className="text-xs text-[#64748B] mt-1">
+                  Prochain badge dans 2 projets
+                </span>
+              </div>
+            </ContentCard>
+            
+            <ContentCard>
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[13px] font-medium text-[#64748B]">Investissement Total</span>
+                  <CreditCard className="h-4 w-4 text-[#64748B]" />
+                </div>
+                <span className="text-2xl font-bold">{stats.totalInvestment}€</span>
+                <span className="text-xs text-[#64748B] mt-1">
+                  Dernière facture il y a 3 jours
+                </span>
+              </div>
+            </ContentCard>
+          </div>
+        </PageSection>
 
-        <Tabs defaultValue="projects" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="projects">Projets</TabsTrigger>
-            <TabsTrigger value="activity">Activité</TabsTrigger>
-          </TabsList>
-          <TabsContent value="projects" className="space-y-4">
-            {projects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
+        <PageSection>
+          <Tabs defaultValue="projects" className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="projects">Projets</TabsTrigger>
+              <TabsTrigger value="activity">Activité</TabsTrigger>
+            </TabsList>
+            <TabsContent value="projects" className="mt-0">
+              {projects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {projects.map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex justify-center py-8">
+                  <EmptyState
+                    title="Aucun projet pour le moment"
+                    description="Vous n'avez pas encore de projets. Explorez notre marketplace pour découvrir nos services et créer votre premier projet."
+                    icons={[FolderPlus, FileText, PenTool]}
+                    action={{
+                      label: "Créer un projet",
+                      onClick: () => router.push('/dashboard/marketplace')
+                    }}
+                  />
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="activity" className="mt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <ContentCard>
+                    <h3 className="text-[18px] font-semibold mb-3">Notifications Récentes</h3>
+                    <p className="text-[13px] text-[#64748B] mb-4">Vos dernières activités et mises à jour</p>
+                    
+                    <ScrollArea className="h-[300px] w-full pr-4">
+                      {notifications.map((notif) => (
+                        <div key={notif.id} className="flex items-start space-x-4 mb-4 p-3 rounded-lg hover:bg-[#F8FAFC]">
+                          <div className={`rounded-full p-2 ${
+                            notif.type === 'comment' ? 'bg-blue-100' :
+                            notif.type === 'deliverable' ? 'bg-green-100' :
+                            notif.type === 'validation' ? 'bg-yellow-100' : 'bg-gray-100'
+                          }`}>
+                            {notif.type === 'comment' ? <MessageSquare className="h-4 w-4" /> :
+                            notif.type === 'deliverable' ? <Package className="h-4 w-4" /> :
+                            notif.type === 'validation' ? <CheckCircle className="h-4 w-4" /> :
+                            <Bell className="h-4 w-4" />}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-[14px] font-medium">{notif.title}</h4>
+                            <p className="text-[13px] text-[#64748B]">{notif.message}</p>
+                            <span className="text-xs text-[#64748B]">
+                              {new Date(notif.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {!notif.read && (
+                            <div className="w-2 h-2 rounded-full bg-[#467FF7]" />
+                          )}
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </ContentCard>
+                </div>
+                <div>
+                  <ContentCard>
+                    <h3 className="text-[18px] font-semibold mb-3">Activité récente</h3>
+                    <p className="text-[13px] text-[#64748B]">Votre activité sur la plateforme</p>
+                    {/* Contenu à ajouter */}
+                  </ContentCard>
+                </div>
               </div>
-            ) : (
-              <div className="flex justify-center py-10">
-                <EmptyState
-                  title="Aucun projet pour le moment"
-                  description="Vous n'avez pas encore de projets. Explorez notre marketplace pour découvrir nos services et créer votre premier projet."
-                  icons={[FolderPlus, FileText, PenTool]}
-                  action={{
-                    label: "Créer un projet",
-                    onClick: () => router.push('/dashboard/marketplace')
-                  }}
-                />
-              </div>
-            )}
-          </TabsContent>
-          <TabsContent value="activity" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <NotificationsPanel notifications={notifications} />
-              {/* Autres panneaux d'activité à ajouter */}
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        </PageSection>
 
         {showTutorial && (
           <TutorialStep
@@ -711,7 +803,7 @@ export default function DashboardPage() {
             icon={tutorialSteps[tutorialStep - 1].icon}
           />
         )}
-      </div>
+      </PageContainer>
       
       {/* Ajout du composant VideoWalkthrough */}
       <VideoWalkthrough 
