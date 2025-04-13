@@ -18,6 +18,8 @@ import StepProfessional from './steps/StepProfessional'
 import StepAmbitions from './steps/StepAmbitions'
 import StepStyle from './steps/StepStyle'
 import StepFinal from './steps/StepFinal'
+import StepVision from './steps/StepVision'
+import StepTeam from './steps/StepTeam'
 
 interface OnboardingStep {
   id: number
@@ -239,12 +241,26 @@ export default function OnboardingFlow() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Composants des étapes importés ici */}
-            {currentStep === 1 && <StepIntroduction data={data} setData={setData} />}
-            {currentStep === 2 && <StepProfessional data={data} setData={setData} />}
-            {currentStep === 3 && <StepStyle data={data} setData={setData} />}
-            {currentStep === 4 && <StepAmbitions data={data} setData={setData} />}
-            {currentStep === 5 && <StepFinal data={data} setData={setData} />}
+            {currentStep === 1 && <StepIntroduction data={data} setData={(newData: OnboardingData) => {
+              setData(newData)
+              handleNext()
+            }} />}
+            {currentStep === 2 && <StepVision data={data} setData={(newData: OnboardingData) => {
+              setData(newData)
+              handleNext()
+            }} />}
+            {currentStep === 3 && <StepStyle data={data} setData={(newData: OnboardingData) => {
+              setData(newData)
+              handleNext()
+            }} />}
+            {currentStep === 4 && <StepTeam data={data} setData={(newData: OnboardingData) => {
+              setData(newData)
+              handleNext()
+            }} />}
+            {currentStep === 5 && <StepFinal data={data} setData={(newData: OnboardingData) => {
+              setData(newData)
+              handleNext()
+            }} />}
           </motion.div>
         </AnimatePresence>
       </Card>
