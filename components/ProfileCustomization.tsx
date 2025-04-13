@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Lock, Trophy, Sparkles, Star, BadgePlus, Palette, BookOpen } from 'lucide-react';
+import { CheckCircle2, Lock, Trophy, Sparkles, Star, BadgePlus, Palette, BookOpen, Medal, Crown, Zap, Gem, Target, Award, Droplet, Users, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -12,8 +12,9 @@ import { Slider } from '@/components/ui/slider';
 import { HexColorPicker } from 'react-colorful';
 import { cn } from '@/lib/utils';
 
-type Theme = 'light' | 'dark' | 'system' | 'blue' | 'green' | 'purple';
-type AvatarFrame = 'none' | 'circle' | 'hexagon' | 'square' | 'star' | 'premium';
+type Theme = 'light' | 'dark' | 'system' | 'blue' | 'green' | 'purple' | 'sunset';
+type AvatarFrame = 'none' | 'circle' | 'hexagon' | 'square' | 'star' | 'premium' | 'diamond' | 'crown';
+type BadgePosition = 'top' | 'bottom' | 'left' | 'right';
 
 type ProfileLevel = {
   level: number;
@@ -21,6 +22,25 @@ type ProfileLevel = {
   requiredPoints: number;
   unlocksFeature: string;
   icon: React.ReactNode;
+}
+
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  unlocked: boolean;
+  icon: React.ReactNode;
+  points: number;
+}
+
+interface Level {
+  level: number;
+  title: string;
+  description: string;
+  rewards: string[];
+  icon: React.ReactNode;
+  pointsRequired: number;
+  unlocksFeature?: string;
 }
 
 interface ProfileCustomizationProps {
@@ -55,44 +75,76 @@ export default function ProfileCustomization({
   const [userLevel, setUserLevel] = useState(1);
   const [userPoints, setUserPoints] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [badgePosition, setBadgePosition] = useState<BadgePosition>('right');
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const [customAnimations, setCustomAnimations] = useState(false);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
 
   // Définition des niveaux de progression
-  const levels: ProfileLevel[] = [
-    { 
-      level: 1, 
-      title: "Débutant", 
-      requiredPoints: 0, 
-      unlocksFeature: "Personnalisation de base",
-      icon: <BookOpen className="h-5 w-5" />
+  const levels: Level[] = [
+    {
+      level: 1,
+      title: 'Débutant',
+      description: 'Premiers pas sur Klyra',
+      rewards: ['Accès aux projets de base', 'Support communautaire'],
+      icon: <Star className="h-5 w-5" />,
+      pointsRequired: 0,
+      unlocksFeature: 'basic_projects'
     },
-    { 
-      level: 2, 
-      title: "Apprenti", 
-      requiredPoints: 50, 
-      unlocksFeature: "Couleurs personnalisées",
-      icon: <Palette className="h-5 w-5" />
+    {
+      level: 2,
+      title: 'Intermédiaire',
+      description: 'Explorer les fonctionnalités avancées',
+      rewards: ['Projets avancés', 'Support prioritaire'],
+      icon: <Star className="h-5 w-5" />,
+      pointsRequired: 150,
+      unlocksFeature: 'advanced_projects'
     },
-    { 
-      level: 3, 
-      title: "Expert", 
-      requiredPoints: 100, 
-      unlocksFeature: "Cadres d'avatar spéciaux",
-      icon: <BadgePlus className="h-5 w-5" />
+    {
+      level: 3,
+      title: 'Expert',
+      description: 'Maîtrise complète de Klyra',
+      rewards: ['Projets illimités', 'Support dédié', 'Fonctionnalités premium'],
+      icon: <Star className="h-5 w-5" />,
+      pointsRequired: 300,
+      unlocksFeature: 'premium_features'
     },
-    { 
-      level: 4, 
-      title: "Maître", 
-      requiredPoints: 200, 
-      unlocksFeature: "Thèmes exclusifs",
-      icon: <Star className="h-5 w-5" />
+  ];
+
+  // Achievements
+  const achievements: Achievement[] = [
+    {
+      id: 'first-project',
+      title: 'Premier Projet',
+      description: 'Créez votre premier projet sur Klyra',
+      unlocked: true,
+      icon: <Users className="h-5 w-5" />,
+      points: 100
     },
-    { 
-      level: 5, 
-      title: "Légende", 
-      requiredPoints: 500, 
-      unlocksFeature: "Personnalisation complète",
-      icon: <Trophy className="h-5 w-5" />
-    }
+    {
+      id: 'complete-profile',
+      title: 'Profil Complet',
+      description: 'Complétez toutes les sections de votre profil',
+      unlocked: true,
+      icon: <MessageSquare className="h-5 w-5" />,
+      points: 50
+    },
+    {
+      id: "team_builder",
+      title: "Chef d'Équipe",
+      description: "Inviter 3 collaborateurs à rejoindre vos projets",
+      unlocked: false,
+      icon: <Users className="h-5 w-5" />,
+      points: 0
+    },
+    {
+      id: "design_master",
+      title: "Maître du Design",
+      description: "Personnaliser l'apparence de 5 projets",
+      unlocked: false,
+      icon: <Palette className="h-5 w-5" />,
+      points: 0
+    },
   ];
 
   // Simuler le chargement des points et du niveau de l'utilisateur
@@ -113,8 +165,8 @@ export default function ProfileCustomization({
       // Calcul de la progression vers le niveau suivant
       const nextLevel = levels.find(l => l.level === userLevel.level + 1);
       if (nextLevel) {
-        const levelProgress = ((points - userLevel.requiredPoints) / 
-          (nextLevel.requiredPoints - userLevel.requiredPoints)) * 100;
+        const levelProgress = ((points - userLevel.pointsRequired) / 
+          (nextLevel.pointsRequired - userLevel.pointsRequired)) * 100;
         setProgress(Math.floor(levelProgress));
       } else {
         setProgress(100); // Niveau max atteint
@@ -125,11 +177,11 @@ export default function ProfileCustomization({
   }, []);
 
   // Calculer le niveau en fonction des points
-  const calculateLevel = (points: number): ProfileLevel => {
+  const calculateLevel = (points: number): Level => {
     // Trouver le niveau le plus élevé que l'utilisateur a atteint
     const currentLevel = [...levels]
       .reverse()
-      .find(level => points >= level.requiredPoints);
+      .find(level => points >= level.pointsRequired);
       
     return currentLevel || levels[0];
   };
@@ -152,8 +204,8 @@ export default function ProfileCustomization({
     // Calculer la nouvelle progression
     const nextLevel = levels.find(l => l.level === newUserLevel.level + 1);
     if (nextLevel) {
-      const levelProgress = ((newPoints - newUserLevel.requiredPoints) / 
-        (nextLevel.requiredPoints - newUserLevel.requiredPoints)) * 100;
+      const levelProgress = ((newPoints - newUserLevel.pointsRequired) / 
+        (nextLevel.pointsRequired - newUserLevel.pointsRequired)) * 100;
       setProgress(Math.floor(levelProgress));
     } else {
       setProgress(100); // Niveau max atteint
@@ -193,7 +245,9 @@ export default function ProfileCustomization({
   const pages = [
     { title: "Thème", component: ThemeSelector },
     { title: "Couleurs", component: ColorSelector },
-    { title: "Avatar", component: AvatarFrameSelector }
+    { title: "Avatar", component: AvatarFrameSelector },
+    { title: "Badges", component: BadgeSelector },
+    { title: "Réalisations", component: AchievementsDisplay }
   ];
 
   // Navigation entre les pages
@@ -249,65 +303,50 @@ export default function ProfileCustomization({
             </Label>
           </div>
           
-          <div>
-            <RadioGroupItem 
-              value="blue" 
-              id="theme-blue" 
-              className="peer sr-only"
-              disabled={!isFeatureUnlocked(4)}
-            />
-            <Label
-              htmlFor="theme-blue"
-              className={cn(
-                "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-50 hover:border-gray-300 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary",
-                !isFeatureUnlocked(4) && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <div className="rounded-md border border-gray-200 bg-[#0F172A] w-full h-20 mb-2 relative">
-                {!isFeatureUnlocked(4) && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
-                    <Lock className="h-6 w-6 text-white" />
+          {(['blue', 'green', 'purple', 'sunset'] as const).map(theme => {
+            const isUnlocked = isFeatureUnlocked(4);
+            const themeColors = {
+              blue: '#0F172A',
+              green: '#0F2A1A',
+              purple: '#2A0F2A',
+              sunset: 'linear-gradient(to right, #FF512F, #DD2476)'
+            } as const;
+            
+            return (
+              <div key={theme}>
+                <RadioGroupItem 
+                  value={theme} 
+                  id={`theme-${theme}`} 
+                  className="peer sr-only"
+                  disabled={!isUnlocked}
+                />
+                <Label
+                  htmlFor={`theme-${theme}`}
+                  className={cn(
+                    "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-50 hover:border-gray-300 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary",
+                    !isUnlocked && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <div 
+                    className="rounded-md border border-gray-200 w-full h-20 mb-2 relative"
+                    style={{ background: themeColors[theme] }}
+                  >
+                    {!isUnlocked && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
+                        <Lock className="h-6 w-6 text-white" />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Océan</span>
-                {!isFeatureUnlocked(4) && (
-                  <span className="text-xs text-muted-foreground">(Niveau 4)</span>
-                )}
-              </div>
-            </Label>
-          </div>
-          
-          <div>
-            <RadioGroupItem 
-              value="green" 
-              id="theme-green" 
-              className="peer sr-only"
-              disabled={!isFeatureUnlocked(4)}
-            />
-            <Label
-              htmlFor="theme-green"
-              className={cn(
-                "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-50 hover:border-gray-300 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary",
-                !isFeatureUnlocked(4) && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <div className="rounded-md border border-gray-200 bg-[#0F2A1A] w-full h-20 mb-2 relative">
-                {!isFeatureUnlocked(4) && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
-                    <Lock className="h-6 w-6 text-white" />
+                  <div className="flex items-center gap-1">
+                    <span>{theme.charAt(0).toUpperCase() + theme.slice(1)}</span>
+                    {!isUnlocked && (
+                      <span className="text-xs text-muted-foreground">(Niveau 4)</span>
+                    )}
                   </div>
-                )}
+                </Label>
               </div>
-              <div className="flex items-center gap-1">
-                <span>Forêt</span>
-                {!isFeatureUnlocked(4) && (
-                  <span className="text-xs text-muted-foreground">(Niveau 4)</span>
-                )}
-              </div>
-            </Label>
-          </div>
+            );
+          })}
         </RadioGroup>
       </div>
     );
@@ -388,17 +427,15 @@ export default function ProfileCustomization({
 
   // Composant de sélection de cadre d'avatar
   function AvatarFrameSelector() {
-    const isBasicUnlocked = true; // Toujours disponible
-    const isAdvancedUnlocked = isFeatureUnlocked(3);
-    const isPremiumUnlocked = isFeatureUnlocked(5);
-    
     const frames = [
       { id: 'none', name: 'Aucun', level: 1 },
       { id: 'circle', name: 'Cercle', level: 1 },
       { id: 'square', name: 'Carré', level: 1 },
       { id: 'hexagon', name: 'Hexagone', level: 3 },
       { id: 'star', name: 'Étoile', level: 3 },
-      { id: 'premium', name: 'Premium', level: 5 }
+      { id: 'premium', name: 'Premium', level: 5 },
+      { id: 'diamond', name: 'Diamant', level: 5 },
+      { id: 'crown', name: 'Couronne', level: 6 }
     ];
     
     return (
@@ -420,21 +457,7 @@ export default function ProfileCustomization({
                   )}
                   disabled={!isUnlocked}
                 >
-                  {frame.id === 'none' ? (
-                    <div className="w-10 h-10 bg-gray-200 rounded-md"></div>
-                  ) : frame.id === 'circle' ? (
-                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                  ) : frame.id === 'square' ? (
-                    <div className="w-10 h-10 bg-gray-200 rounded-md"></div>
-                  ) : frame.id === 'hexagon' ? (
-                    <div className="w-10 h-10 bg-gray-200 rounded-md transform rotate-45"></div>
-                  ) : frame.id === 'star' ? (
-                    <Star className="w-10 h-10 text-gray-200 fill-gray-200" />
-                  ) : (
-                    <div className="w-10 h-10 bg-gradient-to-tr from-yellow-400 to-yellow-200 rounded-full flex items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                  )}
+                  {getAvatarFramePreview(frame.id)}
                   <span className="text-xs">{frame.name}</span>
                 </button>
                 
@@ -450,6 +473,249 @@ export default function ProfileCustomization({
             );
           })}
         </div>
+      </div>
+    );
+  }
+
+  // Fonction utilitaire pour obtenir l'aperçu du cadre d'avatar
+  function getAvatarFramePreview(frameId: string) {
+    switch (frameId) {
+      case 'none':
+        return <div className="w-10 h-10 bg-gray-200 rounded-md"></div>;
+      case 'circle':
+        return <div className="w-10 h-10 bg-gray-200 rounded-full"></div>;
+      case 'square':
+        return <div className="w-10 h-10 bg-gray-200 rounded-md"></div>;
+      case 'hexagon':
+        return <div className="w-10 h-10 bg-gray-200 rounded-md transform rotate-45"></div>;
+      case 'star':
+        return <Star className="w-10 h-10 text-gray-200 fill-gray-200" />;
+      case 'premium':
+        return (
+          <div className="w-10 h-10 bg-gradient-to-tr from-yellow-400 to-yellow-200 rounded-full flex items-center justify-center">
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+        );
+      case 'diamond':
+        return (
+          <div className="w-10 h-10 bg-gradient-to-tr from-blue-400 to-purple-400 rounded-lg flex items-center justify-center">
+            <Gem className="w-6 h-6 text-white" />
+          </div>
+        );
+      case 'crown':
+        return (
+          <div className="w-10 h-10 bg-gradient-to-tr from-yellow-500 to-red-500 rounded-full flex items-center justify-center">
+            <Crown className="w-6 h-6 text-white" />
+          </div>
+        );
+      default:
+        return <div className="w-10 h-10 bg-gray-200 rounded-md"></div>;
+    }
+  }
+
+  // Nouveau composant pour la sélection des badges
+  function BadgeSelector() {
+    const isUnlocked = isFeatureUnlocked(6);
+    
+    const badges = [
+      { id: 'verified', icon: <CheckCircle2 />, name: 'Vérifié' },
+      { id: 'premium', icon: <Crown />, name: 'Premium' },
+      { id: 'expert', icon: <Award />, name: 'Expert' },
+      { id: 'innovator', icon: <Zap />, name: 'Innovateur' }
+    ];
+
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">
+          Badges
+          {!isUnlocked && (
+            <span className="text-sm font-normal text-muted-foreground ml-2">
+              (Débloqué au niveau 6)
+            </span>
+          )}
+        </h3>
+
+        {isUnlocked ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {badges.map(badge => (
+                <button
+                  key={badge.id}
+                  onClick={() => {
+                    setSelectedBadges(prev => 
+                      prev.includes(badge.id)
+                        ? prev.filter(id => id !== badge.id)
+                        : [...prev, badge.id]
+                    );
+                  }}
+                  className={cn(
+                    "border-2 rounded-md p-3 flex items-center gap-2",
+                    selectedBadges.includes(badge.id) ? "border-primary" : "border-muted"
+                  )}
+                >
+                  {badge.icon}
+                  <span>{badge.name}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium">Position des badges</h4>
+              <RadioGroup 
+                value={badgePosition}
+                onValueChange={(value) => setBadgePosition(value as BadgePosition)}
+                className="grid grid-cols-2 gap-2"
+              >
+                {['top', 'bottom', 'left', 'right'].map(position => (
+                  <div key={position}>
+                    <RadioGroupItem 
+                      value={position} 
+                      id={`position-${position}`}
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor={`position-${position}`}
+                      className="flex items-center justify-center p-2 border rounded-md peer-data-[state=checked]:border-primary"
+                    >
+                      {position.charAt(0).toUpperCase() + position.slice(1)}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          </div>
+        ) : (
+          <div className="border rounded-md p-4 bg-muted/50 flex items-center justify-center flex-col gap-2 h-48">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+            <p className="text-muted-foreground">Atteindre le niveau 6 pour débloquer</p>
+            <div className="w-full max-w-xs">
+              <Progress value={progress} className="h-2" />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Nouveau composant pour l'affichage des réalisations
+  function AchievementsDisplay() {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Réalisations</h3>
+        <div className="grid gap-3">
+          {achievements.map(achievement => (
+            <div
+              key={achievement.id}
+              className={cn(
+                "border rounded-md p-3",
+                unlockedAchievements.includes(achievement.id)
+                  ? "bg-primary/5 border-primary/20"
+                  : "bg-muted/5"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "p-2 rounded-full",
+                  unlockedAchievements.includes(achievement.id)
+                    ? "bg-primary/10 text-primary"
+                    : "bg-muted text-muted-foreground"
+                )}>
+                  {achievement.icon}
+                </div>
+                <div>
+                  <h4 className="font-medium">{achievement.title}</h4>
+                  <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Trophy className="h-4 w-4 text-yellow-500" />
+                    <span className="text-sm font-medium">{achievement.points} points</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function LevelsSection() {
+    const currentLevel = 2;
+    const currentXP = 750;
+    const nextLevelXP = 1000;
+    const progress = (currentXP / nextLevelXP) * 100;
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Niveau {currentLevel}</h3>
+            <p className="text-sm text-muted-foreground">
+              {levels[currentLevel - 1].description}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-medium">{currentXP} / {nextLevelXP} XP</p>
+            <Progress value={progress} className="w-[200px]" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {levels.map((level) => (
+            <div
+              key={level.level}
+              className={cn(
+                "p-4 rounded-lg border",
+                level.level === currentLevel
+                  ? "bg-primary/10 border-primary"
+                  : level.level < currentLevel
+                  ? "bg-muted"
+                  : "opacity-50"
+              )}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                {level.icon}
+                <h4 className="font-medium">Niveau {level.level}</h4>
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">{level.description}</p>
+              <ul className="text-sm space-y-1">
+                {level.rewards.map((reward, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    {reward}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function AchievementsSection() {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {achievements.map((achievement) => (
+          <div
+            key={achievement.id}
+            className={cn(
+              "p-4 rounded-lg border",
+              achievement.unlocked ? "bg-primary/10 border-primary" : "opacity-50"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              {achievement.icon}
+              <h4 className="font-medium">{achievement.title}</h4>
+            </div>
+            <p className="text-sm text-muted-foreground">{achievement.description}</p>
+            {achievement.unlocked && (
+              <p className="text-sm text-primary mt-2 flex items-center gap-1">
+                <CheckCircle2 className="h-4 w-4" />
+                Débloqué
+              </p>
+            )}
+          </div>
+        ))}
       </div>
     );
   }
