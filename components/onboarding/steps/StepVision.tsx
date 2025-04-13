@@ -2,161 +2,128 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
-import { OnboardingData } from '../OnboardingFlow'
+import { OnboardingData, Badge, StepProps } from '../types'
 
-interface StepVisionProps {
-  data: OnboardingData
-  microStep: number
-  onComplete: (data: OnboardingData) => void
-}
-
-const growthObjectives = [
-  { id: "market", label: "Pénétration de marché" },
-  { id: "revenue", label: "Augmentation du chiffre d'affaires" },
-  { id: "brand", label: "Notoriété de la marque" },
-  { id: "customers", label: "Acquisition de clients" },
-  { id: "efficiency", label: "Optimisation des processus" }
-]
-
-const timelines = [
-  { id: "3-months", label: "3 mois" },
-  { id: "6-months", label: "6 mois" },
-  { id: "1-year", label: "1 an" },
-  { id: "2-years", label: "2 ans" },
-  { id: "long-term", label: "Long terme (3+ ans)" }
-]
-
-const budgetRanges = [
-  { id: "5k-10k", label: "5 000€ - 10 000€" },
-  { id: "10k-25k", label: "10 000€ - 25 000€" },
-  { id: "25k-50k", label: "25 000€ - 50 000€" },
-  { id: "50k-100k", label: "50 000€ - 100 000€" },
-  { id: "100k+", label: "Plus de 100 000€" }
-]
-
-export default function StepVision({ data, microStep, onComplete }: StepVisionProps) {
+export default function StepVision({ data, onComplete, badges }: StepProps) {
   const [formData, setFormData] = useState({
-    growthObjectives: data.growthObjectives || [],
-    timeline: data.timeline || '',
-    budget: data.budget || ''
+    vision: data.vision || '',
+    targetMarket: data.targetMarket || [],
+    innovationLevel: data.innovationLevel || 'moderate'
   })
 
-  const handleComplete = () => {
-    onComplete({ ...data, ...formData })
+  const targetMarketOptions = [
+    'B2B - Petites entreprises',
+    'B2B - Moyennes entreprises',
+    'B2B - Grandes entreprises',
+    'B2C - Particuliers',
+    'B2G - Secteur public'
+  ]
+
+  const handleTargetMarketChange = (market: string) => {
+    setFormData(prev => ({
+      ...prev,
+      targetMarket: prev.targetMarket.includes(market)
+        ? prev.targetMarket.filter((m: string) => m !== market)
+        : [...prev.targetMarket, market]
+    }))
   }
 
-  const renderMicroStep = () => {
-    switch (microStep) {
-      case 0:
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-4"
-          >
-            <Label className="text-lg font-medium">Objectifs de croissance</Label>
-            <div className="grid grid-cols-2 gap-4">
-              {growthObjectives.map((objective) => (
-                <Label
-                  key={objective.id}
-                  className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                    formData.growthObjectives.includes(objective.id) ? 'border-primary bg-primary/5' : 'border-input'
-                  }`}
-                >
-                  <Checkbox
-                    checked={formData.growthObjectives.includes(objective.id)}
-                    onCheckedChange={(checked) => {
-                      const newObjectives = checked
-                        ? [...formData.growthObjectives, objective.id]
-                        : formData.growthObjectives.filter(o => o !== objective.id)
-                      setFormData({ ...formData, growthObjectives: newObjectives })
-                      if (newObjectives.length > 0) {
-                        handleComplete()
-                      }
-                    }}
-                  />
-                  <span>{objective.label}</span>
-                </Label>
-              ))}
-            </div>
-          </motion.div>
-        )
-
-      case 1:
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-4"
-          >
-            <Label className="text-lg font-medium">Timeline du projet</Label>
-            <RadioGroup
-              value={formData.timeline}
-              onValueChange={(value) => {
-                setFormData({ ...formData, timeline: value })
-                handleComplete()
-              }}
-              className="space-y-3"
-            >
-              {timelines.map((timeline) => (
-                <Label
-                  key={timeline.id}
-                  className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                    formData.timeline === timeline.id ? 'border-primary bg-primary/5' : 'border-input'
-                  }`}
-                >
-                  <RadioGroupItem value={timeline.id} id={timeline.id} />
-                  <span>{timeline.label}</span>
-                </Label>
-              ))}
-            </RadioGroup>
-          </motion.div>
-        )
-
-      case 2:
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-4"
-          >
-            <Label className="text-lg font-medium">Budget envisagé</Label>
-            <RadioGroup
-              value={formData.budget}
-              onValueChange={(value) => {
-                setFormData({ ...formData, budget: value })
-                handleComplete()
-              }}
-              className="space-y-3"
-            >
-              {budgetRanges.map((budget) => (
-                <Label
-                  key={budget.id}
-                  className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                    formData.budget === budget.id ? 'border-primary bg-primary/5' : 'border-input'
-                  }`}
-                >
-                  <RadioGroupItem value={budget.id} id={budget.id} />
-                  <span>{budget.label}</span>
-                </Label>
-              ))}
-            </RadioGroup>
-          </motion.div>
-        )
-
-      default:
-        return null
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onComplete({
+      ...data,
+      vision: formData.vision,
+      targetMarket: formData.targetMarket,
+      innovationLevel: formData.innovationLevel
+    })
   }
 
-  return renderMicroStep()
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-4">
+          <Label>Vision d'entreprise</Label>
+          <Input
+            value={formData.vision}
+            onChange={(e) => setFormData({ ...formData, vision: e.target.value })}
+            placeholder="Décrivez votre vision à long terme..."
+            className="h-24"
+          />
+        </div>
+
+        <div className="space-y-4">
+          <Label>Marché cible</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {targetMarketOptions.map((market) => (
+              <div key={market} className="flex items-center space-x-2">
+                <Checkbox
+                  id={market}
+                  checked={formData.targetMarket.includes(market)}
+                  onCheckedChange={() => handleTargetMarketChange(market)}
+                />
+                <Label htmlFor={market} className="cursor-pointer">
+                  {market}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Label>Niveau d'innovation souhaité</Label>
+          <RadioGroup
+            value={formData.innovationLevel}
+            onValueChange={(value) => setFormData({ ...formData, innovationLevel: value })}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
+            <Label
+              htmlFor="conservative"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
+            >
+              <RadioGroupItem value="conservative" id="conservative" className="sr-only" />
+              <div className="space-y-1">
+                <h3 className="font-semibold">Conservateur</h3>
+                <p className="text-sm text-muted-foreground">Approche éprouvée et stable</p>
+              </div>
+            </Label>
+            <Label
+              htmlFor="moderate"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
+            >
+              <RadioGroupItem value="moderate" id="moderate" className="sr-only" />
+              <div className="space-y-1">
+                <h3 className="font-semibold">Modéré</h3>
+                <p className="text-sm text-muted-foreground">Équilibre innovation et stabilité</p>
+              </div>
+            </Label>
+            <Label
+              htmlFor="disruptive"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
+            >
+              <RadioGroupItem value="disruptive" id="disruptive" className="sr-only" />
+              <div className="space-y-1">
+                <h3 className="font-semibold">Disruptif</h3>
+                <p className="text-sm text-muted-foreground">Innovation radicale</p>
+              </div>
+            </Label>
+          </RadioGroup>
+        </div>
+
+        <Button type="submit" className="w-full">
+          Continue
+        </Button>
+      </form>
+    </motion.div>
+  )
 } 

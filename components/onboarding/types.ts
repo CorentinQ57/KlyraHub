@@ -25,6 +25,9 @@ export interface OnboardingData {
   growthGoals?: string[]
   marketingBudget?: number
   timelineMonths?: number
+  vision?: string
+  targetMarket?: string[]
+  innovationLevel?: string
 }
 
 export interface StepProps {
