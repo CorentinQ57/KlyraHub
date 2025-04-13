@@ -1,83 +1,57 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
-import { supabase, updateProfile as updateProfileApi } from '@/lib/supabase'
-import { Card } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Skeleton } from '@/components/ui/skeleton'
-import ProfileOnboarding from '@/components/onboarding/ProfileOnboarding'
-
-interface Profile {
-  id: string
-  full_name: string
-  avatar_url: string
-  onboarding_completed?: boolean
-  onboarding_answers?: Record<string, any>
-  updated_at?: string
-}
-
-interface UpdateProfileResponse {
-  error: Error | null
-  data: Profile | null
-}
+import { updateProfile, getProfileData } from '@/lib/supabase'
 
 export default function ProfilePage() {
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const router = useRouter()
   const { user, signOut } = useAuth()
   const { toast } = useToast()
-  const [showOnboarding, setShowOnboarding] = useState(false)
-  const [profile, setProfile] = useState<Profile>({
-    id: '',
-    full_name: '',
-    avatar_url: '',
-    onboarding_completed: false
-  })
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login')
-      return
+    if (user) {
+      loadProfile()
     }
+  }, [user])
 
-    const loadProfile = async () => {
-      setIsLoading(true)
-      try {
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-
-        if (error) throw error
-
-        if (profileData) {
-          setProfile(profileData)
-          if (!profileData.onboarding_completed) {
-            setShowOnboarding(true)
-          }
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to load profile',
-          variant: 'destructive'
-        })
-      } finally {
-        setIsLoading(false)
+  async function loadProfile() {
+    setIsLoading(true)
+    try {
+      // Vérifier que user existe
+      if (!user) {
+        return;
       }
-    }
+      
+      // Set email from auth data
+      setEmail(user.email || '')
 
-    loadProfile()
-  }, [user, router, toast])
+      // Get additional profile data
+      const profileData = await getProfileData(user.id)
+      if (profileData) {
+        setFullName(profileData.full_name || '')
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les données du profil",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,36 +62,25 @@ export default function ProfilePage() {
     
     try {
       const updates = {
-        full_name: profile.full_name,
-        avatar_url: profile.avatar_url,
+        id: user.id,
+        full_name: fullName,
         updated_at: new Date().toISOString()
       }
       
-      const data = await updateProfileApi(user.id, updates)
+      const updatedProfile = await updateProfile(user.id, updates)
       
-      if (profile.onboarding_completed !== undefined) {
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            onboarding_completed: profile.onboarding_completed
-          })
-          .eq('id', user.id)
-          
-        if (error) throw error
+      if (updatedProfile) {
+        toast({
+          title: "Profil mis à jour",
+          description: "Vos informations ont été mises à jour avec succès",
+        })
       }
-      
-      if (!data) throw new Error('Failed to update profile')
-      
-      toast({
-        title: 'Success',
-        description: 'Profile updated successfully'
-      })
     } catch (error) {
       console.error('Error updating profile:', error)
       toast({
-        title: 'Error',
-        description: 'Failed to update profile',
-        variant: 'destructive'
+        title: "Erreur",
+        description: "Impossible de mettre à jour le profil",
+        variant: "destructive",
       })
     } finally {
       setIsUpdating(false)
@@ -127,83 +90,102 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       await signOut()
-      router.push('/login')
+      router.push('/')
     } catch (error) {
       console.error('Error logging out:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to logout',
-        variant: 'destructive'
-      })
     }
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-32 w-full" />
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-lg">Chargement des données de profil...</p>
+        </div>
       </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="text-center py-8">
-        <p>Please log in to view your profile</p>
-      </div>
-    )
-  }
-
-  if (showOnboarding) {
-    return (
-      <ProfileOnboarding
-        userId={user.id}
-        onComplete={() => {
-          setShowOnboarding(false)
-          setProfile(prev => ({ ...prev, onboarding_completed: true }))
-          toast({
-            title: 'Welcome!',
-            description: 'Your profile is now set up.'
-          })
-        }}
-      />
     )
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
-            <AvatarFallback>{profile.full_name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h2 className="text-2xl font-bold">{profile.full_name || 'My Profile'}</h2>
-            <p className="text-gray-500">{user.email}</p>
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Votre profil</h1>
+        <p className="text-muted-foreground">
+          Gérez vos informations personnelles
+        </p>
+      </div>
+      
+      <div className="border rounded-lg p-6 space-y-6">
+        <form onSubmit={handleUpdate} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">{fullName || 'Utilisateur'}</h2>
+              <p className="text-muted-foreground mb-4">{email}</p>
+            </div>
+            
+            <div className="grid gap-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Pour changer votre email, contactez le support
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Nom d'utilisateur</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={isUpdating}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        <form onSubmit={handleUpdate} className="mt-6 space-y-4">
-          <div>
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              id="fullName"
-              value={profile.full_name}
-              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-              placeholder="Your full name"
-            />
-          </div>
-          <div className="flex justify-between">
-            <Button type="submit" disabled={isUpdating}>
-              {isUpdating ? 'Updating...' : 'Update Profile'}
+          
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              disabled={isUpdating}
+            >
+              Annuler
             </Button>
-            <Button variant="destructive" onClick={handleLogout}>
-              Logout
+            <Button
+              type="submit"
+              disabled={isUpdating}
+            >
+              {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
             </Button>
           </div>
         </form>
-      </Card>
+      </div>
+      
+      <div className="border rounded-lg p-6 mt-8">
+        <h2 className="text-xl font-semibold mb-4">Sécurité du compte</h2>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-medium">Changer de mot de passe</h3>
+              <p className="text-sm text-muted-foreground">
+                Mettez à jour votre mot de passe pour sécuriser votre compte
+              </p>
+            </div>
+            <Link href="/reset-password">
+              <Button variant="outline">Changer</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   )
 } 
