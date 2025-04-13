@@ -5,16 +5,13 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
-  Card,
-  CardContent,
-} from "@/components/ui/card"
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import CardSelector from '@/components/onboarding/CardSelector'
 
 interface StepStyleProps {
   data: any
@@ -70,11 +67,15 @@ export default function StepStyle({ data, onComplete }: StepStyleProps) {
   })
 
   const toggleVisualStyle = (styleId: string) => {
-    const current = formData.visualPreferences
+    const current = formData.visualPreferences as string[]
     const updated = current.includes(styleId)
-      ? current.filter((id: string) => id !== styleId)
+      ? current.filter(id => id !== styleId)
       : [...current, styleId]
-    setFormData({ ...formData, visualPreferences: updated })
+    
+    // Limit to max 2 selections
+    if (updated.length <= 2) {
+      setFormData({ ...formData, visualPreferences: updated })
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,23 +96,15 @@ export default function StepStyle({ data, onComplete }: StepStyleProps) {
           </Label>
           <div className="grid grid-cols-2 gap-4">
             {visualStyles.map((style) => (
-              <Card
+              <CardSelector
                 key={style.id}
-                className={`cursor-pointer transition-all ${
-                  formData.visualPreferences.includes(style.id)
-                    ? 'border-primary bg-primary/5'
-                    : 'hover:border-primary/50'
-                }`}
+                id={style.id}
+                title={style.name}
+                description={style.description}
+                icon={<span className="text-2xl">{style.icon}</span>}
+                isSelected={(formData.visualPreferences as string[]).includes(style.id)}
                 onClick={() => toggleVisualStyle(style.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="text-2xl mb-2">{style.icon}</div>
-                  <div className="font-medium mb-1">{style.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {style.description}
-                  </div>
-                </CardContent>
-              </Card>
+              />
             ))}
           </div>
         </div>

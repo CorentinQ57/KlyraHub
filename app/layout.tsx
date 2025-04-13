@@ -4,8 +4,6 @@ import { Poppins } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import AuthProvider from '@/lib/auth'
-import { NavigationProvider } from '@/contexts/navigation-context'
-import { usePathname } from 'next/navigation'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -14,8 +12,8 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'KlyraDesign',
-  description: 'Design, branding et stratégie digitale pour TPE/PME tech',
+  title: 'Klyra',
+  description: 'Plateforme de services de design',
 }
 
 export default function RootLayout({
@@ -27,10 +25,8 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning className={poppins.variable}>
       <body className={poppins.className}>
         <AuthProvider>
-          <NavigationProvider>
-            {children}
-            <Toaster />
-          </NavigationProvider>
+          {children}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

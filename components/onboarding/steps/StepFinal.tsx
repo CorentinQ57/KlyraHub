@@ -1,143 +1,170 @@
 "use client"
 
-import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent } from '@/components/ui/card'
+import { CheckCircle2 } from 'lucide-react'
 
 interface StepFinalProps {
-  data: any
+  data: {
+    fullName?: string
+    sectors?: string[]
+    companySize?: string
+    needs?: string[]
+    visualPreferences?: string[]
+    communicationStyle?: string
+    timeManagement?: string
+  }
   onComplete: (data: any) => void
-  badges: string[]
 }
 
-const socialNetworks = [
-  { id: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/in/...' },
-  { id: 'twitter', label: 'Twitter', placeholder: 'https://twitter.com/...' },
-  { id: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/...' }
-]
-
-export default function StepFinal({ data, onComplete, badges }: StepFinalProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [formData, setFormData] = useState({
-    avatarUrl: data.avatarUrl || '',
-    socialLinks: data.socialLinks || {},
-    funFact: data.funFact || ''
-  })
-  const [previewUrl, setPreviewUrl] = useState(data.avatarUrl || '')
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setPreviewUrl(result)
-        setFormData({ ...formData, avatarUrl: result })
-      }
-      reader.readAsDataURL(file)
-    }
+const getSectorName = (id: string) => {
+  const sectors = {
+    'tech': 'Technologie',
+    'finance': 'Finance',
+    'healthcare': 'Santé',
+    'education': 'Éducation',
+    'retail': 'Commerce',
+    'manufacturing': 'Industrie'
   }
+  return sectors[id as keyof typeof sectors] || id
+}
 
-  const handleSocialChange = (networkId: string, value: string) => {
-    setFormData({
-      ...formData,
-      socialLinks: { ...formData.socialLinks, [networkId]: value }
-    })
+const getCompanySizeName = (id: string) => {
+  const sizes = {
+    'solo': 'Entrepreneur individuel',
+    'small': 'Petite entreprise (2-10)',
+    'medium': 'Moyenne entreprise (11-50)',
+    'large': 'Grande entreprise (51+)'
   }
+  return sizes[id as keyof typeof sizes] || id
+}
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onComplete(formData)
+const getNeedName = (id: string) => {
+  const needs = {
+    'branding': 'Identité de marque',
+    'website': 'Site web',
+    'marketing': 'Marketing numérique',
+    'ui-ux': 'UI/UX Design',
+    'social': 'Réseaux sociaux',
+    'content': 'Création de contenu'
   }
+  return needs[id as keyof typeof needs] || id
+}
 
+const getStyleName = (id: string) => {
+  const styles = {
+    'minimal': 'Minimaliste',
+    'bold': 'Audacieux',
+    'classic': 'Classique',
+    'playful': 'Ludique'
+  }
+  return styles[id as keyof typeof styles] || id
+}
+
+const getCommunicationStyleName = (id: string) => {
+  const styles = {
+    'direct': 'Direct et concis',
+    'detailed': 'Détaillé et explicatif',
+    'casual': 'Décontracté et amical',
+    'formal': 'Formel et professionnel'
+  }
+  return styles[id as keyof typeof styles] || id
+}
+
+const getTimeManagementName = (id: string) => {
+  const styles = {
+    'flexible': 'Flexible et adaptable',
+    'structured': 'Structuré et planifié',
+    'deadline': 'Focalisé sur les deadlines',
+    'proactive': 'Proactif et anticipatif'
+  }
+  return styles[id as keyof typeof styles] || id
+}
+
+export default function StepFinal({ data, onComplete }: StepFinalProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      className="space-y-6"
     >
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="text-center">
-          <Label className="text-lg mb-4 block">Ta photo de profil</Label>
-          <div className="flex flex-col items-center gap-4">
-            <Avatar className="w-24 h-24 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-              <AvatarImage src={previewUrl} />
-              <AvatarFallback>
-                {data.fullName?.charAt(0) || '?'}
-              </AvatarFallback>
-            </Avatar>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Choisir une photo
-            </Button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-            />
-          </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3 }}
+        className="text-center mb-8"
+      >
+        <div className="flex justify-center mb-4">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.5 }}
+          >
+            <CheckCircle2 className="w-16 h-16 text-green-500" />
+          </motion.div>
         </div>
+        <h2 className="text-2xl font-bold mb-2">Récapitulatif de ton profil</h2>
+        <p className="text-gray-600">Vérifie les informations ci-dessous avant de finaliser ton profil</p>
+      </motion.div>
 
-        <div className="space-y-4">
-          <Label className="text-lg block">Tes réseaux sociaux</Label>
-          {socialNetworks.map((network) => (
-            <div key={network.id}>
-              <Label htmlFor={network.id}>{network.label}</Label>
-              <Input
-                id={network.id}
-                placeholder={network.placeholder}
-                value={formData.socialLinks[network.id] || ''}
-                onChange={(e) => handleSocialChange(network.id, e.target.value)}
-                className="mt-2"
-              />
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold text-lg mb-2">Informations personnelles</h3>
+            <p><span className="text-gray-500">Nom :</span> {data.fullName || 'Non spécifié'}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold text-lg mb-2">Informations professionnelles</h3>
+            <div className="space-y-2">
+              {data.sectors && data.sectors.length > 0 && (
+                <p><span className="text-gray-500">Secteurs d'activité :</span> {data.sectors.map(getSectorName).join(', ')}</p>
+              )}
+              {data.companySize && (
+                <p><span className="text-gray-500">Taille de l'entreprise :</span> {getCompanySizeName(data.companySize)}</p>
+              )}
+              {data.needs && data.needs.length > 0 && (
+                <p><span className="text-gray-500">Besoins actuels :</span> {data.needs.map(getNeedName).join(', ')}</p>
+              )}
             </div>
-          ))}
-        </div>
+          </CardContent>
+        </Card>
 
-        <div>
-          <Label htmlFor="funFact" className="text-lg block">
-            Un fait amusant sur toi ou ton entreprise 😊
-          </Label>
-          <Textarea
-            id="funFact"
-            placeholder="Partage quelque chose d'unique..."
-            value={formData.funFact}
-            onChange={(e) => setFormData({ ...formData, funFact: e.target.value })}
-            className="mt-2"
-          />
-        </div>
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold text-lg mb-2">Préférences</h3>
+            <div className="space-y-2">
+              {data.visualPreferences && data.visualPreferences.length > 0 && (
+                <p><span className="text-gray-500">Style visuel :</span> {data.visualPreferences.map(getStyleName).join(', ')}</p>
+              )}
+              {data.communicationStyle && (
+                <p><span className="text-gray-500">Communication :</span> {getCommunicationStyleName(data.communicationStyle)}</p>
+              )}
+              {data.timeManagement && (
+                <p><span className="text-gray-500">Relation avec les délais :</span> {getTimeManagementName(data.timeManagement)}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <div className="bg-primary/5 rounded-lg p-4">
-          <h3 className="font-medium mb-2">Tes badges gagnés 🏆</h3>
-          <div className="flex flex-wrap gap-2">
-            {badges.map((badge) => (
-              <span
-                key={badge}
-                className="px-3 py-1 bg-primary/10 rounded-full text-primary text-sm"
-              >
-                {badge}
-              </span>
-            ))}
-          </div>
-        </div>
-
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8 }}
+      >
         <Button
-          type="submit"
+          onClick={() => onComplete(data)}
           className="w-full"
           size="lg"
         >
-          Terminer 🎉
+          Terminer et accéder à mon tableau de bord 🚀
         </Button>
-      </form>
+      </motion.div>
     </motion.div>
   )
 } 

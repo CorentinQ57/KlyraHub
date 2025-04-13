@@ -111,52 +111,60 @@ export default function ProfilePage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Profil"
-        description="Gérez vos informations personnelles et la sécurité de votre compte"
+        title="Votre profil"
+        description="Gérez vos informations personnelles"
       >
-        <Link href="/dashboard">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Retour
+        <div className="flex items-center space-x-2">
+          <Link href="/dashboard">
+            <Button variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Retour
+            </Button>
+          </Link>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" /> Déconnexion
           </Button>
-        </Link>
+        </div>
       </PageHeader>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <PageSection>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <PageSection title="Informations personnelles">
             <ContentCard>
-              <h3 className="text-lg font-medium mb-4">Informations personnelles</h3>
-              <form onSubmit={handleUpdate} className="space-y-4">
+              <form onSubmit={handleUpdate} className="space-y-6">
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="email">Adresse email</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-[14px] font-medium text-[#1A2333]">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       disabled
-                      className="mt-1 bg-[#F8FAFC]"
+                      className="bg-[#F8FAFC] h-10 rounded-lg border-[#E2E8F0]"
                     />
+                    <p className="text-[13px] text-[#64748B]">
+                      Pour changer votre email, contactez le support
+                    </p>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="fullName">Nom complet</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-[14px] font-medium text-[#1A2333]">Nom d'utilisateur</Label>
                     <Input
                       id="fullName"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       disabled={isUpdating}
-                      className="mt-1"
+                      className="h-10 rounded-lg border-[#E2E8F0]"
                     />
                   </div>
                 </div>
                 
-                <div className="pt-4 flex justify-end">
+                <div className="pt-4 border-t border-[#E2E8F0] flex justify-end">
                   <Button
                     type="submit"
                     disabled={isUpdating}
                   >
-                    {isUpdating ? "Enregistrement..." : "Enregistrer"}
+                    <Save className="mr-2 h-4 w-4" />
+                    {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
                   </Button>
                 </div>
               </form>
@@ -165,35 +173,37 @@ export default function ProfilePage() {
         </div>
         
         <div>
-          <PageSection>
-            <ContentCard>
-              <h3 className="text-lg font-medium mb-4">Détails du compte</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-[#64748B]">
-                    <User className="inline-block h-4 w-4 mr-1" />
-                    {email}
-                  </p>
-                  <p className="text-sm text-[#64748B] mt-1">
-                    Membre depuis {user ? new Date(user.created_at).toLocaleDateString() : ''}
-                  </p>
+          <PageSection title="Sécurité du compte">
+            <ContentCard className="space-y-6">
+              <div className="flex items-start space-x-4 pb-6 border-b border-[#E2E8F0]">
+                <div className="h-10 w-10 rounded-lg bg-[#EBF2FF] flex items-center justify-center text-[#467FF7] flex-shrink-0">
+                  <KeyRound className="h-5 w-5" />
                 </div>
-                
-                <div className="pt-2">
-                  <h4 className="text-sm font-medium mb-2">Sécurité</h4>
+                <div className="space-y-1">
+                  <h4 className="text-[16px] font-medium">Mot de passe</h4>
+                  <p className="text-[13px] text-[#64748B] mb-2">
+                    Mettez à jour votre mot de passe pour sécuriser votre compte
+                  </p>
                   <Link href="/reset-password">
-                    <Button variant="outline" size="sm" className="w-full justify-start mb-2">
-                      <KeyRound className="mr-2 h-4 w-4" /> Changer le mot de passe
-                    </Button>
+                    <Button variant="outline" size="sm">Changer</Button>
                   </Link>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" /> Déconnexion
-                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4 pt-2">
+                <div className="h-10 w-10 rounded-lg bg-[#EBF2FF] flex items-center justify-center text-[#467FF7] flex-shrink-0">
+                  <User className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="space-y-1">
+                    <h4 className="text-[16px] font-medium">Détails du compte</h4>
+                    <p className="text-[13px] text-[#64748B]">
+                      {email}
+                    </p>
+                    <p className="text-[13px] text-[#64748B]">
+                      Membre depuis {user ? new Date(user.created_at).toLocaleDateString() : ''}
+                    </p>
+                  </div>
                 </div>
               </div>
             </ContentCard>
