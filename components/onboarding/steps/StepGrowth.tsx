@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -5,50 +7,24 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { OnboardingData } from '../OnboardingFlow';
+import { OnboardingData, Badge, StepProps } from '../types';
 
-interface StepGrowthProps {
-  data: OnboardingData;
-  onComplete: (data: Partial<OnboardingData>) => void;
-}
+export default function StepGrowth({ data, onComplete, badges }: StepProps) {
+  const [formData, setFormData] = useState({
+    growthGoals: data.growthGoals || [],
+    marketingBudget: data.marketingBudget || 0,
+    timelineMonths: data.timelineMonths || 6
+  })
 
-const growthObjectives = [
-  'Augmenter le chiffre d\'affaires',
-  'Optimiser les couts',
-  'Developper de nouveaux marches',
-  'Ameliorer la satisfaction client',
-  'Innover sur les produits/services',
-  'Renforcer l\'image de marque',
-];
-
-const timelineOptions = [
-  '3 mois',
-  '6 mois',
-  '1 an',
-  '2 ans',
-  '5 ans',
-];
-
-export default function StepGrowth({ data, onComplete }: StepGrowthProps) {
-  const [selectedObjectives, setSelectedObjectives] = useState<string[]>(data.growthObjectives || []);
-  const [timeline, setTimeline] = useState<string>(data.timeline || '1 an');
-  const [budget, setBudget] = useState<string>(data.budget || '');
-
-  const handleObjectiveToggle = (objective: string) => {
-    setSelectedObjectives(prev => 
-      prev.includes(objective)
-        ? prev.filter(o => o !== objective)
-        : [...prev, objective]
-    );
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
     onComplete({
-      growthObjectives: selectedObjectives,
-      timeline,
-      budget,
-    });
-  };
+      ...data,
+      growthGoals: formData.growthGoals,
+      marketingBudget: formData.marketingBudget,
+      timelineMonths: formData.timelineMonths
+    })
+  }
 
   return (
     <motion.div
@@ -57,81 +33,44 @@ export default function StepGrowth({ data, onComplete }: StepGrowthProps) {
       exit={{ opacity: 0, y: -20 }}
       className="space-y-6"
     >
-      <div className="space-y-4">
-        <motion.h2 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-2xl font-bold"
-        >
-          Objectifs de croissance
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { delay: 0.2 } }}
-          className="text-gray-600"
-        >
-          Selectionnez vos principaux objectifs de croissance et definissez votre timeline
-        </motion.p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        {growthObjectives.map((objective, index) => (
-          <motion.div
-            key={objective}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card
-              className={`p-4 cursor-pointer transition-all ${
-                selectedObjectives.includes(objective)
-                  ? 'border-primary bg-primary/10'
-                  : 'hover:border-primary/50'
-              }`}
-              onClick={() => handleObjectiveToggle(objective)}
-            >
-              {objective}
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      <div className="space-y-6 mt-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-4">
-          <Label>Timeline</Label>
-          <div className="flex gap-2">
-            {timelineOptions.map((option) => (
-              <Button
-                key={option}
-                variant={timeline === option ? 'default' : 'outline'}
-                onClick={() => setTimeline(option)}
-                className="flex-1"
-              >
-                {option}
-              </Button>
-            ))}
+          <Label>Marketing Budget (Monthly)</Label>
+          <div className="space-y-2">
+            <Slider
+              value={[formData.marketingBudget]}
+              onValueChange={(value) => setFormData({ ...formData, marketingBudget: value[0] })}
+              max={10000}
+              step={100}
+              className="w-full"
+            />
+            <div className="text-sm text-muted-foreground text-right">
+              {formData.marketingBudget}€ / month
+            </div>
           </div>
         </div>
 
         <div className="space-y-4">
-          <Label>Budget mensuel estime (€)</Label>
-          <Input
-            type="number"
-            value={budget}
-            onChange={(e) => setBudget(e.target.value)}
-            placeholder="Ex: 5000"
-            className="w-full"
-          />
+          <Label>Growth Timeline</Label>
+          <div className="space-y-2">
+            <Slider
+              value={[formData.timelineMonths]}
+              onValueChange={(value) => setFormData({ ...formData, timelineMonths: value[0] })}
+              min={3}
+              max={24}
+              step={1}
+              className="w-full"
+            />
+            <div className="text-sm text-muted-foreground text-right">
+              {formData.timelineMonths} months
+            </div>
+          </div>
         </div>
-      </div>
 
-      <Button
-        onClick={handleSubmit}
-        className="w-full mt-8"
-        disabled={selectedObjectives.length === 0 || !timeline || !budget}
-      >
-        Continuer
-      </Button>
+        <Button type="submit" className="w-full">
+          Continue
+        </Button>
+      </form>
     </motion.div>
-  );
+  )
 } 

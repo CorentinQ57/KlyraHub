@@ -22,6 +22,9 @@ export interface OnboardingData {
     timeManagement?: string
     visualPreference?: string
   }
+  growthGoals?: string[]
+  marketingBudget?: number
+  timelineMonths?: number
 }
 
 export interface StepProps {
