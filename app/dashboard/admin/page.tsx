@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/auth'
 import { fetchAllProjects } from '@/lib/supabase'
 import { Project } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { Settings, Users, ShoppingBag, FileText } from 'lucide-react'
 
 // Étendre le type Project pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -94,100 +96,107 @@ export default function AdminDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg">Chargement des données d'administration...</p>
+      <PageContainer>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
+            <p className="mt-4 text-[14px]">Chargement des données d'administration...</p>
+          </div>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Administration</h1>
-          <p className="text-sm text-primary mt-1">Gestion des projets et utilisateurs</p>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="Administration"
+        description="Gestion des projets et utilisateurs"
+      >
+        <Link href="/dashboard">
+          <Button variant="outline">
+            <FileText className="mr-2 h-4 w-4" /> Dashboard client
+          </Button>
+        </Link>
+      </PageHeader>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="p-6 border shadow-sm bg-white/50 hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-semibold mb-2">Services</h2>
-            <p className="text-muted-foreground mb-4">Gérez les services de la marketplace</p>
-            <div className="mt-auto">
-              <Button 
-                className="w-full" 
-                onClick={() => router.push('/dashboard/admin/services')}
-              >
-                Gérer les services
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="p-6 border shadow-sm bg-white/50 hover:shadow-md transition-shadow">
-            <h2 className="text-xl font-semibold mb-2">Catégories</h2>
-            <p className="text-muted-foreground mb-4">Gérez les catégories de services</p>
-            <div className="mt-auto">
-              <Button 
-                className="w-full" 
-                onClick={() => router.push('/dashboard/admin/categories')}
-              >
-                Gérer les catégories
-              </Button>
-            </div>
-          </Card>
-        </div>
-
-        {/* Filter Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-muted/20 p-4 rounded-lg">
-          <h2 className="text-xl font-semibold">Tous les projets ({filteredProjects.length})</h2>
-          <div className="flex flex-wrap gap-2">
+      {/* Quick actions */}
+      <PageSection title="Accès rapides">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ContentCard>
+            <h2 className="text-[18px] font-semibold mb-3">Services</h2>
+            <p className="text-[14px] text-[#64748B] mb-4">
+              Gérez les services de la marketplace
+            </p>
             <Button 
-              variant={statusFilter === 'all' ? 'default' : 'outline'} 
+              className="w-full" 
+              onClick={() => router.push('/dashboard/admin/services')}
+            >
+              <ShoppingBag className="mr-2 h-4 w-4" /> Gérer les services
+            </Button>
+          </ContentCard>
+
+          <ContentCard>
+            <h2 className="text-[18px] font-semibold mb-3">Catégories</h2>
+            <p className="text-[14px] text-[#64748B] mb-4">
+              Gérez les catégories de services
+            </p>
+            <Button 
+              className="w-full" 
+              onClick={() => router.push('/dashboard/admin/categories')}
+            >
+              <Settings className="mr-2 h-4 w-4" /> Gérer les catégories
+            </Button>
+          </ContentCard>
+        </div>
+      </PageSection>
+
+      {/* Filter Controls */}
+      <PageSection title={`Tous les projets (${filteredProjects.length})`}>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Button 
+            variant={statusFilter === 'all' ? 'default' : 'outline'} 
+            size="sm" 
+            onClick={() => setStatusFilter('all')}
+            className="text-xs"
+          >
+            Tous
+          </Button>
+          {Object.entries(statusLabels).map(([status, { label }]) => (
+            <Button 
+              key={status}
+              variant={statusFilter === status ? 'default' : 'outline'} 
               size="sm" 
-              onClick={() => setStatusFilter('all')}
+              onClick={() => setStatusFilter(status)}
               className="text-xs"
             >
-              Tous
+              {label}
             </Button>
-            {Object.entries(statusLabels).map(([status, { label }]) => (
-              <Button 
-                key={status}
-                variant={statusFilter === status ? 'default' : 'outline'} 
-                size="sm" 
-                onClick={() => setStatusFilter(status)}
-                className="text-xs"
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
+          ))}
         </div>
 
         {/* Projects Table */}
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden border">
+        <ContentCard>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left">ID</th>
-                  <th className="px-4 py-3 text-left">Titre</th>
-                  <th className="px-4 py-3 text-left">Client</th>
-                  <th className="px-4 py-3 text-left">Statut</th>
-                  <th className="px-4 py-3 text-left">Prix</th>
-                  <th className="px-4 py-3 text-left">Date de création</th>
-                  <th className="px-4 py-3 text-left">Actions</th>
+                <tr className="border-b border-[#E2E8F0]">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#64748B] uppercase">ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#64748B] uppercase">Titre</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#64748B] uppercase">Client</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#64748B] uppercase">Statut</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#64748B] uppercase">Prix</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#64748B] uppercase">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#64748B] uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProjects.length > 0 ? (
                   filteredProjects.map((project) => (
-                    <tr key={project.id} className="border-b hover:bg-muted/20">
-                      <td className="px-4 py-3">{project.id}</td>
-                      <td className="px-4 py-3 font-medium">{project.title}</td>
-                      <td className="px-4 py-3">
+                    <tr key={project.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]">
+                      <td className="px-4 py-3 text-[14px]">{project.id}</td>
+                      <td className="px-4 py-3 text-[14px] font-medium">{project.title}</td>
+                      <td className="px-4 py-3 text-[14px]">
                         {project.client?.full_name || project.client?.email || 'N/A'}
                       </td>
                       <td className="px-4 py-3">
@@ -195,34 +204,50 @@ export default function AdminDashboardPage() {
                           {statusLabels[project.status].label}
                         </span>
                       </td>
-                      <td className="px-4 py-3">{project.price}€</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-[14px]">{project.price}€</td>
+                      <td className="px-4 py-3 text-[14px]">
                         {new Date(project.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          <Link href={`/dashboard/admin/projects/${project.id}`}>
-                            <Button size="sm" variant="outline">Voir</Button>
-                          </Link>
-                          <Link href={`/dashboard/admin/projects/${project.id}/edit`}>
-                            <Button size="sm">Éditer</Button>
-                          </Link>
-                        </div>
+                      <td className="px-4 py-3 space-x-2">
+                        <Link href={`/dashboard/admin/projects/${project.id}/edit`}>
+                          <Button size="sm" variant="outline" className="h-8 text-xs">
+                            Éditer
+                          </Button>
+                        </Link>
+                        <Link href={`/dashboard/projects/${project.id}`}>
+                          <Button size="sm" variant="outline" className="h-8 text-xs">
+                            Voir
+                          </Button>
+                        </Link>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                      Aucun projet correspondant aux critères de filtrage
+                    <td colSpan={7} className="px-4 py-8 text-center text-[14px] text-[#64748B]">
+                      Aucun projet ne correspond à votre recherche
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-    </div>
+        </ContentCard>
+      </PageSection>
+
+      <PageSection title="Gestion des utilisateurs">
+        <ContentCard>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-[16px] font-semibold">Utilisateurs</h3>
+            <Button size="sm" onClick={() => router.push('/dashboard/admin/users')}>
+              <Users className="mr-2 h-4 w-4" /> Gérer les utilisateurs
+            </Button>
+          </div>
+          <p className="text-[14px] text-[#64748B]">
+            Accédez à la liste des utilisateurs, gérez les rôles et permissions.
+          </p>
+        </ContentCard>
+      </PageSection>
+    </PageContainer>
   )
 } 
