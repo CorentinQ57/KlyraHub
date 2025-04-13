@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Trophy, Upload, Linkedin, Twitter, Instagram, Globe, Clock } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { OnboardingData, Badge, StepProps } from '../types'
 
 interface SocialLinks {
   linkedin?: string

@@ -2,9 +2,12 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
+import { OnboardingData, Badge, StepProps } from '../types'
 import {
   DragDropContext,
   Droppable,

@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Palette, MessageSquare, Heart, Sparkles } from 'lucide-react'
+import { OnboardingData, Badge, StepProps } from '../types'
 
 interface StepStyleProps {
   data: {
