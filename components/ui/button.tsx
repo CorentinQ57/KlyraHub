@@ -5,12 +5,12 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-medium text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-klyra disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-medium text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-klyra disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-klyra text-white shadow-sm hover:bg-klyra-600 hover:shadow-btn-hover",
+          "bg-btn-primary border border-[#2F54A3] text-white hover:bg-klyra-600 active:translate-y-0.5 [box-shadow:0_10px_12px_-2px_rgba(47,84,163,0.25),inset_0_-12px_8px_-10px_rgba(255,255,255,0.5)] hover:[box-shadow:0_12px_16px_-2px_rgba(47,84,163,0.3),inset_0_-12px_8px_-10px_rgba(255,255,255,0.6)] active:[box-shadow:0_5px_8px_-2px_rgba(47,84,163,0.2),inset_0_-8px_6px_-8px_rgba(255,255,255,0.4)]",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:

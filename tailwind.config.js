@@ -174,7 +174,13 @@ module.exports = {
       },
       boxShadow: {
         'card': '0 2px 8px rgba(0, 0, 0, 0.05)',
-        'btn-hover': '0 4px 12px rgba(70, 127, 247, 0.25)'
+        'btn-hover': '0 4px 12px rgba(70, 127, 247, 0.25)',
+        'btn-cta': '0 10px 12px -2px rgba(47, 84, 163, 0.25)',
+        'btn-cta-sm': '0 5px 8px -2px rgba(47, 84, 163, 0.2)',
+        'btn-cta-inner': 'inset 0 -12px 8px -10px rgba(255, 255, 255, 0.5)'
+      },
+      backgroundImage: {
+        'btn-primary': 'linear-gradient(to bottom, #5A9AFF, #467FF7, #3A6FE0)'
       }
   	}
   },
