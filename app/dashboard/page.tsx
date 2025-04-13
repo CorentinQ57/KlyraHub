@@ -130,12 +130,12 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
 
   return (
     <motion.div 
-      className="card border border-gray-100 hover:shadow-md transition-shadow rounded-lg overflow-hidden flex flex-col"
+      className="card border border-gray-100 hover:shadow-md transition-shadow rounded-lg overflow-hidden flex flex-col p-0"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
+      <div className="relative aspect-video w-full overflow-hidden bg-gray-100 rounded-t-lg">
         <Image
           src={displayImage}
           alt={project.services?.name || "Image du projet"}
@@ -146,7 +146,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
       </div>
 
-      <div className="p-4 flex-1 flex flex-col">
+      <div className="p-3 flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-2">
           <div>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

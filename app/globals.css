@@ -143,7 +143,12 @@
   
   /* Carte */
   .card {
-    @apply bg-white rounded-large p-6 shadow-card;
+    @apply bg-white rounded-large shadow-card;
+  }
+  
+  /* Carte avec padding (pour la rétrocompatibilité) */
+  .card-padded {
+    @apply p-6;
   }
   
   /* Dégradés */
