@@ -7,6 +7,134 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
+// Enhanced logging of session debug info in localStorage and cookies
+const debugAuthState = () => {
+  if (typeof window !== 'undefined') {
+    try {
+      // Check localStorage tokens (from both possible formats)
+      const supabaseAccessToken = localStorage.getItem('supabase.auth.token') || 
+                                 localStorage.getItem('sb-access-token') || 
+                                 localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
+      
+      const refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
+                          localStorage.getItem('sb-refresh-token') || 
+                          localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
+      
+      const sessionExpiry = localStorage.getItem('supabase.auth.expires_at') || 
+                           localStorage.getItem('sb-expires-at') || 
+                           localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-expires-at');
+
+      // Check cookies
+      const cookieString = document.cookie;
+      const hasSbAccessToken = cookieString.includes('sb-access-token');
+      const hasSbRefreshToken = cookieString.includes('sb-refresh-token');
+      
+      console.log('🔑 Auth Debug (Tokens):', {
+        localStorage: {
+          accessToken: supabaseAccessToken ? 'Present' : 'Missing',
+          refreshToken: refreshToken ? 'Present' : 'Missing',
+          expiresAt: sessionExpiry ? new Date(parseInt(sessionExpiry) * 1000).toLocaleString() : 'Missing',
+        },
+        cookies: {
+          hasAccessToken: hasSbAccessToken,
+          hasRefreshToken: hasSbRefreshToken,
+        }
+      });
+
+      // Check if we have a token in memory (can be retrieved using auth.getSession())
+      if (supabaseAccessToken) {
+        // Log the first few characters of the token for debugging
+        console.log('Token prefix:', supabaseAccessToken.substring(0, 10) + '...');
+      }
+    } catch (error) {
+      console.error('Error reading auth state:', error);
+    }
+  }
+};
+
+// Try to invoke debug early
+debugAuthState();
+
+// Enhanced storage implementation that checks both storage formats
+const enhancedStorage = {
+  getItem: (key: string) => {
+    if (typeof window === 'undefined') return null;
+    
+    // Try standard format first
+    let value = localStorage.getItem(key);
+    
+    // If not found, try alternative formats
+    if (!value) {
+      // Convert from supabase format to sb format
+      if (key === 'supabase.auth.token') {
+        value = localStorage.getItem('sb-access-token') || 
+                localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
+      } 
+      else if (key === 'supabase.auth.refreshToken') {
+        value = localStorage.getItem('sb-refresh-token') || 
+                localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
+      }
+      else if (key === 'supabase.auth.expires_at') {
+        value = localStorage.getItem('sb-expires-at') || 
+                localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-expires-at');
+      }
+      // And vice versa - convert from sb format to supabase format
+      else if (key === 'sb-access-token') {
+        value = localStorage.getItem('supabase.auth.token');
+      }
+      else if (key === 'sb-refresh-token') {
+        value = localStorage.getItem('supabase.auth.refreshToken');
+      }
+      
+      // Debug which key format was found
+      if (value) {
+        console.log(`Retrieved auth token using alternative key format for: ${key}`);
+      }
+    }
+    
+    return value;
+  },
+  setItem: (key: string, value: string) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(key, value);
+    
+    // For critical auth keys, store in both formats for redundancy
+    if (key === 'supabase.auth.token') {
+      localStorage.setItem('sb-access-token', value);
+    } 
+    else if (key === 'supabase.auth.refreshToken') {
+      localStorage.setItem('sb-refresh-token', value);
+    }
+    else if (key === 'sb-access-token') {
+      localStorage.setItem('supabase.auth.token', value);
+    }
+    else if (key === 'sb-refresh-token') {
+      localStorage.setItem('supabase.auth.refreshToken', value);
+    }
+  },
+  removeItem: (key: string) => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(key);
+    
+    // Remove all possible formats
+    if (key === 'supabase.auth.token' || key === 'sb-access-token') {
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-access-token');
+      localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
+    } 
+    else if (key === 'supabase.auth.refreshToken' || key === 'sb-refresh-token') {
+      localStorage.removeItem('supabase.auth.refreshToken');
+      localStorage.removeItem('sb-refresh-token');
+      localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
+    }
+    else if (key === 'supabase.auth.expires_at' || key === 'sb-expires-at') {
+      localStorage.removeItem('supabase.auth.expires_at');
+      localStorage.removeItem('sb-expires-at');
+      localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-expires-at');
+    }
+  }
+};
+
 export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -15,14 +143,33 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      flowType: 'pkce', // Use PKCE flow for better security
+      storage: enhancedStorage,
+      storageKey: 'supabase.auth.token',
+      // Reduced timeouts to avoid long loading periods
+      debug: true
     },
     global: {
       headers: {
         'X-Client-Info': 'supabase-js@2.39.7',
       },
     },
+    // Reduced timeout for API calls to avoid long loading periods
+    realtime: {
+      timeout: 10000, // 10 seconds
+    },
+    db: {
+      schema: 'public',
+    },
   }
 );
+
+// Run debug after supabase client is created and schedule periodic checks
+setTimeout(debugAuthState, 100);
+// Periodically check auth state every 15 seconds while page is open
+if (typeof window !== 'undefined') {
+  setInterval(debugAuthState, 15000);
+}
 
 // Database types
 export type User = {
@@ -1344,5 +1491,42 @@ export async function createStripeSession(
   } catch (error) {
     console.error('Exception dans createStripeSession:', error);
     throw error;
+  }
+}
+
+// Helper function to refresh session token
+export async function refreshSession() {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) {
+      console.error('⚠️ Error refreshing session:', error);
+      return null;
+    }
+    
+    console.log('✅ Session refreshed successfully:', data.session ? 'Valid session' : 'No session');
+    return data.session;
+  } catch (error) {
+    console.error('Exception in refreshSession:', error);
+    return null;
+  }
+}
+
+// Helper function to check session status with enhanced debugging
+export async function checkSessionStatus() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Log detailed session state
+    console.log('🔐 Session check:', {
+      hasSession: !!session,
+      user: session?.user?.email || 'None',
+      expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toLocaleString() : 'N/A',
+      newAccessToken: session?.access_token?.substring(0, 10) + '...' || 'None',
+    });
+    
+    return !!session;
+  } catch (error) {
+    console.error('Error checking session status:', error);
+    return false;
   }
 } 

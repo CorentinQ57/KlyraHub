@@ -9,7 +9,7 @@ import { fetchAllProjects } from '@/lib/supabase'
 import { Project } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { Settings, Users, ShoppingBag, FileText } from 'lucide-react'
+import { Settings, Users, ShoppingBag, FileText, RotateCw } from 'lucide-react'
 import { useSafeFetch } from '@/lib/hooks/useSafeFetch'
 
 // Étendre le type Project pour inclure les relations
@@ -35,7 +35,9 @@ export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const router = useRouter()
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, reloadAuthState } = useAuth()
+  const [authChecked, setAuthChecked] = useState(false)
+  const [retryingAuth, setRetryingAuth] = useState(false)
 
   // Status labels and colors for UI
   const statusLabels: Record<string, { label: string, color: string }> = {
@@ -61,30 +63,58 @@ export default function AdminDashboardPage() {
     },
   }
 
+  // Check for admin access as early as possible
+  useEffect(() => {
+    if (user?.id) {
+      if (!isAdmin) {
+        // If we know for sure user is not admin, redirect immediately 
+        if (authChecked) {
+          router.push('/dashboard');
+        } else {
+          // If we're not sure yet, force an auth state reload to verify
+          if (!retryingAuth) {
+            setRetryingAuth(true);
+            console.log("⚠️ Admin status unclear, forcing auth reload...");
+            reloadAuthState().finally(() => {
+              setAuthChecked(true);
+              setRetryingAuth(false);
+            });
+          }
+        }
+      } else {
+        // User is confirmed admin
+        setAuthChecked(true);
+      }
+    }
+  }, [user, isAdmin, router, authChecked, retryingAuth, reloadAuthState]);
+
   // Use our safe fetch hook for admin projects
   const { 
     data: adminProjects, 
     isLoading: projectsLoading,
-    error: projectsError 
+    error: projectsError,
+    refetch: refetchProjects
   } = useSafeFetch<ProjectWithRelations[]>(
     async () => {
-      // Only fetch if admin
-      if (!isAdmin) {
-        console.log("User is not admin, redirecting");
-        router.push('/dashboard');
+      // Only fetch if user exists, even if admin status is uncertain
+      if (!user?.id) {
+        console.log("No user ID available for projects fetch");
         return [];
       }
-      return await fetchAllProjects();
+      
+      console.log("Fetching all projects for admin...");
+      try {
+        const allProjects = await fetchAllProjects();
+        console.log(`✅ Successfully fetched ${allProjects.length} projects`);
+        return allProjects;
+      } catch (err) {
+        console.error("❌ Error fetching admin projects:", err);
+        // Throw the error to trigger retries in useSafeFetch
+        throw err;
+      }
     },
-    [isAdmin]
+    [isAdmin, authChecked]
   );
-
-  // Redirect if not admin
-  useEffect(() => {
-    if (user && !isAdmin) {
-      router.push('/dashboard')
-    }
-  }, [user, isAdmin, router])
 
   // Update projects state when adminProjects changes
   useEffect(() => {
@@ -102,8 +132,8 @@ export default function AdminDashboardPage() {
 
   // Synchronize loading states
   useEffect(() => {
-    setIsLoading(projectsLoading)
-  }, [projectsLoading])
+    setIsLoading(projectsLoading || (user?.id && !authChecked))
+  }, [projectsLoading, user?.id, authChecked])
 
   // Filter projects when status filter changes
   useEffect(() => {
@@ -114,8 +144,38 @@ export default function AdminDashboardPage() {
     }
   }, [statusFilter, projects])
 
+  const handleRefresh = async () => {
+    console.log("🔄 Manual refresh requested");
+    setIsLoading(true);
+    
+    try {
+      // First reload auth state
+      await reloadAuthState();
+      // Then refetch projects
+      await refetchProjects();
+    } catch (err) {
+      console.error("Error during manual refresh:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (projectsError) {
     console.error('Error loading admin projects:', projectsError)
+    // Show error UI with option to retry
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-3 text-red-600">Erreur de chargement</h2>
+            <p className="mb-6 text-[14px]">Impossible de charger les données d'administration</p>
+            <Button onClick={handleRefresh}>
+              <RotateCw className="mr-2 h-4 w-4" /> Réessayer
+            </Button>
+          </div>
+        </div>
+      </PageContainer>
+    )
   }
 
   if (isLoading) {
@@ -131,12 +191,34 @@ export default function AdminDashboardPage() {
     )
   }
 
+  // If auth check passed but no admin access
+  if (!isAdmin && authChecked) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-3">Accès non autorisé</h2>
+            <p className="mb-6 text-[14px]">Vous n'avez pas les droits d'accès à cette page</p>
+            <Link href="/dashboard">
+              <Button>
+                Retour au tableau de bord
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </PageContainer>
+    )
+  }
+
   return (
     <PageContainer>
       <PageHeader
         title="Administration"
         description="Gestion des projets et utilisateurs"
       >
+        <Button variant="outline" onClick={handleRefresh} className="mr-2">
+          <RotateCw className="mr-2 h-4 w-4" /> Actualiser
+        </Button>
         <Link href="/dashboard">
           <Button variant="outline">
             <FileText className="mr-2 h-4 w-4" /> Dashboard client
@@ -248,8 +330,8 @@ export default function AdminDashboardPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-[14px] text-[#64748B]">
-                      Aucun projet ne correspond à votre recherche
+                    <td colSpan={7} className="px-4 py-6 text-center text-[14px] text-[#64748B]">
+                      Aucun projet trouvé
                     </td>
                   </tr>
                 )}
