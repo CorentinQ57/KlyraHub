@@ -9,36 +9,51 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { updateProfile, getProfileData } from '@/lib/supabase'
-import { PageContainer, PageHeader, ContentCard } from '@/components/ui/page-container'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
 import { User, KeyRound, ArrowLeft, Save, LogOut } from 'lucide-react'
 
 export default function ProfilePage() {
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isUpdating, setIsUpdating] = useState(false)
+  // Consolidated state management
+  const [profileData, setProfileData] = useState({
+    fullName: '',
+    email: '',
+  })
+  const [status, setStatus] = useState({
+    isLoading: true,
+    isUpdating: false
+  })
+  
   const router = useRouter()
   const { user, signOut, ensureUserProfile } = useAuth()
   const { toast } = useToast()
 
+  // Effect to load profile data when user is available
   useEffect(() => {
     if (user) {
-      ensureUserProfile(user.id).finally(() => loadProfile())
-    } else if (!isLoading) {
+      ensureUserProfile(user.id).then(() => loadProfile())
+    } else if (!status.isLoading) {
       router.push('/login')
     }
-  }, [user, router])
+  }, [user, router, status.isLoading])
 
+  // Load profile data from Supabase
   async function loadProfile() {
-    setIsLoading(true)
+    setStatus(prev => ({ ...prev, isLoading: true }))
+    
     try {
       if (!user) return
       
-      setEmail(user.email || '')
-      const profileData = await getProfileData(user.id)
+      // Set email from auth data
+      setProfileData(prev => ({ ...prev, email: user.email || '' }))
       
-      if (profileData) {
-        setFullName(profileData.full_name || '')
+      // Fetch additional profile data
+      const data = await getProfileData(user.id)
+      
+      if (data) {
+        setProfileData(prev => ({ 
+          ...prev, 
+          fullName: data.full_name || '' 
+        }))
       } else {
         toast({
           title: "Information",
@@ -54,19 +69,21 @@ export default function ProfilePage() {
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setStatus(prev => ({ ...prev, isLoading: false }))
     }
   }
 
+  // Handle profile update
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
     
-    setIsUpdating(true)
+    setStatus(prev => ({ ...prev, isUpdating: true }))
+    
     try {
       const updates = {
         id: user.id,
-        full_name: fullName,
+        full_name: profileData.fullName,
         updated_at: new Date().toISOString()
       }
       
@@ -86,10 +103,11 @@ export default function ProfilePage() {
         variant: "destructive",
       })
     } finally {
-      setIsUpdating(false)
+      setStatus(prev => ({ ...prev, isUpdating: false }))
     }
   }
 
+  // Handle user logout
   const handleLogout = async () => {
     try {
       await signOut()
@@ -99,13 +117,14 @@ export default function ProfilePage() {
     }
   }
 
-  if (isLoading) {
+  // Loading state
+  if (status.isLoading) {
     return (
       <PageContainer>
-        <div className="flex items-center justify-center h-[50vh]">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
-            <p className="mt-4 text-sm text-gray-500">Chargement du profil...</p>
+            <p className="mt-4 text-sm text-[#64748B]">Chargement du profil...</p>
           </div>
         </div>
       </PageContainer>
@@ -118,90 +137,102 @@ export default function ProfilePage() {
         title="Votre profil"
         description="Gérez vos informations personnelles et paramètres de sécurité"
       >
-        <Button variant="outline" onClick={handleLogout}>
+        <Button 
+          variant="outline" 
+          onClick={handleLogout} 
+          size="sm"
+          className="h-9 text-sm font-medium"
+        >
           <LogOut className="mr-2 h-4 w-4" /> Déconnexion
         </Button>
       </PageHeader>
       
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Personal Information Card */}
-        <div className="md:col-span-8">
-          <ContentCard>
-            <div className="flex items-center mb-4">
-              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 mr-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <ContentCard className="overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+            <div className="flex items-center mb-6 pb-4 border-b border-[#E2E8F0]">
+              <div className="h-10 w-10 rounded-lg bg-[#EBF2FF] flex items-center justify-center text-[#467FF7] mr-3">
                 <User className="h-5 w-5" />
               </div>
-              <h2 className="text-lg font-semibold">Informations personnelles</h2>
+              <h3>Informations personnelles</h3>
             </div>
             
-            <form onSubmit={handleUpdate} className="space-y-5">
+            <form onSubmit={handleUpdate} className="space-y-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="email">Adresse email</Label>
+                  <Label htmlFor="email" className="text-[#1A2333] font-medium">Adresse email</Label>
                   <Input
                     id="email"
                     type="email"
-                    value={email}
+                    value={profileData.email}
                     disabled
-                    className="mt-1 bg-gray-50"
+                    className="mt-1.5 bg-[#F8FAFC]"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-[#64748B] mt-1">
                     Pour changer votre email, contactez le support
                   </p>
                 </div>
                 
                 <div>
-                  <Label htmlFor="fullName">Nom d'utilisateur</Label>
+                  <Label htmlFor="fullName" className="text-[#1A2333] font-medium">Nom d'utilisateur</Label>
                   <Input
                     id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    disabled={isUpdating}
-                    className="mt-1"
+                    value={profileData.fullName}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
+                    disabled={status.isUpdating}
+                    className="mt-1.5"
                   />
                 </div>
               </div>
               
-              <div className="flex justify-end items-center pt-4 border-t border-gray-100">
+              <div className="flex justify-end border-t border-[#E2E8F0] pt-4">
                 <Button
                   type="submit"
-                  disabled={isUpdating}
-                  className="ml-3"
+                  disabled={status.isUpdating}
+                  size="sm"
+                  className="h-9 text-sm font-medium"
                 >
                   <Save className="mr-2 h-4 w-4" />
-                  {isUpdating ? "Mise à jour..." : "Enregistrer"}
+                  {status.isUpdating ? "Mise à jour..." : "Enregistrer"}
                 </Button>
               </div>
             </form>
           </ContentCard>
         </div>
         
-        {/* Security Card */}
-        <div className="md:col-span-4">
-          <ContentCard className="h-full">
-            <div className="flex items-center mb-5">
-              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 mr-3">
+        <div className="md:col-span-1">
+          <ContentCard className="h-full overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+            <div className="flex items-center mb-6 pb-4 border-b border-[#E2E8F0]">
+              <div className="h-10 w-10 rounded-lg bg-[#EBF2FF] flex items-center justify-center text-[#467FF7] mr-3">
                 <KeyRound className="h-5 w-5" />
               </div>
-              <h2 className="text-lg font-semibold">Sécurité</h2>
+              <h3>Sécurité</h3>
             </div>
             
             <div className="space-y-6">
-              <div className="pb-4 border-b border-gray-100">
-                <h4 className="font-medium mb-1">Mot de passe</h4>
-                <p className="text-sm text-gray-500 mb-3">
-                  Mettez à jour régulièrement votre mot de passe pour sécuriser votre compte
+              <div className="space-y-2">
+                <h4 className="font-medium text-[#1A2333]">Mot de passe</h4>
+                <p className="text-sm text-[#64748B] mb-3">
+                  Mettez à jour régulièrement votre mot de passe
                 </p>
                 <Link href="/reset-password">
-                  <Button variant="outline" size="sm">Changer le mot de passe</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-9 text-sm font-medium"
+                  >
+                    Changer le mot de passe
+                  </Button>
                 </Link>
               </div>
               
-              <div>
-                <h4 className="font-medium mb-1">Détails du compte</h4>
-                <div className="space-y-2 mt-1 text-sm text-gray-500">
-                  <p>Email: {email}</p>
-                  <p>Membre depuis: {user ? new Date(user.created_at).toLocaleDateString('fr-FR') : ''}</p>
+              <div className="pt-4 border-t border-[#E2E8F0]">
+                <h4 className="font-medium mb-2 text-[#1A2333]">Détails du compte</h4>
+                <div className="space-y-1">
+                  <p className="text-sm text-[#64748B]">Email: {profileData.email}</p>
+                  <p className="text-sm text-[#64748B]">
+                    Membre depuis: {user ? new Date(user.created_at).toLocaleDateString('fr-FR') : ''}
+                  </p>
                 </div>
               </div>
             </div>
@@ -211,7 +242,11 @@ export default function ProfilePage() {
       
       <div className="mt-6">
         <Link href="/dashboard">
-          <Button variant="ghost" type="button">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="text-[#64748B] hover:text-[#1A2333]"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" /> Retour au tableau de bord
           </Button>
         </Link>

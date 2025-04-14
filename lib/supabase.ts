@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
+// Create a global ready flag to ensure Supabase is fully initialized
+let isCoreSupabaseReady = false;
+
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
 }
@@ -7,55 +10,91 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
-// Enhanced logging of session debug info in localStorage and cookies
-const debugAuthState = () => {
+// Enhanced logging of session debug info in localStorage, cookies and initial state
+const debugAuthState = (source = 'default') => {
   if (typeof window !== 'undefined') {
     try {
-      // Check localStorage tokens (from both possible formats)
-      const supabaseAccessToken = localStorage.getItem('supabase.auth.token') || 
-                                 localStorage.getItem('sb-access-token') || 
-                                 localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
+      // Check all possible localStorage token formats
+      const tokenKeys = [
+        'supabase.auth.token',
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
+        'sb-access-token',
+      ];
       
-      const refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
-                          localStorage.getItem('sb-refresh-token') || 
-                          localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
+      const refreshTokenKeys = [
+        'supabase.auth.refreshToken',
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`,
+        'sb-refresh-token',
+      ];
       
-      const sessionExpiry = localStorage.getItem('supabase.auth.expires_at') || 
-                           localStorage.getItem('sb-expires-at') || 
-                           localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-expires-at');
-
+      const expiryKeys = [
+        'supabase.auth.expires_at',
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`,
+        'sb-expires-at',
+      ];
+      
+      // Check for tokens in all possible formats
+      let foundToken = null;
+      let foundRefreshToken = null;
+      let foundExpiry = null;
+      
+      for (const key of tokenKeys) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          foundToken = { key, value: value.substring(0, 12) + '...' };
+          break;
+        }
+      }
+      
+      for (const key of refreshTokenKeys) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          foundRefreshToken = { key, value: value.substring(0, 12) + '...' };
+          break;
+        }
+      }
+      
+      for (const key of expiryKeys) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          foundExpiry = { 
+            key, 
+            value, 
+            date: new Date(parseInt(value) * 1000).toLocaleString() 
+          };
+          break;
+        }
+      }
+      
       // Check cookies
       const cookieString = document.cookie;
-      const hasSbAccessToken = cookieString.includes('sb-access-token');
-      const hasSbRefreshToken = cookieString.includes('sb-refresh-token');
+      const sbCookieRegex = /sb-(access|refresh)-token/;
+      const hasSbCookies = sbCookieRegex.test(cookieString);
       
-      console.log('🔑 Auth Debug (Tokens):', {
+      console.log(`🔑 Auth Debug [${source}]:`, {
+        supabaseReady: isCoreSupabaseReady,
         localStorage: {
-          accessToken: supabaseAccessToken ? 'Present' : 'Missing',
-          refreshToken: refreshToken ? 'Present' : 'Missing',
-          expiresAt: sessionExpiry ? new Date(parseInt(sessionExpiry) * 1000).toLocaleString() : 'Missing',
+          token: foundToken ? `Found in ${foundToken.key}` : 'Missing',
+          refreshToken: foundRefreshToken ? `Found in ${foundRefreshToken.key}` : 'Missing',
+          expiry: foundExpiry ? `Found in ${foundExpiry.key} (${foundExpiry.date})` : 'Missing',
         },
         cookies: {
-          hasAccessToken: hasSbAccessToken,
-          hasRefreshToken: hasSbRefreshToken,
+          hasSbCookies,
+          preview: cookieString.substring(0, 50) + (cookieString.length > 50 ? '...' : '')
         }
       });
 
-      // Check if we have a token in memory (can be retrieved using auth.getSession())
-      if (supabaseAccessToken) {
-        // Log the first few characters of the token for debugging
-        console.log('Token prefix:', supabaseAccessToken.substring(0, 10) + '...');
-      }
+      // Return if we found authentication data
+      return !!(foundToken || foundRefreshToken || hasSbCookies);
     } catch (error) {
       console.error('Error reading auth state:', error);
+      return false;
     }
   }
+  return false;
 };
 
-// Try to invoke debug early
-debugAuthState();
-
-// Enhanced storage implementation that checks both storage formats
+// Enhanced cookie-aware storage implementation
 const enhancedStorage = {
   getItem: (key: string) => {
     if (typeof window === 'undefined') return null;
@@ -65,76 +104,202 @@ const enhancedStorage = {
     
     // If not found, try alternative formats
     if (!value) {
-      // Convert from supabase format to sb format
-      if (key === 'supabase.auth.token') {
-        value = localStorage.getItem('sb-access-token') || 
-                localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
-      } 
-      else if (key === 'supabase.auth.refreshToken') {
-        value = localStorage.getItem('sb-refresh-token') || 
-                localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
-      }
-      else if (key === 'supabase.auth.expires_at') {
-        value = localStorage.getItem('sb-expires-at') || 
-                localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-expires-at');
-      }
-      // And vice versa - convert from sb format to supabase format
-      else if (key === 'sb-access-token') {
-        value = localStorage.getItem('supabase.auth.token');
-      }
-      else if (key === 'sb-refresh-token') {
-        value = localStorage.getItem('supabase.auth.refreshToken');
+      // Token mappings
+      const mappings: Record<string, string[]> = {
+        // Main access token
+        'supabase.auth.token': [
+          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
+          'sb-access-token'
+        ],
+        [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`]: [
+          'supabase.auth.token',
+          'sb-access-token'
+        ],
+        'sb-access-token': [
+          'supabase.auth.token',
+          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`
+        ],
+        
+        // Refresh token
+        'supabase.auth.refreshToken': [
+          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`,
+          'sb-refresh-token'
+        ],
+        [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`]: [
+          'supabase.auth.refreshToken',
+          'sb-refresh-token'
+        ],
+        'sb-refresh-token': [
+          'supabase.auth.refreshToken',
+          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`
+        ],
+        
+        // Expiry
+        'supabase.auth.expires_at': [
+          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`,
+          'sb-expires-at'
+        ],
+        [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`]: [
+          'supabase.auth.expires_at',
+          'sb-expires-at'
+        ],
+        'sb-expires-at': [
+          'supabase.auth.expires_at',
+          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`
+        ]
+      };
+      
+      // Try alternatives
+      if (mappings[key]) {
+        for (const altKey of mappings[key]) {
+          const altValue = localStorage.getItem(altKey);
+          if (altValue) {
+            console.log(`Retrieved auth value using alternative key: ${key} → ${altKey}`);
+            value = altValue;
+            break;
+          }
+        }
       }
       
-      // Debug which key format was found
-      if (value) {
-        console.log(`Retrieved auth token using alternative key format for: ${key}`);
+      // If still not found, check cookies (for access and refresh tokens)
+      if (!value && typeof document !== 'undefined') {
+        try {
+          // Handle cookie extraction for specific keys
+          if (key === 'supabase.auth.token' || key === `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token` || key === 'sb-access-token') {
+            const match = document.cookie.match(new RegExp('(^| )sb-access-token=([^;]+)'));
+            if (match) {
+              console.log('Retrieved access token from cookie');
+              value = match[2];
+            }
+          } else if (key === 'supabase.auth.refreshToken' || key === `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token` || key === 'sb-refresh-token') {
+            const match = document.cookie.match(new RegExp('(^| )sb-refresh-token=([^;]+)'));
+            if (match) {
+              console.log('Retrieved refresh token from cookie');
+              value = match[2];
+            }
+          }
+        } catch (e) {
+          console.error('Error accessing cookies:', e);
+        }
       }
     }
     
     return value;
   },
+  
   setItem: (key: string, value: string) => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(key, value);
     
-    // For critical auth keys, store in both formats for redundancy
-    if (key === 'supabase.auth.token') {
-      localStorage.setItem('sb-access-token', value);
-    } 
-    else if (key === 'supabase.auth.refreshToken') {
-      localStorage.setItem('sb-refresh-token', value);
+    // Store in multiple formats for redundancy
+    const mappings: Record<string, string[]> = {
+      // Main access token
+      'supabase.auth.token': [
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
+        'sb-access-token'
+      ],
+      [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`]: [
+        'supabase.auth.token',
+        'sb-access-token'
+      ],
+      'sb-access-token': [
+        'supabase.auth.token',
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`
+      ],
+      
+      // Refresh token
+      'supabase.auth.refreshToken': [
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`,
+        'sb-refresh-token'
+      ],
+      [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`]: [
+        'supabase.auth.refreshToken',
+        'sb-refresh-token'
+      ],
+      'sb-refresh-token': [
+        'supabase.auth.refreshToken',
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`
+      ],
+      
+      // Expiry
+      'supabase.auth.expires_at': [
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`,
+        'sb-expires-at'
+      ],
+      [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`]: [
+        'supabase.auth.expires_at',
+        'sb-expires-at'
+      ],
+      'sb-expires-at': [
+        'supabase.auth.expires_at',
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`
+      ]
+    };
+    
+    if (mappings[key]) {
+      for (const altKey of mappings[key]) {
+        localStorage.setItem(altKey, value);
+      }
     }
-    else if (key === 'sb-access-token') {
-      localStorage.setItem('supabase.auth.token', value);
-    }
-    else if (key === 'sb-refresh-token') {
-      localStorage.setItem('supabase.auth.refreshToken', value);
+    
+    // Also store critical auth tokens as cookies for additional reliability
+    if (typeof document !== 'undefined') {
+      try {
+        const maxAgeSec = 60 * 60 * 24 * 7; // 7 days
+        
+        if (key === 'supabase.auth.token' || key === `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token` || key === 'sb-access-token') {
+          document.cookie = `sb-access-token=${value}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
+        } else if (key === 'supabase.auth.refreshToken' || key === `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token` || key === 'sb-refresh-token') {
+          document.cookie = `sb-refresh-token=${value}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
+        }
+      } catch (e) {
+        console.error('Error setting cookies:', e);
+      }
     }
   },
+  
   removeItem: (key: string) => {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(key);
     
     // Remove all possible formats
-    if (key === 'supabase.auth.token' || key === 'sb-access-token') {
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('sb-access-token');
-      localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
-    } 
-    else if (key === 'supabase.auth.refreshToken' || key === 'sb-refresh-token') {
-      localStorage.removeItem('supabase.auth.refreshToken');
-      localStorage.removeItem('sb-refresh-token');
-      localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
+    const allKeys = [
+      // Access token
+      'supabase.auth.token',
+      `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
+      'sb-access-token',
+      
+      // Refresh token
+      'supabase.auth.refreshToken',
+      `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`,
+      'sb-refresh-token',
+      
+      // Expiry
+      'supabase.auth.expires_at',
+      `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`,
+      'sb-expires-at'
+    ];
+    
+    for (const k of allKeys) {
+      localStorage.removeItem(k);
     }
-    else if (key === 'supabase.auth.expires_at' || key === 'sb-expires-at') {
-      localStorage.removeItem('supabase.auth.expires_at');
-      localStorage.removeItem('sb-expires-at');
-      localStorage.removeItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-expires-at');
+    
+    // Also remove cookies
+    if (typeof document !== 'undefined') {
+      try {
+        document.cookie = 'sb-access-token=; Max-Age=-99999999; path=/; SameSite=Lax';
+        document.cookie = 'sb-refresh-token=; Max-Age=-99999999; path=/; SameSite=Lax';
+      } catch (e) {
+        console.error('Error removing cookies:', e);
+      }
     }
   }
 };
 
+// Check for auth data before initializing Supabase
+const hasAuthData = debugAuthState('pre-init');
+
+// Create Supabase client with enhanced config
 export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -143,10 +308,10 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      flowType: 'pkce', // Use PKCE flow for better security
+      flowType: 'pkce',
       storage: enhancedStorage,
       storageKey: 'supabase.auth.token',
-      // Reduced timeouts to avoid long loading periods
+      // Enable debugging for better error visibility
       debug: true
     },
     global: {
@@ -160,15 +325,72 @@ export const supabase = createClient(
     },
     db: {
       schema: 'public',
-    },
+    }
   }
 );
 
-// Run debug after supabase client is created and schedule periodic checks
-setTimeout(debugAuthState, 100);
-// Periodically check auth state every 15 seconds while page is open
+// Wait for Supabase client to be fully initialized
+const waitForSupabaseReady = () => {
+  return new Promise<void>((resolve) => {
+    // If we detected auth data, give Supabase more time to load it
+    const waitTime = hasAuthData ? 300 : 100;
+    
+    setTimeout(() => {
+      isCoreSupabaseReady = true;
+      console.log(`✅ Supabase client ready after ${waitTime}ms wait`);
+      resolve();
+    }, waitTime);
+  });
+};
+
+// Initialize Supabase
+waitForSupabaseReady().then(() => {
+  // Run debug after Supabase client is fully initialized
+  debugAuthState('post-init');
+  
+  // Set up auth state change listener for debugging
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    console.log('🔄 Auth state changed:', event, session ? `User: ${session.user.email}` : 'No session');
+    
+    // When a session is detected, store tokens redundantly
+    if (session && session.access_token) {
+      console.log('💾 Redundantly storing detected session tokens');
+      enhancedStorage.setItem('supabase.auth.token', session.access_token);
+      if (session.refresh_token) {
+        enhancedStorage.setItem('supabase.auth.refreshToken', session.refresh_token);
+      }
+    }
+    
+    // Debug auth state again after change
+    debugAuthState('auth-change');
+  });
+});
+
+// Export a readiness check
+export const isSupabaseReady = () => isCoreSupabaseReady;
+
+// Export a function to check if Supabase is ready and wait if it's not
+export const waitForSupabase = async () => {
+  if (isCoreSupabaseReady) return;
+  await waitForSupabaseReady();
+};
+
+// Periodically check auth state every 30 seconds while page is open
 if (typeof window !== 'undefined') {
-  setInterval(debugAuthState, 15000);
+  setInterval(() => {
+    debugAuthState('periodic');
+    
+    // Try to help keep session active by forcing a refresh
+    if (isCoreSupabaseReady) {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          console.log('📡 Refreshing session periodically');
+        }
+      }).catch(err => {
+        console.error('Error in periodic session check:', err);
+      });
+    }
+  }, 30000);
 }
 
 // Database types

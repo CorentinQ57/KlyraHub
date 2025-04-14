@@ -1,9 +1,15 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Session, User } from '@supabase/supabase-js'
+import { Session, User, AuthChangeEvent, AuthError } from '@supabase/supabase-js'
+import toast from 'react-hot-toast'
+
+// Define subscription type for auth
+type SupabaseAuthSubscription = {
+  unsubscribe: () => void
+}
 
 type AuthContextType = {
   user: User | null
@@ -224,283 +230,196 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  // Get initial session and set up auth state listener - Optimisé
-  const getInitialSession = async () => {
+  // Make sure supabase client is actually ready before proceeding
+  const waitForSupabase = async (): Promise<void> => {
+    // Check for global supabase ready flag first (might be set in lib/supabase.ts)
+    if (typeof window !== 'undefined' && (window as any).__SUPABASE_READY === true) {
+      console.log("🔥 Supabase client already marked as ready")
+      return
+    }
+
+    // Wait a bit for Supabase client to initialize
+    console.log("⏱️ Waiting for Supabase client to initialize...")
+    
+    // First check - just a small delay to let client initialize
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    // Make a simple API call to verify Supabase is ready
     try {
-      console.log("🚀 Getting initial session...")
-      setIsLoading(true)
-
-      // Check if we already have tokens in localStorage
-      // This helps determine if we should aggressively try to recover the session
-      let hasLocalTokens = false;
-      let accessToken = null;
-      let refreshToken = null;
-
+      // Try a simple API call that doesn't require auth
+      const { data: healthCheck, error } = await Promise.race([
+        supabase.from('categories').select('count', { count: 'exact', head: true }),
+        new Promise(resolve => setTimeout(() => resolve({ 
+          data: null, 
+          error: new Error("Health check timeout") 
+        }), 1500))
+      ]) as any
+      
+      if (error && error.message !== "Health check timeout") {
+        console.log("⚠️ Supabase health check returned error, but client is responsive:", error.message)
+      } else {
+        console.log("✅ Supabase health check successful")
+      }
+      
+      // Set global ready flag
       if (typeof window !== 'undefined') {
-        // Check various token formats that Supabase might use
-        accessToken = localStorage.getItem('supabase.auth.token') || 
-                     localStorage.getItem('sb-access-token') || 
-                     localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
-                     
-        refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
-                      localStorage.getItem('sb-refresh-token') || 
-                      localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
-        
-        hasLocalTokens = !!(accessToken || refreshToken);
-        console.log('📝 Local tokens check:', hasLocalTokens ? 'Tokens found' : 'No tokens', 
-          accessToken ? 'Access token present' : 'No access token',
-          refreshToken ? 'Refresh token present' : 'No refresh token');
-      }
-
-      // Vérifier s'il y a déjà un utilisateur en mémoire (cas refresh page)
-      if (user && typeof user === 'object' && user.id) {
-        console.log("🧠 User already in memory, skipping session check:", user.email);
-        // On a déjà un utilisateur valide, on peut raccourcir le processus
-        const role = await Promise.race([
-          checkUserRole(user.id),
-          new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
-        ]);
-        console.log("🛡️ Role check for cached user:", role);
-        setIsAdmin(role === 'admin');
-        // Marquer comme chargé
-        setIsLoading(false);
-        return;
-      }
-
-      // If we have tokens but no user in memory, we need to proactively
-      // try to recover the session before proceeding
-      if (hasLocalTokens) {
-        console.log('🔄 Tokens found but no user - forcing session refresh...');
-        
-        // First try: Direct session refresh - with a short timeout
-        try {
-          const { data, error } = await Promise.race([
-            supabase.auth.refreshSession(),
-            new Promise((resolve) => setTimeout(() => 
-              resolve({ data: null, error: new Error("Refresh session timeout") }), 2000))
-          ]) as any;
-          
-          if (data?.session && data.session.user) {
-            console.log('✅ Session refreshed successfully!', data.session.user.email);
-            setSession(data.session);
-            safeSetUser(data.session.user);
-            
-            // Check role with a short timeout
-            Promise.race([
-              checkUserRole(data.session.user.id),
-              new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
-            ]).then(role => {
-              console.log("🛡️ Role check for refreshed session:", role);
-              setIsAdmin(role === 'admin');
-            });
-            
-            setIsLoading(false);
-            return;
-          } else if (error) {
-            console.warn('⚠️ Session refresh failed:', error.message);
-          }
-        } catch (refreshErr) {
-          console.warn('⚠️ Error during session refresh attempt 1:', refreshErr);
-        }
-        
-        // Second try: If refresh failed but we have a refresh token, try a manual token refresh
-        if (refreshToken) {
-          console.log('🔄 Attempting manual token refresh with stored refresh token...');
-          try {
-            // This is a simplified approach - in production you might want a more robust solution
-            const { data, error } = await Promise.race([
-              supabase.auth.refreshSession({ refresh_token: refreshToken }),
-              new Promise((resolve) => setTimeout(() => 
-                resolve({ data: null, error: new Error("Manual refresh timeout") }), 2000))
-            ]) as any;
-            
-            if (data?.session && data.session.user) {
-              console.log('✅ Manual session refresh successful!', data.session.user.email);
-              setSession(data.session);
-              safeSetUser(data.session.user);
-              
-              // Check role with a short timeout
-              Promise.race([
-                checkUserRole(data.session.user.id),
-                new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
-              ]).then(role => {
-                console.log("🛡️ Role check for manually refreshed session:", role);
-                setIsAdmin(role === 'admin');
-              });
-              
-              setIsLoading(false);
-              return;
-            } else if (error) {
-              console.warn('⚠️ Manual session refresh failed:', error.message);
-            }
-          } catch (manualRefreshErr) {
-            console.warn('⚠️ Error during manual token refresh:', manualRefreshErr);
-          }
-        }
-
-        // Third try: If refresh failed but we have an access token, try getUser
-        if (accessToken) {
-          console.log('🔄 Attempting to get user with stored access token...');
-          try {
-            const { data, error } = await Promise.race([
-              supabase.auth.getUser(),
-              new Promise((resolve) => setTimeout(() => 
-                resolve({ data: { user: null }, error: new Error("getUser timeout") }), 2000))
-            ]) as any;
-            
-            if (data?.user && typeof data.user === 'object' && data.user.id) {
-              console.log('✅ Got user with access token:', data.user.email);
-              
-              // Create a minimal session object
-              const minimalSession = {
-                user: data.user,
-                access_token: accessToken
-              } as any;
-              
-              setSession(minimalSession);
-              safeSetUser(data.user);
-              
-              // Check role with a short timeout
-              Promise.race([
-                checkUserRole(data.user.id),
-                new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
-              ]).then(role => {
-                console.log("🛡️ Role check for recovered user:", role);
-                setIsAdmin(role === 'admin');
-              });
-              
-              setIsLoading(false);
-              return;
-            } else if (error) {
-              console.warn('⚠️ getUser with access token failed:', error.message);
-            }
-          } catch (getUserErr) {
-            console.warn('⚠️ Error during getUser with access token:', getUserErr);
-          }
-        }
+        (window as any).__SUPABASE_READY = true
       }
       
-      // If all recovery attempts failed, fall back to standard getSession
-      console.log('🔄 All recovery attempts failed or no tokens found, trying standard getSession...');
-      
-      // Multiple attempts for getSession with increasing timeouts
-      let session = null;
-      let getSessionError = null;
-      
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        const timeout = attempt * 1000; // Increasing timeout: 1s, 2s, 3s
-        
-        try {
-          console.log(`🔄 getSession attempt ${attempt} with ${timeout}ms timeout...`);
-          
-          const sessionPromise = supabase.auth.getSession();
-          const sessionTimeout = new Promise((resolve) => 
-            setTimeout(() => resolve({ 
-              data: { session: null }, 
-              error: new Error(`Session check timeout (${timeout}ms)`) 
-            }), timeout)
-          );
+      return
+    } catch (err) {
+      console.warn("⚠️ Supabase health check error:", err)
+      // Continue anyway - we've at least waited some time
+    }
+  }
 
-          const { data: { session: attemptSession }, error } = await Promise.race([sessionPromise, sessionTimeout]) as any;
-          
-          // If we got a session, use it and stop retrying
-          if (attemptSession) {
-            session = attemptSession;
-            console.log(`✅ Session found on attempt ${attempt}:`, session.user?.email);
-            break;
+  // Get initial session and set up auth state listener - Completely Redesigned
+  const getInitialSession = async (): Promise<{
+    session: Session | null
+    user: User | null
+    error: string | null
+  }> => {
+    console.log("📝 Starting session recovery process...")
+    
+    // Wait for Supabase to be ready before proceeding
+    await waitForSupabase()
+    
+    // Short-circuit if we have a session in memory and it matches what's in storage
+    if (session) {
+      console.log("🔍 Using existing session from memory")
+      return { session, user, error: null }
+    }
+    
+    console.log("🔄 Session not found in memory, attempting recovery")
+    let authListener: SupabaseAuthSubscription | null = null
+    
+    // Create a promise to track auth state changes during initialization
+    const authChangePromise = new Promise<{session: Session | null, user: User | null}>((resolve) => {
+      try {
+        // Listen for auth changes during startup
+        authListener = supabase.auth.onAuthStateChange((event, newSession) => {
+          console.log(`🔔 Auth event during initialization: ${event}`)
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            resolve({session: newSession, user: newSession?.user || null})
           }
-          
-          // If we got a real error (not timeout), stop retrying
-          if (error && error.message.indexOf('timeout') === -1) {
-            getSessionError = error;
-            console.error(`⚠️ Real error on attempt ${attempt}:`, error);
-            break;
-          }
-          
-          // If it was just a timeout, we'll retry (unless this was the last attempt)
-          if (attempt < 3) {
-            console.log(`⏱️ Attempt ${attempt} timed out, retrying...`);
-          }
-        } catch (err) {
-          console.error(`⚠️ Exception in getSession attempt ${attempt}:`, err);
-          getSessionError = err;
-          break;
-        }
+        })
+        
+        // Set timeout to avoid waiting forever
+        setTimeout(() => {
+          resolve({session: null, user: null})
+        }, 2000)
+      } catch (err) {
+        console.error("❌ Error setting up auth listener:", err)
+        resolve({session: null, user: null})
       }
-
-      // Process the session (or lack thereof)
-      if (session) {
-        console.log("🔐 Using session with user:", session.user?.email);
+    })
+    
+    try {
+      // Attempt 1: Try the modern API first (getSession)
+      console.log("🔍 Attempt 1: Trying getSession()")
+      const { data: sessionData, error: sessionError } = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise(resolve => setTimeout(() => resolve({
+          data: { session: null },
+          error: new Error("getSession timeout")
+        }), 2000))
+      ]) as any
+      
+      if (sessionData?.session) {
+        console.log("✅ Session recovered using getSession()")
+        const recoveredSession = sessionData.session
         
-        // Si session.user existe mais n'est pas un objet valide, essayer de récupérer directement l'utilisateur
-        if (!session.user || typeof session.user !== 'object' || !session.user.id) {
-          console.log("⚠️ Session user invalid, forcing getUser call");
-          try {
-            const { data: { user: directUser }, error: userError } = await Promise.race([
-              supabase.auth.getUser(),
-              new Promise(resolve => setTimeout(() => resolve({ 
-                data: { user: null }, 
-                error: new Error("getUser timeout") 
-              }), 2000))
-            ]) as any;
-            
-            if (directUser && typeof directUser === 'object' && directUser.id) {
-              console.log('✅ Got user directly:', directUser.email);
-              // Update session with valid user
-              session.user = directUser;
-              setSession(session);
-              safeSetUser(directUser);
-              
-              // Check if user is admin
-              Promise.race([
-                checkUserRole(directUser.id),
-                new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
-              ]).then(role => {
-                console.log("🛡️ Role check for direct user:", role);
-                setIsAdmin(role === 'admin');
-              });
-              
-              setIsLoading(false);
-            } else {
-              throw new Error("Failed to get valid user from getUser");
-            }
-          } catch (userError) {
-            console.error("⚠️ Exception in direct getUser:", userError);
-            setSession(null);
-            setUser(null);
-            setIsAdmin(false);
-            setIsLoading(false);
-          }
-        } else {
-          // Session user is valid
-          console.log("✅ Session user is valid:", session.user.email);
-          setSession(session);
-          safeSetUser(session.user);
-          
-          // Check if user is admin - Mais ne pas bloquer l'interface
-          Promise.race([
-            checkUserRole(session.user.id),
-            new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
-          ]).then(role => {
-            console.log("🛡️ Role check result for session user:", role);
-            setIsAdmin(role === 'admin');
-          }).catch(roleError => {
-            console.error("Error checking role for session user:", roleError);
-          });
-          
-          // Considérer comme chargé même si la vérification du rôle est encore en cours
-          setIsLoading(false);
+        // Clean up listener
+        authListener?.unsubscribe()
+        
+        return {
+          session: recoveredSession,
+          user: recoveredSession?.user || null,
+          error: null
         }
       } else {
-        console.log("❌ No session found after all attempts, clearing auth state");
-        setSession(null);
-        setUser(null);
-        setIsAdmin(false);
-        setIsLoading(false);
+        console.log("⚠️ getSession() failed:", sessionError?.message || "No session found")
       }
-    } catch (error) {
-      console.error('⚠️ Error in getInitialSession:', error);
-      setIsLoading(false);
+      
+      // Attempt 2: Try getUser
+      console.log("🔍 Attempt 2: Trying getUser()")
+      const { data: userData, error: userError } = await Promise.race([
+        supabase.auth.getUser(),
+        new Promise(resolve => setTimeout(() => resolve({
+          data: { user: null },
+          error: new Error("getUser timeout")
+        }), 2000))
+      ]) as any
+      
+      if (userData?.user) {
+        console.log("✅ User found using getUser(), attempting to refresh session")
+        
+        // Attempt 3: If we have a user but no session, try to refresh the session
+        console.log("🔍 Attempt 3: Trying refreshSession()")
+        const { data: refreshData, error: refreshError } = await Promise.race([
+          supabase.auth.refreshSession(),
+          new Promise(resolve => setTimeout(() => resolve({
+            data: { session: null },
+            error: new Error("refreshSession timeout")
+          }), 3000))
+        ]) as any
+        
+        if (refreshData?.session) {
+          console.log("✅ Session refreshed successfully")
+          
+          // Clean up listener
+          authListener?.unsubscribe()
+          
+          return {
+            session: refreshData.session,
+            user: refreshData.session?.user || userData.user,
+            error: null
+          }
+        } else {
+          console.log("⚠️ Session refresh failed:", refreshError?.message || "No session created")
+        }
+      } else {
+        console.log("⚠️ getUser() failed:", userError?.message || "No user found")
+      }
+      
+      // Attempt 4: Wait for auth state change in case a login is happening concurrently
+      console.log("🔍 Attempt 4: Waiting for auth events")
+      const authChangeResult = await authChangePromise
+      
+      if (authChangeResult.session) {
+        console.log("✅ Session recovered from auth state change")
+        return {
+          session: authChangeResult.session,
+          user: authChangeResult.user,
+          error: null
+        }
+      }
+      
+      // Final attempt: Check if cookies contain auth data but Supabase didn't load it
+      console.log("🔍 Final check: Reviewing local storage and cookies")
+      const hasLocalStorageAuth = typeof window !== 'undefined' && localStorage.getItem('supabase.auth.token')
+      const hasCookieAuth = typeof document !== 'undefined' && document.cookie.includes('sb-')
+      
+      if (hasLocalStorageAuth || hasCookieAuth) {
+        console.log("⚠️ Auth data found in storage, but session recovery failed. User may need to log in again.")
+      }
+      
+      // Clean up listener if still active
+      authListener?.unsubscribe()
+      
+      console.log("⚠️ All session recovery attempts failed")
+      return { session: null, user: null, error: "Session recovery failed" }
+    } catch (err) {
+      console.error("❌ Fatal error during session recovery:", err)
+      
+      // Clean up listener if still active
+      authListener?.unsubscribe()
+      
+      return {
+        session: null,
+        user: null,
+        error: `Fatal error: ${(err as Error).message}`
+      }
     }
   }
 
