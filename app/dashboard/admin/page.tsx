@@ -10,6 +10,7 @@ import { Project } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
 import { Settings, Users, ShoppingBag, FileText } from 'lucide-react'
+import { useSafeFetch } from '@/lib/hooks/useSafeFetch'
 
 // Étendre le type Project pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -60,17 +61,49 @@ export default function AdminDashboardPage() {
     },
   }
 
+  // Use our safe fetch hook for admin projects
+  const { 
+    data: adminProjects, 
+    isLoading: projectsLoading,
+    error: projectsError 
+  } = useSafeFetch<ProjectWithRelations[]>(
+    async () => {
+      // Only fetch if admin
+      if (!isAdmin) {
+        console.log("User is not admin, redirecting");
+        router.push('/dashboard');
+        return [];
+      }
+      return await fetchAllProjects();
+    },
+    [isAdmin]
+  );
+
+  // Redirect if not admin
   useEffect(() => {
-    // Redirect if not admin
     if (user && !isAdmin) {
       router.push('/dashboard')
-      return
-    }
-
-    if (user && isAdmin) {
-      loadProjects()
     }
   }, [user, isAdmin, router])
+
+  // Update projects state when adminProjects changes
+  useEffect(() => {
+    if (adminProjects) {
+      setProjects(adminProjects)
+      
+      // Apply current filter
+      if (statusFilter === 'all') {
+        setFilteredProjects(adminProjects)
+      } else {
+        setFilteredProjects(adminProjects.filter(project => project.status === statusFilter))
+      }
+    }
+  }, [adminProjects, statusFilter])
+
+  // Synchronize loading states
+  useEffect(() => {
+    setIsLoading(projectsLoading)
+  }, [projectsLoading])
 
   // Filter projects when status filter changes
   useEffect(() => {
@@ -81,17 +114,8 @@ export default function AdminDashboardPage() {
     }
   }, [statusFilter, projects])
 
-  const loadProjects = async () => {
-    try {
-      setIsLoading(true)
-      const projectData = await fetchAllProjects()
-      setProjects(projectData)
-      setFilteredProjects(projectData)
-    } catch (error) {
-      console.error('Error loading projects:', error)
-    } finally {
-      setIsLoading(false)
-    }
+  if (projectsError) {
+    console.error('Error loading admin projects:', projectsError)
   }
 
   if (isLoading) {

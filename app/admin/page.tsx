@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/lib/auth'
+import { useSafeFetch } from '@/lib/hooks/useSafeFetch'
 
 interface Project {
   id: string
@@ -29,6 +31,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const { toast } = useToast()
+  const { user, isAdmin } = useAuth()
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     totalProjects: 0,
@@ -38,100 +41,122 @@ export default function AdminDashboard() {
     activeServices: 0,
     recentProjects: []
   })
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
+  // Use our safe fetch hook for admin stats
+  const { data: adminStats, isLoading: statsLoading, error: statsError } = useSafeFetch<DashboardStats>(
+    async () => {
+      // Only fetch if admin
+      if (!isAdmin) {
+        return stats; // Return default stats
+      }
+      
+      console.log("Fetching admin stats safely")
+      
+      try {
+        // Get total users
+        const { count: totalUsers, error: usersError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+        
+        if (usersError) throw usersError
+        
+        // Get projects stats
+        const { data: projects, error: projectsError } = await supabase
+          .from('projects')
+          .select('id, title, status, created_at')
+        
+        if (projectsError) throw projectsError
+        
+        // Get pending projects
+        const { count: pendingProjects, error: pendingError } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending')
+        
+        if (pendingError) throw pendingError
+        
+        // Get completed projects
+        const { count: completedProjects, error: completedError } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'completed')
+        
+        if (completedError) throw completedError
+        
+        // Get services stats
+        const { data: services, error: servicesError } = await supabase
+          .from('services')
+          .select('id, active')
+        
+        if (servicesError) throw servicesError
+        
+        // Get recent projects
+        const { data: recentProjectsData, error: recentError } = await supabase
+          .from('projects')
+          .select(`
+            id, 
+            title, 
+            status, 
+            created_at,
+            client:profiles!projects_client_id_fkey(full_name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5)
+        
+        if (recentError) throw recentError
+        
+        // Format recent projects data to match the expected type
+        const recentProjects: Project[] = recentProjectsData ? recentProjectsData.map((project: any) => ({
+          id: project.id,
+          title: project.title,
+          status: project.status,
+          created_at: project.created_at,
+          client: {
+            full_name: project.client?.full_name || 'N/A'
+          }
+        })) : []
+        
+        return {
+          totalUsers: totalUsers || 0,
+          totalProjects: projects?.length || 0,
+          totalServices: services?.length || 0,
+          pendingProjects: pendingProjects || 0,
+          completedProjects: completedProjects || 0,
+          activeServices: services?.filter(s => s.active)?.length || 0,
+          recentProjects
+        };
+      } catch (error) {
+        console.error('Error fetching admin stats:', error)
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les statistiques",
+          variant: "destructive"
+        })
+        throw error;
+      }
+    },
+    [isAdmin]
+  );
+
+  // Update stats when admin stats load
   useEffect(() => {
-    fetchStats()
-  }, [])
-
-  const fetchStats = async () => {
-    try {
-      setIsLoading(true)
-      
-      // Get total users
-      const { count: totalUsers, error: usersError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-      
-      if (usersError) throw usersError
-      
-      // Get projects stats
-      const { data: projects, error: projectsError } = await supabase
-        .from('projects')
-        .select('id, title, status, created_at')
-      
-      if (projectsError) throw projectsError
-      
-      // Get pending projects
-      const { count: pendingProjects, error: pendingError } = await supabase
-        .from('projects')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
-      
-      if (pendingError) throw pendingError
-      
-      // Get completed projects
-      const { count: completedProjects, error: completedError } = await supabase
-        .from('projects')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed')
-      
-      if (completedError) throw completedError
-      
-      // Get services stats
-      const { data: services, error: servicesError } = await supabase
-        .from('services')
-        .select('id, active')
-      
-      if (servicesError) throw servicesError
-      
-      // Get recent projects
-      const { data: recentProjectsData, error: recentError } = await supabase
-        .from('projects')
-        .select(`
-          id, 
-          title, 
-          status, 
-          created_at,
-          client:profiles!projects_client_id_fkey(full_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5)
-      
-      if (recentError) throw recentError
-      
-      // Format recent projects data to match the expected type
-      const recentProjects: Project[] = recentProjectsData ? recentProjectsData.map((project: any) => ({
-        id: project.id,
-        title: project.title,
-        status: project.status,
-        created_at: project.created_at,
-        client: {
-          full_name: project.client.full_name
-        }
-      })) : []
-      
-      setStats({
-        totalUsers: totalUsers || 0,
-        totalProjects: projects?.length || 0,
-        totalServices: services?.length || 0,
-        pendingProjects: pendingProjects || 0,
-        completedProjects: completedProjects || 0,
-        activeServices: services?.filter(s => s.active)?.length || 0,
-        recentProjects
-      })
-      
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les statistiques",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
+    if (adminStats) {
+      setStats(adminStats);
     }
-  }
+  }, [adminStats]);
+
+  // Synchronize loading states
+  useEffect(() => {
+    setIsLoading(statsLoading);
+  }, [statsLoading]);
+
+  // Log any errors
+  useEffect(() => {
+    if (statsError) {
+      console.error('Error with admin stats:', statsError);
+    }
+  }, [statsError]);
 
   const getStatusColor = (status: string) => {
     const colors = {

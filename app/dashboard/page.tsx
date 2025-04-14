@@ -19,6 +19,7 @@ import VideoWalkthrough from '@/components/VideoWalkthrough'
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { useSafeFetch } from '@/lib/hooks/useSafeFetch'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -391,7 +392,7 @@ const NotificationsPanel = ({ notifications }: { notifications: Notification[] }
 }
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
   const { user, isAdmin } = useAuth()
   const router = useRouter()
@@ -444,90 +445,47 @@ export default function DashboardPage() {
   })
   const [notifications, setNotifications] = useState<Notification[]>([])
   
-  // Fonction pour charger les projets
-  const loadProjects = async () => {
-    if (user) {
-      try {
-        const fetchedProjects = isAdmin 
-          ? await fetchAllProjects()
-          : await fetchProjects(user.id);
-        
-        // Débogage: afficher la structure d'un projet
-        if (fetchedProjects.length > 0) {
-          console.log('Structure du premier projet:', JSON.stringify(fetchedProjects[0], null, 2));
-          
-          // Vérifier spécifiquement la structure des services et de la catégorie
-          const firstProject = fetchedProjects[0];
-          console.log('Service du projet:', firstProject.services);
-          console.log('Category_id:', firstProject.services?.category_id);
-          console.log('Category:', firstProject.services?.category);
-        }
-        
-        setProjects(fetchedProjects);
-        
-        // Vérifier si c'est la première connexion pour montrer le tutoriel
-        if (typeof window !== 'undefined') {
-          const isFirstLogin = localStorage.getItem('hasCompletedOnboarding') === null;
-          
-          // Si c'est la première connexion, afficher le tutoriel
-          if (isFirstLogin) {
-            console.log("Première connexion détectée, affichage du tutoriel d'onboarding");
-            setShowTutorial(true);
-            // Nous ne marquons pas encore le tutoriel comme terminé ici,
-            // cela sera fait lorsque l'utilisateur termine le tutoriel
-          }
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des projets:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger vos projets.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
+  // Use our safe fetch hook for projects
+  const { 
+    data: fetchedProjects, 
+    isLoading: projectsLoading,
+    refetch: refetchProjects
+  } = useSafeFetch<ProjectWithRelations[]>(
+    async (userId) => {
+      // Choose the right fetch function based on admin status
+      return isAdmin 
+        ? await fetchAllProjects()
+        : await fetchProjects(userId);
+    },
+    [isAdmin] // Re-fetch when admin status changes
+  )
   
-  // Fonction pour passer à l'étape suivante du tutoriel
-  const nextTutorialStep = () => {
-    if (tutorialStep < 5) {
-      setTutorialStep(tutorialStep + 1)
-    } else {
-      setShowTutorial(false)
-      // Marquer le tutoriel comme terminé dans localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('hasCompletedOnboarding', 'true')
-      }
-      // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
-      if (showTutorialParam) {
-        const newUrl = window.location.pathname
-        window.history.replaceState({}, document.title, newUrl)
-      }
-    }
-  }
-  
-  // Fonction pour fermer le tutoriel
-  const closeTutorial = () => {
-    setShowTutorial(false)
-    // Marquer le tutoriel comme terminé même si fermé prématurément
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('hasCompletedOnboarding', 'true')
-    }
-    // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
-    if (showTutorialParam) {
-      const newUrl = window.location.pathname
-      window.history.replaceState({}, document.title, newUrl)
-    }
-  }
-  
-  // Effet pour charger les projets
+  // Update projects state when fetchedProjects changes
   useEffect(() => {
-    if (user) {
-      loadProjects()
+    if (fetchedProjects) {
+      setProjects(fetchedProjects)
+      
+      // Debugging logs
+      if (fetchedProjects.length > 0) {
+        console.log('First project loaded successfully');
+      }
+      
+      // Check for first login to show tutorial
+      if (typeof window !== 'undefined') {
+        const isFirstLogin = localStorage.getItem('hasCompletedOnboarding') === null;
+        
+        if (isFirstLogin) {
+          console.log("Première connexion détectée, affichage du tutoriel d'onboarding");
+          setShowTutorial(true);
+        }
+      }
     }
-  }, [user])
+  }, [fetchedProjects])
+  
+  // Synchronize loading states
+  useEffect(() => {
+    setIsLoading(projectsLoading)
+  }, [projectsLoading])
   
   // Effet pour afficher le tutoriel si le paramètre est présent dans l'URL
   useEffect(() => {
@@ -558,7 +516,7 @@ export default function DashboardPage() {
             })
             
             // Recharger les projets
-            loadProjects()
+            refetchProjects()
             
             // Nettoyer l'URL pour éviter de recréer le projet en cas de refresh
             const newUrl = window.location.pathname
@@ -577,7 +535,7 @@ export default function DashboardPage() {
     }
     
     handlePaymentSuccess()
-  }, [paymentSuccess, sessionId, serviceId, title, price, user, isLoading])
+  }, [paymentSuccess, sessionId, serviceId, title, price, user, isLoading, refetchProjects])
 
   // Les étapes du tutoriel
   const tutorialSteps = [
@@ -638,7 +596,7 @@ export default function DashboardPage() {
     })
   }
 
-  // Charger les notifications
+  // Safe fetch for notifications
   const loadNotifications = async () => {
     // TODO: Implémenter la récupération des notifications depuis Supabase
     // Pour l'instant, on utilise des données de test
@@ -651,7 +609,7 @@ export default function DashboardPage() {
         createdAt: new Date(),
         read: false
       },
-      // Ajouter d'autres notifications de test...
+      // Add other test notifications...
     ])
   }
 
@@ -661,6 +619,37 @@ export default function DashboardPage() {
     }
     loadNotifications()
   }, [projects])
+
+  // Tutorial functions
+  const nextTutorialStep = () => {
+    if (tutorialStep < 5) {
+      setTutorialStep(tutorialStep + 1)
+    } else {
+      setShowTutorial(false)
+      // Marquer le tutoriel comme terminé dans localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hasCompletedOnboarding', 'true')
+      }
+      // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
+      if (showTutorialParam) {
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, document.title, newUrl)
+      }
+    }
+  }
+  
+  const closeTutorial = () => {
+    setShowTutorial(false)
+    // Marquer le tutoriel comme terminé même si fermé prématurément
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hasCompletedOnboarding', 'true')
+    }
+    // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
+    if (showTutorialParam) {
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, document.title, newUrl)
+    }
+  }
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
