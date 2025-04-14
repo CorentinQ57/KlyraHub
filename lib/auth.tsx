@@ -405,8 +405,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Return empty state
       return { session: null, user: null, error: null }
     } catch (error) {
-      console.error("❌ Critical error in getInitialSession:", error)
-      return { session: null, user: null, error }
+      console.error("❌ Critical error in getInitialSession:", error);
+      return { session: null, user: null, error: error as Error };
     } finally {
       // Clean up auth listener if it exists
       if (authListener) {
@@ -1123,96 +1123,95 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
     
-    // Exécuter avec un timeout global raccourci
-    await Promise.race([
-      reloadPromise(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Global reloadAuthState timeout")), 2000))
-    ]).catch(err => {
-      console.error("Caught in reloadAuthState race:", err);
-      // Ne pas propager l'erreur
-    }).finally(() => {
+    try {
+      // Exécuter avec un timeout global raccourci
+      await Promise.race([
+        reloadPromise(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Global reloadAuthState timeout")), 2000))
+      ]).catch(err => {
+        console.error("Caught in reloadAuthState race:", err);
+        // Ne pas propager l'erreur
+      });
+    } catch (error) {
+      console.error("Exception in reloadAuthState:", error);
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+    } finally {
+      // Garantir que isLoading est toujours mis à false, quoi qu'il arrive
       clearTimeout(timeoutId);
+      console.log("✅ Setting isLoading to false from reloadAuthState finally block");
       setIsLoading(false);
-    });
-  } catch (error) {
-    console.error("Exception in reloadAuthState:", error);
-    setUser(null);
-    setSession(null);
-    setIsAdmin(false);
-  } finally {
-    // Garantir que isLoading est toujours mis à false, quoi qu'il arrive
-    console.log("✅ Setting isLoading to false from reloadAuthState finally block");
-    setIsLoading(false);
-  }
-};
-
-// Fonction pour s'assurer qu'un profil existe pour l'utilisateur
-const ensureUserProfile = async (userId: string) => {
-  try {
-    if (!userId) {
-      console.error("Invalid user ID provided to ensureUserProfile");
-      return;
     }
-    
-    console.log(`Ensuring profile exists for user: ${userId}`);
-    
-    // Vérifier si le profil existe
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single();
-    
-    // Si le profil n'existe pas ou il y a une erreur, tenter de le créer
-    if (error || !data) {
-      console.log('Profile not found or error, attempting to create one for user:', userId);
+  }
+
+  // Fonction pour s'assurer qu'un profil existe pour l'utilisateur
+  const ensureUserProfile = async (userId: string) => {
+    try {
+      if (!userId) {
+        console.error("Invalid user ID provided to ensureUserProfile");
+        return;
+      }
       
-      // Récupérer les informations utilisateur
-      const { data: userData } = await supabase.auth.getUser();
+      console.log(`Ensuring profile exists for user: ${userId}`);
       
-      if (userData && userData.user) {
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            full_name: userData.user.user_metadata?.full_name || '',
-            email: userData.user.email,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+      // Vérifier si le profil existe
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      // Si le profil n'existe pas ou il y a une erreur, tenter de le créer
+      if (error || !data) {
+        console.log('Profile not found or error, attempting to create one for user:', userId);
         
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
+        // Récupérer les informations utilisateur
+        const { data: userData } = await supabase.auth.getUser();
+        
+        if (userData && userData.user) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              full_name: userData.user.user_metadata?.full_name || '',
+              email: userData.user.email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+          } else {
+            console.log('Successfully created profile for user:', userId);
+          }
         } else {
-          console.log('Successfully created profile for user:', userId);
+          console.error('No user data available to create profile');
         }
       } else {
-        console.error('No user data available to create profile');
+        console.log('Profile already exists for user:', userId);
       }
-    } else {
-      console.log('Profile already exists for user:', userId);
+    } catch (err) {
+      console.error('Exception in ensureUserProfile:', err);
     }
-  } catch (err) {
-    console.error('Exception in ensureUserProfile:', err);
+  };
+
+  // Create context value
+  const value = {
+    user,
+    session,
+    isLoading,
+    isAdmin,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
+    reloadAuthState,
+    ensureUserProfile,
+    checkUserRole,
   }
-};
 
-// Create context value
-const value = {
-  user,
-  session,
-  isLoading,
-  isAdmin,
-  signUp,
-  signIn,
-  signOut,
-  resetPassword,
-  reloadAuthState,
-  ensureUserProfile,
-  checkUserRole,
-}
-
-return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 // Custom hook to use the auth context
