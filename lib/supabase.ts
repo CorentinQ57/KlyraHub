@@ -154,6 +154,59 @@ export async function updateProfile(userId: string, updates: Partial<User>) {
   return data
 }
 
+/**
+ * Sauvegarde les données d'onboarding de l'utilisateur
+ */
+export async function saveOnboardingData(userId: string, onboardingData: any) {
+  try {
+    // Étape 1: Mettre à jour les données de profil
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        full_name: onboardingData.fullName,
+        company_name: onboardingData.companyName,
+        phone: onboardingData.phone,
+        business_goals: onboardingData.goals,
+        sector: onboardingData.sector, 
+        company_size: onboardingData.companySize,
+        needs: JSON.stringify({
+          branding: onboardingData.needsBranding || false,
+          website: onboardingData.needsWebsite || false, 
+          marketing: onboardingData.needsMarketing || false
+        }),
+        visual_preferences: onboardingData.visualPreferences || [],
+        communication_style: onboardingData.communicationStyle,
+        time_management: onboardingData.timeManagement,
+        onboarded: true,
+        onboarding_completed_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+    
+    if (profileError) {
+      console.error('Error updating profile with onboarding data:', profileError)
+      throw profileError
+    }
+    
+    // Étape 2: Mettre à jour les métadonnées utilisateur
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: { 
+        onboarded: true,
+        onboardingCompletedAt: new Date().toISOString()
+      }
+    })
+    
+    if (metadataError) {
+      console.error('Error updating user metadata:', metadataError)
+      throw metadataError
+    }
+    
+    return true
+  } catch (error) {
+    console.error('Error in saveOnboardingData:', error)
+    throw error
+  }
+}
+
 export async function fetchProjects(userId: string) {
   try {
     const { data, error } = await supabase

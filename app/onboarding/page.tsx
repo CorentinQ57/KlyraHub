@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/lib/auth'
 import { useToast } from '@/components/ui/use-toast'
+import { saveOnboardingData } from '@/lib/supabase'
 import ProgressBar from '@/components/onboarding/ProgressBar'
 import StepWelcome from '@/components/onboarding/steps/StepWelcome'
 import StepProfile from '@/components/onboarding/steps/StepProfile'
@@ -72,18 +73,22 @@ export default function OnboardingPage() {
     setIsSubmitting(true)
     
     try {
-      // Here you would typically send the data to your backend
-      // For now, we'll just simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Vérifier si l'utilisateur est authentifié
+      if (!user) {
+        throw new Error("Utilisateur non authentifié")
+      }
       
-      // Show success toast
+      // Sauvegarder les données d'onboarding
+      await saveOnboardingData(user.id, data)
+      
+      // Afficher un toast de succès
       toast({
         title: "Profil complété !",
         description: "Bienvenue sur Klyra Hub. Vos préférences ont été enregistrées.",
         duration: 5000,
       })
       
-      // Redirect to dashboard
+      // Rediriger vers le dashboard
       router.push('/dashboard')
     } catch (error) {
       console.error('Error saving onboarding data:', error)

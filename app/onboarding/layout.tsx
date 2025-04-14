@@ -17,10 +17,17 @@ export default function OnboardingLayout({
   
   // Check if user has completed onboarding
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login')
-    } else if (!isLoading && user?.user_metadata?.onboarded) {
-      router.push('/dashboard')
+    if (!isLoading) {
+      if (!user) {
+        // Rediriger vers la page de connexion si non connecté
+        router.push('/login')
+      } else if (user?.user_metadata?.onboarded === true) {
+        // Rediriger vers le dashboard si l'onboarding est déjà complété
+        console.log('Utilisateur déjà onboardé, redirection vers le dashboard')
+        router.push('/dashboard')
+      } else {
+        console.log('Onboarding en cours pour l\'utilisateur', user?.email)
+      }
     }
   }, [user, isLoading, router])
   
