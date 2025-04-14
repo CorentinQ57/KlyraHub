@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { Gantt as GanttChart, Task, ViewMode, StylingOption, DisplayOption } from "gantt-task-react";
+import { Gantt as GanttChart, ViewMode, StylingOption, DisplayOption } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
 import { cn } from "@/lib/utils";
 import { format, addDays, addMonths, parseISO } from "date-fns";
@@ -9,10 +9,34 @@ import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+// Définir l'interface Task car elle n'est pas exportée par la librairie
+export interface Task {
+  id: string;
+  type: "task" | "milestone" | "project";
+  name: string;
+  start: Date;
+  end: Date;
+  /**
+   * From 0 to 100
+   */
+  progress: number;
+  styles?: {
+    backgroundColor?: string;
+    backgroundSelectedColor?: string;
+    progressColor?: string;
+    progressSelectedColor?: string;
+  };
+  isDisabled?: boolean;
+  project?: string;
+  dependencies?: string[];
+  hideChildren?: boolean;
+  displayOrder?: number;
+}
+
 // Type des options de customisation
 export interface GanttOptions {
   viewMode?: ViewMode;
-  locale?: typeof fr;
+  locale?: string;
   headerHeight?: number;
   columnWidth?: number;
   listCellWidth?: string;
@@ -21,11 +45,11 @@ export interface GanttOptions {
   barFill?: number;
   todayColor?: string;
   projectProgressColor?: string;
-  progressColor?: string;
+  barProgressColor?: string;
   onExpanderClick?: (task: Task) => void;
   onDateChange?: (task: Task, children: Task[]) => void;
-  onTaskClick?: (task: Task) => void;
-  onTaskDoubleClick?: (task: Task) => void;
+  onClick?: (task: Task) => void;
+  onDoubleClick?: (task: Task) => void;
   TooltipContent?: React.FC<{ task: Task; fontSize: string; fontFamily: string }>;
 }
 
@@ -53,14 +77,14 @@ export function Gantt({
     barFill: options?.barFill || 60,
     todayColor: options?.todayColor || "#467FF7",
     projectProgressColor: options?.projectProgressColor || "#467FF7",
-    progressColor: options?.progressColor || "#7FA3F9",
+    barProgressColor: options?.barProgressColor || "#7FA3F9",
     fontFamily: "Poppins, sans-serif",
   };
   
   // Options d'affichage pour le Gantt
   const displayOptions: DisplayOption = {
     viewMode: view,
-    locale: options?.locale || fr,
+    locale: options?.locale || "fr",
   };
   
   // Effet pour faire défiler le gantt vers la position enregistrée
@@ -166,8 +190,8 @@ export function Gantt({
           tasks={tasks}
           viewMode={view}
           onDateChange={options?.onDateChange}
-          onTaskClick={options?.onTaskClick}
-          onDoubleClick={options?.onTaskDoubleClick}
+          onClick={options?.onClick}
+          onDoubleClick={options?.onDoubleClick}
           onExpanderClick={options?.onExpanderClick}
           listCellWidth={defaultOptions.listCellWidth}
           columnWidth={defaultOptions.columnWidth}
@@ -179,7 +203,7 @@ export function Gantt({
           locale={displayOptions.locale}
           todayColor={defaultOptions.todayColor}
           projectProgressColor={defaultOptions.projectProgressColor}
-          progressColor={defaultOptions.progressColor}
+          barProgressColor={defaultOptions.barProgressColor}
           fontFamily={defaultOptions.fontFamily}
         />
       </div>
@@ -187,8 +211,8 @@ export function Gantt({
   );
 }
 
-// Exporte les types et enums de la librairie pour faciliter l'utilisation
-export { Task, ViewMode }
+// Exporte l'enum pour faciliter l'utilisation
+export { ViewMode }
 
 // Fonction utilitaire pour créer une tâche
 export function createTask(

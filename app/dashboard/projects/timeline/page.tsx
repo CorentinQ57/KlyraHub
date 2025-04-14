@@ -471,8 +471,8 @@ export default function ProjectTimeline() {
                 tasks={ganttTasks}
                 options={{
                   viewMode: viewMode,
-                  locale: fr,
-                  onTaskClick: handleTaskClick,
+                  locale: "fr",
+                  onClick: handleTaskClick,
                   headerHeight: 50,
                 }}
                 className="h-full"
