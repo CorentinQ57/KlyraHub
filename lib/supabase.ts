@@ -1984,4 +1984,66 @@ export const checkAuthTokensExist = () => {
     console.error('Error checking auth tokens:', error);
     return false;
   }
-}; 
+};
+
+// Renforcer la sauvegarde des jetons d'authentification
+export function enforceTokenStorage() {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    // Vérifier si nous avons une session valide
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error('Error getting session in enforceTokenStorage:', error);
+        return;
+      }
+      
+      if (data?.session) {
+        console.log('✅ Enforcing token storage for valid session');
+        
+        // Explicitement stocker les tokens dans localStorage et cookies
+        const accessToken = data.session.access_token;
+        const refreshToken = data.session.refresh_token;
+        
+        // Stockage dans localStorage avec redondance
+        localStorage.setItem('supabase.auth.token', JSON.stringify({ 
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+        }));
+        
+        localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, JSON.stringify({ 
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+        }));
+        
+        // Stockage direct des tokens
+        localStorage.setItem('sb-access-token', accessToken);
+        localStorage.setItem('sb-refresh-token', refreshToken);
+        
+        // Set secure cookies
+        const maxAgeSec = 60 * 60 * 24 * 7; // 7 days
+        document.cookie = `sb-access-token=${accessToken}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
+        document.cookie = `sb-refresh-token=${refreshToken}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
+        
+        console.log('✅ Token storage enforced in multiple locations');
+      }
+    });
+  } catch (error) {
+    console.error('Error in enforceTokenStorage:', error);
+  }
+}
+
+// Exécuter après initialisation dans le navigateur
+if (typeof window !== 'undefined') {
+  // Wait 500ms to ensure Supabase client is ready
+  setTimeout(() => {
+    enforceTokenStorage();
+  }, 500);
+  
+  // Aussi exécuter périodiquement pour maintenir la session
+  setInterval(() => {
+    enforceTokenStorage();
+  }, 10 * 60 * 1000); // Toutes les 10 minutes
+} 

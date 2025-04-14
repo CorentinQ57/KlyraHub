@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card'
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
 import { Settings, Users, ShoppingBag, FileText, RotateCw } from 'lucide-react'
 import { useSafeFetch } from '@/lib/hooks/useSafeFetch'
+import { supabase } from '@/lib/supabase'
 
 // Étendre le type Project pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -200,6 +201,49 @@ export default function AdminDashboardPage() {
       setFilteredProjects(projects.filter(project => project.status === statusFilter))
     }
   }, [statusFilter, projects])
+
+  // Add explicit session check on page load
+  useEffect(() => {
+    const checkAdminSession = async () => {
+      console.log("🔍 Checking admin session validity");
+      try {
+        // First check if we have a session
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("❌ Admin session check error:", sessionError);
+          return;
+        }
+        
+        if (!sessionData.session) {
+          console.log("⚠️ No session found during admin check, reloading auth state");
+          await reloadAuthState();
+          return;
+        }
+        
+        // We have a session, check admin status
+        console.log("🔒 Checking admin status for:", sessionData.session?.user?.email);
+        
+        // If admin status is uncertain, force a reload of auth state
+        if (!authChecked) {
+          console.log("⚠️ Admin status uncertain, reloading auth state");
+          await reloadAuthState();
+          setAuthChecked(true);
+        }
+        
+        // If we know we're admin but have no projects, force a refresh
+        if (isAdmin && (!adminProjects || adminProjects.length === 0) && !projectsLoading) {
+          console.log("👑 Admin confirmed but no projects loaded, refreshing");
+          invalidateProjectsCache();
+          refetchProjects();
+        }
+      } catch (err) {
+        console.error("❌ Error in admin session check:", err);
+      }
+    };
+    
+    checkAdminSession();
+  }, [isAdmin, authChecked, adminProjects, projectsLoading, reloadAuthState, refetchProjects]);
 
   if (projectsError) {
     console.error('Error loading admin projects:', projectsError)

@@ -394,7 +394,7 @@ const NotificationsPanel = ({ notifications }: { notifications: Notification[] }
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, reloadAuthState } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -668,6 +668,51 @@ export default function DashboardPage() {
       window.history.replaceState({}, document.title, newUrl)
     }
   }
+
+  // Effet pour gérer les changements de statut utilisateur
+  useEffect(() => {
+    // Si l'utilisateur vient d'être connecté, forcer un rafraîchissement des projets
+    if (user && user.id && !projectsLoading) {
+      console.log("👤 User state changed, ensuring projects are loaded:", user.email);
+      
+      // On vérifie que les projets sont bien chargés
+      if (!fetchedProjects || fetchedProjects.length === 0) {
+        console.log("🔄 No projects loaded yet, triggering refresh");
+        refetchProjects();
+      }
+    }
+  }, [user, projectsLoading, fetchedProjects, refetchProjects]);
+
+  // Vérifier explicitement que la session est valide après un changement de route
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        // Vérifier que la session existe
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("❌ Error checking session:", error);
+          return;
+        }
+        
+        if (!data.session) {
+          console.log("⚠️ No valid session found, reloading auth state");
+          await reloadAuthState();
+        } else if (!fetchedProjects || fetchedProjects.length === 0) {
+          // Si on a une session mais pas de projets, recharger les projets
+          console.log("✅ Valid session found but no projects, reloading projects");
+          refetchProjects();
+        } else {
+          console.log("✅ Valid session with projects already loaded");
+        }
+      } catch (err) {
+        console.error("❌ Error in checkSession:", err);
+      }
+    };
+    
+    // Exécuter la vérification au montage du composant
+    checkSession();
+  }, [reloadAuthState, fetchedProjects, refetchProjects]);
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
