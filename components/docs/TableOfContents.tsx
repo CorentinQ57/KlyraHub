@@ -51,9 +51,9 @@ export function TableOfContents({ items }: TableOfContentsProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 sticky top-6">
       <p className="font-medium text-sm">Sur cette page</p>
-      <ul className="space-y-2 text-sm">
+      <ul className="space-y-2 text-sm max-h-[calc(100vh-8rem)] overflow-auto pr-2">
         {items.map((item) => (
           <li
             key={item.id}
