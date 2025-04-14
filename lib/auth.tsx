@@ -289,109 +289,247 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("🔍 Using existing session from memory")
       return { session, user, error: null }
     }
+
+    // Attempt to restore from cached user in localStorage first for immediate UI response
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedUserData = localStorage.getItem('klyra_cached_user')
+        if (cachedUserData) {
+          const cachedUser = JSON.parse(cachedUserData)
+          
+          // Use cached user data as a fallback while we recover the real session
+          if (cachedUser && typeof cachedUser === 'object' && cachedUser.id) {
+            console.log("⚡ Using cached user data from localStorage:", cachedUser.email)
+            
+            // Set user data from cache immediately to prevent UI flickering
+            safeSetUser(cachedUser)
+            
+            // Create a minimal temporary session
+            const tempSession = {
+              user: cachedUser,
+              access_token: localStorage.getItem('supabase.auth.token') || 
+                            localStorage.getItem('sb-access-token') || 
+                            localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`) || 
+                            'temporary-token'
+            } as any
+            
+            setSession(tempSession)
+            console.log("⚡ Set temporary session from cached data")
+            
+            // We'll still continue session recovery in background to get a proper session
+          }
+        }
+      } catch (cacheError) {
+        console.warn("⚠️ Error reading cached user:", cacheError)
+        // Continue with regular recovery even if cache fails
+      }
+    }
     
     console.log("🔄 Session not found in memory, attempting recovery")
     let authListener: SupabaseAuthSubscription | null = null
     
-    // Create a promise to track auth state changes during initialization
+    // Set up a more aggressive auth state listener that works even when session recovery fails
     const authChangePromise = new Promise<{session: Session | null, user: User | null}>((resolve) => {
       try {
         // Listen for auth changes during startup
         authListener = supabase.auth.onAuthStateChange((event, newSession) => {
           console.log(`🔔 Auth event during initialization: ${event}`)
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
             resolve({session: newSession, user: newSession?.user || null})
           }
         })
         
-        // Set timeout to avoid waiting forever
+        // Set timeout to avoid waiting forever - longer timeout to give more chance for events
         setTimeout(() => {
           resolve({session: null, user: null})
-        }, 2000)
+        }, 3000)
       } catch (err) {
         console.error("❌ Error setting up auth listener:", err)
         resolve({session: null, user: null})
       }
     })
-    
+
     try {
-      // Attempt 1: Try the modern API first (getSession)
-      console.log("🔍 Attempt 1: Trying getSession()")
-      const { data: sessionData, error: sessionError } = await Promise.race([
-        supabase.auth.getSession(),
-        new Promise(resolve => setTimeout(() => resolve({
-          data: { session: null },
-          error: new Error("getSession timeout")
-        }), 2000))
-      ]) as any
+      // Try multiple methods in parallel instead of sequentially to speed up recovery
+      const results = await Promise.allSettled([
+        // Attempt 1: Modern API (getSession)
+        Promise.race([
+          (async () => {
+            console.log("🔍 Attempt 1: Trying getSession()")
+            const { data, error } = await supabase.auth.getSession()
+            
+            if (data?.session) {
+              console.log("✅ Session recovered using getSession()")
+              return { method: 'getSession', result: { session: data.session, user: data.session.user } }
+            }
+            
+            console.log("⚠️ getSession() failed:", error?.message || "No session found")
+            return null
+          })(),
+          new Promise(resolve => setTimeout(() => {
+            console.log("⏱️ getSession timeout reached")
+            resolve(null)
+          }, 2000))
+        ]),
+        
+        // Attempt 2: Get user directly
+        Promise.race([
+          (async () => {
+            console.log("🔍 Attempt 2: Trying getUser()")
+            const { data, error } = await supabase.auth.getUser()
+            
+            if (data?.user) {
+              console.log("✅ User found using getUser()")
+              return { method: 'getUser', result: { user: data.user, session: null } }
+            }
+            
+            console.log("⚠️ getUser() failed:", error?.message || "No user found")
+            return null
+          })(),
+          new Promise(resolve => setTimeout(() => {
+            console.log("⏱️ getUser timeout reached")
+            resolve(null)
+          }, 2000))
+        ]),
+        
+        // Attempt 3: Try refreshing session
+        Promise.race([
+          (async () => {
+            console.log("🔍 Attempt 3: Trying refreshSession()")
+            const { data, error } = await supabase.auth.refreshSession()
+            
+            if (data?.session) {
+              console.log("✅ Session refreshed successfully")
+              return { method: 'refreshSession', result: { session: data.session, user: data.session.user } }
+            }
+            
+            console.log("⚠️ Session refresh failed:", error?.message || "No session created")
+            return null
+          })(),
+          new Promise(resolve => setTimeout(() => {
+            console.log("⏱️ refreshSession timeout reached")
+            resolve(null)
+          }, 2500))
+        ]),
+        
+        // Attempt 4: Wait for auth state changes
+        (async () => {
+          console.log("🔍 Attempt 4: Waiting for auth events")
+          const result = await authChangePromise
+          
+          if (result.session) {
+            console.log("✅ Session recovered from auth state change")
+            return { method: 'authStateChange', result }
+          }
+          
+          return null
+        })()
+      ])
       
-      if (sessionData?.session) {
-        console.log("✅ Session recovered using getSession()")
-        const recoveredSession = sessionData.session
-        
-        // Clean up listener
-        authListener?.unsubscribe()
-        
-        return {
-          session: recoveredSession,
-          user: recoveredSession?.user || null,
-          error: null
-        }
-      } else {
-        console.log("⚠️ getSession() failed:", sessionError?.message || "No session found")
-      }
-      
-      // Attempt 2: Try getUser
-      console.log("🔍 Attempt 2: Trying getUser()")
-      const { data: userData, error: userError } = await Promise.race([
-        supabase.auth.getUser(),
-        new Promise(resolve => setTimeout(() => resolve({
-          data: { user: null },
-          error: new Error("getUser timeout")
-        }), 2000))
-      ]) as any
-      
-      if (userData?.user) {
-        console.log("✅ User found using getUser(), attempting to refresh session")
-        
-        // Attempt 3: If we have a user but no session, try to refresh the session
-        console.log("🔍 Attempt 3: Trying refreshSession()")
-        const { data: refreshData, error: refreshError } = await Promise.race([
-          supabase.auth.refreshSession(),
-          new Promise(resolve => setTimeout(() => resolve({
-            data: { session: null },
-            error: new Error("refreshSession timeout")
-          }), 3000))
-        ]) as any
-        
-        if (refreshData?.session) {
-          console.log("✅ Session refreshed successfully")
+      // Check results for first successful recovery
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value) {
+          const recoveryData = result.value.result
+          
+          // Cache user data for future recovery
+          if (recoveryData.user && typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('klyra_cached_user', JSON.stringify(recoveryData.user))
+              console.log("💾 Cached user data in localStorage")
+            } catch (cacheError) {
+              console.warn("⚠️ Error caching user data:", cacheError)
+            }
+          }
           
           // Clean up listener
           authListener?.unsubscribe()
           
           return {
-            session: refreshData.session,
-            user: refreshData.session?.user || userData.user,
+            session: recoveryData.session,
+            user: recoveryData.user,
             error: null
           }
-        } else {
-          console.log("⚠️ Session refresh failed:", refreshError?.message || "No session created")
         }
-      } else {
-        console.log("⚠️ getUser() failed:", userError?.message || "No user found")
       }
       
-      // Attempt 4: Wait for auth state change in case a login is happening concurrently
-      console.log("🔍 Attempt 4: Waiting for auth events")
-      const authChangeResult = await authChangePromise
-      
-      if (authChangeResult.session) {
-        console.log("✅ Session recovered from auth state change")
-        return {
-          session: authChangeResult.session,
-          user: authChangeResult.user,
-          error: null
+      // Check if we have a manual fallback option with localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          // Attempt to manually construct a session from tokens
+          const accessToken = localStorage.getItem('supabase.auth.token') || 
+                            localStorage.getItem('sb-access-token') || 
+                            localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`)
+          
+          const refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
+                              localStorage.getItem('sb-refresh-token') || 
+                              localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`)
+          
+          // If we have tokens but no session, try a direct manual token refresh
+          if (refreshToken) {
+            console.log("🔄 Last resort: Manual token refresh with stored refresh token")
+            try {
+              const { data, error } = await Promise.race([
+                supabase.auth.refreshSession({ refresh_token: refreshToken }),
+                new Promise(resolve => setTimeout(() => resolve({ 
+                  data: null, 
+                  error: new Error("Manual refresh timeout") 
+                }), 2500))
+              ]) as any
+              
+              if (data?.session) {
+                console.log("✅ Manual token refresh successful!")
+                
+                // Cache user data for future recovery
+                if (data.session.user && typeof window !== 'undefined') {
+                  try {
+                    localStorage.setItem('klyra_cached_user', JSON.stringify(data.session.user))
+                  } catch (cacheError) {
+                    console.warn("⚠️ Error caching user data:", cacheError)
+                  }
+                }
+                
+                // Clean up listener
+                authListener?.unsubscribe()
+                
+                return {
+                  session: data.session,
+                  user: data.session.user,
+                  error: null
+                }
+              }
+            } catch (manualRefreshError) {
+              console.warn("⚠️ Manual token refresh failed:", manualRefreshError)
+            }
+          }
+          
+          // Try to get user from cached data as a last resort
+          const cachedUserData = localStorage.getItem('klyra_cached_user')
+          if (cachedUserData && accessToken) {
+            const cachedUser = JSON.parse(cachedUserData)
+            if (cachedUser && typeof cachedUser === 'object' && cachedUser.id) {
+              console.log("🔄 Creating manual session from cached user and tokens")
+              
+              // Create a minimal session object using cached data
+              const manualSession = {
+                user: cachedUser,
+                access_token: accessToken,
+                refresh_token: refreshToken || undefined,
+                provider_token: null,
+                provider_refresh_token: null
+              } as any
+              
+              // Clean up listener
+              authListener?.unsubscribe()
+              
+              return {
+                session: manualSession,
+                user: cachedUser,
+                error: null
+              }
+            }
+          }
+        } catch (fallbackError) {
+          console.warn("⚠️ Error in localStorage fallback logic:", fallbackError)
         }
       }
       
@@ -445,6 +583,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.log("🚑 Emergency user check successful:", emergencyUser.email)
               safeSetUser(emergencyUser)
               
+              // Cache l'utilisateur pour les futures récupérations
+              try {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('klyra_cached_user', JSON.stringify(emergencyUser))
+                  console.log("💾 Emergency user cached in localStorage")
+                }
+              } catch (cacheError) {
+                console.warn("⚠️ Error caching emergency user:", cacheError)
+              }
+              
               // Liste des emails admin connus (hardcoded pour DEV) - Copie de checkUserRole pour éviter les dépendances circulaires
               const knownAdminEmails = [
                 'corentin@klyra.design',
@@ -483,18 +631,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Exécuter getInitialSession avec une protection timeout
     const initSession = async () => {
       try {
-        await Promise.race([
+        const result = await Promise.race([
           getInitialSession(),
-          new Promise((_, reject) => 
+          new Promise<{ session: Session | null, user: User | null, error: string | null }>((resolve) => 
             setTimeout(() => {
               console.log("⏱️ getInitialSession timeout reached")
               // Plutôt que de rejeter, on force juste isLoading à false
               setIsLoading(false)
               // On résout pour éviter une erreur non gérée
-              return null
-            }, 2000)
+              return resolve({ session: null, user: null, error: "Timeout" })
+            }, 3000)
           )
         ])
+        
+        // Si on a un utilisateur de getInitialSession, mettre à jour le cache
+        if (result.user && typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('klyra_cached_user', JSON.stringify(result.user))
+            console.log("💾 Cached user from initSession")
+          } catch (cacheError) {
+            console.warn("⚠️ Error caching user data from initSession:", cacheError)
+          }
+        }
+        
       } catch (error) {
         console.error("⚠️ Error in initSession:", error)
         // Garantir que isLoading est mis à false même en cas d'erreur
@@ -515,6 +674,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (typeof session.user === 'object' && session.user?.id) {
               setSession(session)
               safeSetUser(session.user)
+              
+              // Mettre à jour le cache utilisateur pour les futures récupérations
+              try {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('klyra_cached_user', JSON.stringify(session.user))
+                  console.log("💾 User cached from auth event:", event)
+                }
+              } catch (cacheError) {
+                console.warn("⚠️ Error caching user from auth event:", cacheError)
+              }
               
               // Vérifier en mémoire si c'est un admin connu pour une réponse immédiate
               const knownAdminEmails = [
@@ -559,6 +728,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   // Non-critical error, continue execution
                 }
               }
+              
+              // Si l'événement est SIGNED_OUT, supprimer les données du cache
+              if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
+                try {
+                  localStorage.removeItem('klyra_cached_user')
+                  console.log("🧹 Removed cached user data on sign out")
+                } catch (clearCacheError) {
+                  console.warn("⚠️ Error clearing cached user:", clearCacheError)
+                }
+              }
             } else {
               console.error("⚠️ ERREUR: session.user n'est pas un objet valide dans onAuthStateChange:", session.user)
               
@@ -574,6 +753,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   console.log("✅ Recovered user:", recoveredUser.email)
                   setSession(session)
                   safeSetUser(recoveredUser)
+                  
+                  // Mettre à jour le cache utilisateur pour les futures récupérations
+                  try {
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('klyra_cached_user', JSON.stringify(recoveredUser))
+                      console.log("💾 Recovered user cached")
+                    }
+                  } catch (cacheError) {
+                    console.warn("⚠️ Error caching recovered user:", cacheError)
+                  }
                   
                   // Vérifier en mémoire si c'est un admin connu
                   const knownAdminEmails = [
@@ -603,6 +792,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   setSession(null)
                   setUser(null)
                   setIsAdmin(false)
+                  
+                  // Nettoyer le cache si la récupération échoue
+                  if (typeof window !== 'undefined') {
+                    try {
+                      localStorage.removeItem('klyra_cached_user')
+                      console.log("🧹 Removed invalid cached user data")
+                    } catch (clearCacheError) {
+                      console.warn("⚠️ Error clearing invalid cached user:", clearCacheError)
+                    }
+                  }
                 }
               } catch (recoveryError) {
                 console.error("⚠️ Error in recovery attempt:", recoveryError)
@@ -615,6 +814,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(null)
             setUser(null)
             setIsAdmin(false)
+            
+            // Si on reçoit une session null et qu'il y a un SIGNED_OUT event, nettoyer le cache
+            if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
+              try {
+                localStorage.removeItem('klyra_cached_user')
+                console.log("🧹 Removed cached user data on explicit sign out")
+              } catch (clearCacheError) {
+                console.warn("⚠️ Error clearing cached user on sign out:", clearCacheError)
+              }
+            }
           }
         } catch (error) {
           console.error("⚠️ Error in auth state change handler:", error)

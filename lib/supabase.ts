@@ -329,6 +329,54 @@ export const supabase = createClient(
   }
 );
 
+// Add interceptor for session expiry errors and auto-refresh
+const addSessionRefreshInterceptor = () => {
+  if (typeof window !== 'undefined') {
+    // Add a generic fetch interceptor to handle auth errors
+    const originalFetch = window.fetch;
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      try {
+        const response = await originalFetch(input, init);
+        
+        // Check if this could be an auth error
+        if (response.status === 401) {
+          const url = typeof input === 'string' 
+            ? input 
+            : input instanceof Request 
+              ? input.url
+              : input.toString();
+          
+          // Only try to refresh if this is a Supabase API call
+          if (url.includes(process.env.NEXT_PUBLIC_SUPABASE_URL || '')) {
+            console.log('🔑 Detected 401 response, attempting refresh...');
+            
+            try {
+              const { data, error: refreshError } = await supabase.auth.refreshSession();
+              
+              if (!refreshError && data?.session) {
+                console.log('✅ Token refreshed due to 401 response');
+                
+                // For important API calls, we could retry the request here
+                // This would require cloning the request and sending it again
+                // We're keeping it simple for now and just refreshing the token
+              }
+            } catch (refreshError) {
+              console.warn('⚠️ Background refresh failed:', refreshError);
+            }
+          }
+        }
+        
+        return response;
+      } catch (error) {
+        console.error('❌ Fetch error:', error);
+        throw error;
+      }
+    };
+    
+    console.log('✅ Session refresh interceptor installed');
+  }
+};
+
 // Wait for Supabase client to be fully initialized
 const waitForSupabaseReady = () => {
   return new Promise<void>((resolve) => {
@@ -338,9 +386,147 @@ const waitForSupabaseReady = () => {
     setTimeout(() => {
       isCoreSupabaseReady = true;
       console.log(`✅ Supabase client ready after ${waitTime}ms wait`);
+      
+      // Add session refresh interceptor after initialization
+      addSessionRefreshInterceptor();
+      
       resolve();
     }, waitTime);
   });
+};
+
+// Add a manual initialization function for authentication
+const initSupabaseAuth = async () => {
+  // Wait for basic initialization
+  await waitForSupabaseReady();
+  
+  // Check if we need to do a manual refresh
+  if (typeof window !== 'undefined') {
+    try {
+      // Vérifier si nous avons un utilisateur en cache
+      const cachedUserStr = localStorage.getItem('klyra_cached_user');
+      if (cachedUserStr) {
+        console.log("🧠 Found cached user data");
+        
+        try {
+          // Parse cached user
+          const cachedUser = JSON.parse(cachedUserStr);
+          
+          // Check if tokens exist in localStorage
+          const refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
+                            localStorage.getItem('sb-refresh-token') || 
+                            localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`);
+          
+          // If we have a valid cached user but no refresh token, we might be in a half-logged-in state
+          // Attempt a background session check to resolve this
+          if (cachedUser && typeof cachedUser === 'object' && cachedUser.id) {
+            console.log("🔄 Attempting early session validation for cached user...");
+            
+            // Try a low-impact call to verify session
+            const { data, error } = await Promise.race([
+              supabase.auth.getUser(),
+              new Promise(resolve => setTimeout(() => resolve({ 
+                data: null, 
+                error: new Error("Early session check timeout")
+              }), 2000))
+            ]) as any;
+            
+            if (error) {
+              console.warn("⚠️ Early session check failed:", error.message);
+              
+              if (refreshToken) {
+                // Try to refresh the token if we have one
+                console.log("🔄 Attempting early manual token refresh...");
+                const { error: refreshError } = await supabase.auth.refreshSession({ 
+                  refresh_token: refreshToken 
+                });
+                
+                if (refreshError) {
+                  console.warn("⚠️ Early manual refresh failed:", refreshError.message);
+                  
+                  // If refreshing fails and we have cached user data, warn about potential sync issues
+                  console.warn("⚠️ Session restoration will rely on cached data due to token refresh failure");
+                } else {
+                  console.log("✅ Early manual refresh successful!");
+                }
+              } else {
+                console.warn("⚠️ No refresh token available for cached user - session may be lost");
+              }
+            } else if (data?.user) {
+              console.log("✅ Early session check confirmed valid user:", data.user.email);
+              
+              // Update cache with current data
+              localStorage.setItem('klyra_cached_user', JSON.stringify(data.user));
+              console.log("💾 Updated cached user data after validation");
+            } else {
+              console.warn("⚠️ Session check returned empty user data but no error");
+            }
+          }
+        } catch (parseError) {
+          console.error("❌ Error parsing cached user:", parseError);
+          // If parsing fails, remove the invalid cache entry
+          localStorage.removeItem('klyra_cached_user');
+        }
+      } else {
+        // If no cached user but tokens exist, check if we can get user data
+        const hasAuthTokens = localStorage.getItem('supabase.auth.token') || 
+                            localStorage.getItem('sb-access-token') || 
+                            localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+                            
+        const refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
+                          localStorage.getItem('sb-refresh-token') || 
+                          localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`);
+        
+        if (hasAuthTokens || refreshToken) {
+          console.log("🔍 Auth tokens found but no cached user - attempting to retrieve");
+          
+          // If we have tokens but no cached user, try to get the user data
+          const { data, error } = await Promise.race([
+            supabase.auth.getUser(),
+            new Promise(resolve => setTimeout(() => resolve({ 
+              data: null, 
+              error: new Error("User retrieval timeout")
+            }), 2000))
+          ]) as any;
+          
+          if (error) {
+            console.warn("⚠️ Failed to retrieve user with existing tokens:", error.message);
+            
+            if (refreshToken) {
+              // Attempt refresh as last resort
+              console.log("🔄 Attempting manual token refresh to restore session...");
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({ 
+                refresh_token: refreshToken 
+              });
+              
+              if (refreshError) {
+                console.warn("⚠️ Token refresh failed, session may be lost:", refreshError.message);
+              } else if (refreshData?.session?.user) {
+                console.log("✅ Session restored through refresh token!");
+                
+                // Cache the recovered user
+                localStorage.setItem('klyra_cached_user', JSON.stringify(refreshData.session.user));
+                console.log("💾 Cached user data from refresh");
+              }
+            }
+          } else if (data?.user) {
+            console.log("✅ Successfully retrieved user:", data.user.email);
+            
+            // Cache the user for future use
+            localStorage.setItem('klyra_cached_user', JSON.stringify(data.user));
+            console.log("💾 Cached retrieved user data");
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("⚠️ Error in initSupabaseAuth:", error);
+    }
+  }
+  
+  // Run debug after initialization
+  debugAuthState('post-init');
+  
+  return true;
 };
 
 // Initialize Supabase
@@ -348,21 +534,9 @@ waitForSupabaseReady().then(() => {
   // Run debug after Supabase client is fully initialized
   debugAuthState('post-init');
   
-  // Set up auth state change listener for debugging
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-    console.log('🔄 Auth state changed:', event, session ? `User: ${session.user.email}` : 'No session');
-    
-    // When a session is detected, store tokens redundantly
-    if (session && session.access_token) {
-      console.log('💾 Redundantly storing detected session tokens');
-      enhancedStorage.setItem('supabase.auth.token', session.access_token);
-      if (session.refresh_token) {
-        enhancedStorage.setItem('supabase.auth.refreshToken', session.refresh_token);
-      }
-    }
-    
-    // Debug auth state again after change
-    debugAuthState('auth-change');
+  // Trigger immediate auth check as a background task
+  initSupabaseAuth().catch(error => {
+    console.warn("⚠️ Background auth initialization failed:", error);
   });
 });
 
