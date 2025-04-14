@@ -1,43 +1,23 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { Loader2 } from 'lucide-react'
 
 export default function HomePage() {
   const router = useRouter()
-  const { user, isLoading, isSessionRestoring } = useAuth()
-  const [redirectTimer, setRedirectTimer] = useState<NodeJS.Timeout | null>(null)
+  const { user, isLoading } = useAuth()
   
   useEffect(() => {
-    // Nettoyer le timer précédent si on recharge l'état
-    if (redirectTimer) {
-      clearTimeout(redirectTimer)
-      setRedirectTimer(null)
-    }
-    
-    // N'exécuter la logique de redirection que si l'authentification est chargée
-    // et que la restauration de session est terminée
-    if (!isLoading && !isSessionRestoring) {
-      // Ajouter un délai de grâce avant la redirection
-      const timer = setTimeout(() => {
-        if (user) {
-          console.log("✅ Redirection vers /dashboard après le délai de grâce")
-          router.push('/dashboard')
-        } else {
-          console.log("⚠️ Redirection vers /login après le délai de grâce")
-          router.push('/login')
-        }
-      }, 1500) // Délai de grâce de 1.5s
-      
-      setRedirectTimer(timer)
-      
-      return () => {
-        clearTimeout(timer)
+    if (!isLoading) {
+      if (user) {
+        router.push('/dashboard')
+      } else {
+        router.push('/login')
       }
     }
-  }, [user, isLoading, isSessionRestoring, router, redirectTimer])
+  }, [user, isLoading, router])
   
   return (
     <div className="min-h-screen flex items-center justify-center">

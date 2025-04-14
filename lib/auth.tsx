@@ -40,7 +40,6 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
-  isSessionRestoring: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ data: any | null; error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ data: any | null; error: Error | null }>;
   signOut: () => Promise<void>;
@@ -62,7 +61,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [isSessionRestoring, setIsSessionRestoring] = useState(true)
   const router = useRouter()
   const adminEmails = ['admin@klyra.com', 'tech@klyra.com', 'corentin@klyra.com']
   const { toast } = useToast()
@@ -141,7 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return cachedRole;
         }
       }
-        
+      
       // 3. Vérifier dans les métadonnées de l'utilisateur (plus rapide que d'appeler l'API)
       if (user && user.user_metadata) {
         // Tenter plusieurs chemins possibles dans les métadonnées
@@ -182,19 +180,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Ajouter une protection timeout
       const fetchRolePromise = async () => {
         try {
-          const { data, error } = await supabase
-            .from('profiles')
+      const { data, error } = await supabase
+        .from('profiles')
             .select('role, email')
-            .eq('id', userId)
-            .single();
-  
-          if (error) {
+        .eq('id', userId)
+        .single();
+
+      if (error) {
             console.error('Error fetching user role from profiles:', error);
-            return null;
-          }
-  
+        return null;
+      }
+
           // Vérifier si le rôle est défini dans les données
-          const role = data?.role || null;
+      const role = data?.role || null;
           
           // Si on a un email dans les données et que cet email est celui d'un admin connu
           if (!role && data?.email && knownAdminEmails.includes(data.email.toLowerCase())) {
@@ -206,17 +204,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
           
           console.log("User role data from profiles:", data);
-          
-          // Sauvegarder le rôle dans localStorage pour les futures vérifications
-          if (typeof window !== 'undefined' && role) {
-            localStorage.setItem(`user_role_${userId}`, role);
-          }
-          
-          return role;
+      
+      // Sauvegarder le rôle dans localStorage pour les futures vérifications
+      if (typeof window !== 'undefined' && role) {
+        localStorage.setItem(`user_role_${userId}`, role);
+      }
+      
+      return role;
         } catch (dbError) {
           console.error("Error in fetchRolePromise:", dbError);
-          return null;
-        }
+      return null;
+    }
       };
       
       // Exécuter avec un timeout strict (1 seconde max)
@@ -276,9 +274,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for global supabase ready flag first (might be set in lib/supabase.ts)
     if (typeof window !== 'undefined' && (window as any).__SUPABASE_READY === true) {
       console.log("🔥 Supabase client already marked as ready")
-      return
-    }
-
+              return
+            }
+            
     // Wait a bit for Supabase client to initialize
     console.log("⏱️ Waiting for Supabase client to initialize...")
     
@@ -298,7 +296,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error && error.message !== "Health check timeout") {
         console.log("⚠️ Supabase health check returned error, but client is responsive:", error.message)
-      } else {
+            } else {
         console.log("✅ Supabase health check successful")
       }
       
@@ -406,10 +404,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // If we reach here, we couldn't get a session or user through standard means
       // Return empty state
       return { session: null, user: null, error: null }
-    } catch (error) {
+          } catch (error) {
       console.error("❌ Critical error in getInitialSession:", error);
       return { session: null, user: null, error: error as Error };
-    } finally {
+          } finally {
       // Clean up auth listener if it exists
       if (authListener) {
         console.log("🧹 Cleaning up auth listener from session recovery")
@@ -421,14 +419,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Define the auth state change handler here
   const handleAuthStateChange = async (event: AuthChangeEvent, session: Session | null) => {
     console.log(`🔔 Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session")
-    
-    try {
-      if (session) {
-        // Vérification supplémentaire pour s'assurer que user est un objet valide
-        if (typeof session.user === 'object' && session.user?.id) {
-          setSession(session)
-          safeSetUser(session.user)
-          
+        
+        try {
+          if (session) {
+            // Vérification supplémentaire pour s'assurer que user est un objet valide
+            if (typeof session.user === 'object' && session.user?.id) {
+              setSession(session)
+              safeSetUser(session.user)
+              
           // Mettre à jour le cache utilisateur pour les futures récupérations
           try {
             if (typeof window !== 'undefined') {
@@ -457,40 +455,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.error("Error in auth event role check:", error);
               });
           }
-          
-          // Update last_sign_in_at in profiles table
-          if (event === 'SIGNED_IN') {
+              
+              // Update last_sign_in_at in profiles table
+              if (event === 'SIGNED_IN') {
             console.log("📝 Updating last sign in timestamp")
-            try {
+                try {
               // Assurer qu'un profil existe avant de tenter de le mettre à jour
               await ensureUserProfile(session.user.id);
               
               // Mise à jour du timestamp de dernière connexion
-              await supabase
-                .from('profiles')
-                .update({ last_sign_in_at: new Date().toISOString() })
-                .eq('id', session.user.id)
-            } catch (updateError) {
-              console.error('Error updating last sign in time:', updateError)
-              // Non-critical error, continue execution
-            }
-          }
-        } else {
+                  await supabase
+                    .from('profiles')
+                    .update({ last_sign_in_at: new Date().toISOString() })
+                    .eq('id', session.user.id)
+                } catch (updateError) {
+                  console.error('Error updating last sign in time:', updateError)
+                  // Non-critical error, continue execution
+                }
+              }
+            } else {
           console.error("⚠️ ERREUR: session.user n'est pas un objet valide dans onAuthStateChange:", session.user)
-          
-          // Attempt to recover by directly calling getUser
-          try {
+              
+              // Attempt to recover by directly calling getUser
+              try {
             console.log("🛠️ Attempting to recover user from auth event")
             const { data: { user: recoveredUser } } = await Promise.race([
               supabase.auth.getUser(),
               new Promise(resolve => setTimeout(() => resolve({ data: { user: null }, error: new Error("Recovery timeout") }), 1000))
             ]) as any;
-            
-            if (recoveredUser && typeof recoveredUser === 'object' && recoveredUser.id) {
+                
+                if (recoveredUser && typeof recoveredUser === 'object' && recoveredUser.id) {
               console.log("✅ Recovered user:", recoveredUser.email)
-              setSession(session)
-              safeSetUser(recoveredUser)
-              
+                  setSession(session)
+                  safeSetUser(recoveredUser)
+                  
               // Mettre à jour le cache utilisateur pour les futures récupérations
               try {
                 if (typeof window !== 'undefined') {
@@ -505,7 +503,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               if (recoveredUser.email && adminEmails.includes(recoveredUser.email.toLowerCase())) {
                 console.log("👑 Admin reconnu par email (recovery):", recoveredUser.email);
                 setIsAdmin(true);
-              } else {
+                } else {
                 // Check if the recovered user is admin - en parallèle
                 Promise.race([
                   checkUserRole(recoveredUser.id),
@@ -519,9 +517,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               }
             } else {
               console.error("⚠️ Recovery failed, invalid user:", recoveredUser)
-              setSession(null)
-              setUser(null)
-              setIsAdmin(false)
+                  setSession(null)
+                  setUser(null)
+                  setIsAdmin(false)
               
               // Nettoyer le cache si la récupération échoue
               if (typeof window !== 'undefined') {
@@ -532,18 +530,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   console.warn("⚠️ Error clearing invalid cached user:", clearCacheError)
                 }
               }
-            }
-          } catch (recoveryError) {
+                }
+              } catch (recoveryError) {
             console.error("⚠️ Error in recovery attempt:", recoveryError)
+                setSession(null)
+                setUser(null)
+                setIsAdmin(false)
+              }
+            }
+          } else {
             setSession(null)
             setUser(null)
             setIsAdmin(false)
-          }
-        }
-      } else {
-        setSession(null)
-        setUser(null)
-        setIsAdmin(false)
         
         // Si on reçoit une session null et qu'il y a un SIGNED_OUT event, nettoyer le cache
         if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
@@ -554,23 +552,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.warn("⚠️ Error clearing cached user on sign out:", clearCacheError)
           }
         }
-      }
-    } catch (error) {
+          }
+        } catch (error) {
       console.error("⚠️ Error in auth state change handler:", error)
-      setSession(null)
-      setUser(null)
-      setIsAdmin(false)
-    } finally {
+          setSession(null)
+          setUser(null)
+          setIsAdmin(false)
+        } finally {
       console.log("✅ Setting isLoading to false from auth state change")
-      setIsLoading(false)
-    }
-  }
+          setIsLoading(false)
+        }
+      }
 
   useEffect(() => {
     console.log("🔧 Setting up auth state listener...")
-    
-    // Indiquer que la restauration de session commence
-    setIsSessionRestoring(true);
     
     // Mettre un timeout de sécurité pour empêcher un loading infini
     const safetyTimeout = setTimeout(() => {
@@ -696,12 +691,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Resolve loading state regardless of result
         setIsLoading(false);
-        
-        // Ajouter un délai avant de désactiver isSessionRestoring pour permettre à l'UI de se mettre à jour
-        setTimeout(() => {
-          setIsSessionRestoring(false);
-          console.log("✅ Session restoration complete, isSessionRestoring set to false");
-        }, 1500); // Délai de grâce de 1.5s
       } catch (e) {
         console.error("❌ Fatal error during auth initialization:", e);
         
@@ -710,7 +699,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(null);
         setIsAdmin(false);
         setIsLoading(false);
-        setIsSessionRestoring(false);
       }
     };
 
@@ -840,8 +828,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Reload auth state function - Optimisée
   const reloadAuthState = async (): Promise<void> => {
     console.log("🔄 Manually reloading auth state")
-    setIsLoading(true)
-    
+      setIsLoading(true)
+      
     // Check if we have any tokens in localStorage
     let hasLocalTokens = false;
     let accessToken = null;
@@ -862,9 +850,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     // Timeout de sécurité global pour garantir que isLoading passe à false
-    const timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
       console.log("⚠️ reloadAuthState safety timeout triggered")
-      setIsLoading(false)
+        setIsLoading(false)
     }, 2500) // Réduit à 2.5 secondes max
     
     // Optimisation: si on a déjà un utilisateur valide, on peut avancer plus vite
@@ -1061,7 +1049,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 
                 console.log("🛡️ Role check result:", role);
                 setIsAdmin(role === 'admin');
-              } catch (roleError) {
+        } catch (roleError) {
                 console.error("Error checking role:", roleError);
                 
                 // For known admin emails, set admin role even if check fails
@@ -1118,8 +1106,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log("👑 Admin recognized by email during session recovery:", currentSession.user.email);
                 setIsAdmin(true);
               }
-            }
-          } else {
+        }
+      } else {
             console.log("No user available from any source");
             setUser(null);
             setSession(null);
@@ -1214,7 +1202,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     session,
     isLoading,
     isAdmin,
-    isSessionRestoring,
     signUp,
     signIn,
     signOut,
