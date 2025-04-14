@@ -18,6 +18,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userTypeError, setUserTypeError] = useState(false)
   const [isReloading, setIsReloading] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  // Nouvel état pour détecter un chargement trop long avec user valide
+  const [userDetectedButStillLoading, setUserDetectedButStillLoading] = useState(false)
   
   // Vérifier si le chemin actuel est dans la section documentation
   const isDocsRoute = pathname.startsWith('/dashboard/docs')
@@ -102,6 +104,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isLoading, user, isDocsRoute])
   
+  // Détecter si l'utilisateur est valide mais que isLoading reste bloqué
+  useEffect(() => {
+    // Si on a un utilisateur valide mais que isLoading reste à true
+    if (isLoading && user && typeof user === 'object' && 'id' in user) {
+      // Après 1 seconde, considérer que c'est un bug de isLoading
+      const timeoutId = setTimeout(() => {
+        console.log("User détecté mais isLoading toujours actif, autorisant l'affichage du dashboard");
+        setUserDetectedButStillLoading(true);
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoading, user]);
+  
   // Fonction pour forcer la déconnexion en cas d'erreur de type
   const handleForceSignOut = async () => {
     console.log("Forcing sign out due to user type error")
@@ -141,7 +157,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
   
   // Afficher un état de chargement si on vérifie encore l'authentification
-  if (isLoading && !forceDisplay) {
+  // Modifié: afficher le dashboard si user est défini même si isLoading est bloqué
+  if (isLoading && !forceDisplay && !userDetectedButStillLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
         <div className="text-center">
@@ -181,10 +198,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
   
   // Vérifier que l'utilisateur existe et est valide avant d'afficher le contenu
+  // Modifié: faire une vérification plus robuste
   const isValidUser = user && typeof user === 'object' && 'id' in user
   
   // Ne rien afficher si l'utilisateur n'est pas authentifié (redirection en cours)
-  if ((!isValidUser && !forceDisplay)) return null
+  // Modifié: permettre l'affichage si userDetectedButStillLoading est true
+  if ((!isValidUser && !forceDisplay && !userDetectedButStillLoading)) return null
   
   // Afficher le layout avec la navigation pour les utilisateurs authentifiés
   return (

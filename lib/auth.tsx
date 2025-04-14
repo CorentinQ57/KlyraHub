@@ -76,31 +76,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log("Using cached role from localStorage:", cachedRole);
           return cachedRole;
         }
+        
+        // Vérifier dans la session si disponible
+        if (session?.user?.user_metadata?.role) {
+          const metadataRole = session.user.user_metadata.role;
+          console.log("Using role from session metadata:", metadataRole);
+          // Mettre en cache
+          localStorage.setItem(`user_role_${userId}`, metadataRole);
+          return metadataRole;
+        }
       }
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single();
+      // Si on arrive ici, il faut faire un appel API
+      // Ajouter une protection timeout
+      const fetchRolePromise = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', userId)
+          .single();
 
-      if (error) {
-        console.error('Error fetching user role:', error);
-        return null;
-      }
+        if (error) {
+          console.error('Error fetching user role:', error);
+          return null;
+        }
 
-      const role = data?.role || null;
-      console.log("User role data:", data);
+        const role = data?.role || null;
+        console.log("User role data:", data);
+        
+        // Sauvegarder le rôle dans localStorage pour les futures vérifications
+        if (typeof window !== 'undefined' && role) {
+          localStorage.setItem(`user_role_${userId}`, role);
+        }
+        
+        return role;
+      };
       
-      // Sauvegarder le rôle dans localStorage pour les futures vérifications
-      if (typeof window !== 'undefined' && role) {
-        localStorage.setItem(`user_role_${userId}`, role);
-      }
+      // Exécuter avec un timeout
+      const role = await Promise.race([
+        fetchRolePromise(),
+        new Promise<string | null>((resolve) => {
+          setTimeout(() => {
+            console.log("Role check timeout, using default 'client' role");
+            // En cas de timeout, présumer un rôle client par défaut
+            if (typeof window !== 'undefined') {
+              // Mettre en cache temporaire (1 heure)
+              localStorage.setItem(`user_role_${userId}`, 'client');
+              localStorage.setItem(`user_role_${userId}_temp`, 'true');
+              setTimeout(() => localStorage.removeItem(`user_role_${userId}_temp`), 3600000);
+            }
+            resolve('client');
+          }, 1500);
+        })
+      ]);
       
       return role;
     } catch (error) {
       console.error('Error in checkUserRole:', error);
-      return null;
+      // Par défaut, retourner 'client' plutôt que null pour éviter les blocages
+      return 'client';
     }
   }
 
@@ -220,7 +254,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }, 3000) // 3 secondes maximum de loading (réduit de 5 à 3 secondes)
     
-    getInitialSession()
+    // Exécuter getInitialSession avec une protection timeout
+    const initSession = async () => {
+      try {
+        await Promise.race([
+          getInitialSession(),
+          new Promise((_, reject) => 
+            setTimeout(() => {
+              console.log("getInitialSession timeout reached")
+              // Plutôt que de rejeter, on force juste isLoading à false
+              setIsLoading(false)
+              // On résout pour éviter une erreur non gérée
+              return null
+            }, 2500)
+          )
+        ])
+      } catch (error) {
+        console.error("Error in initSession:", error)
+        // Garantir que isLoading est mis à false même en cas d'erreur
+        setIsLoading(false)
+      }
+    }
+    
+    initSession()
 
     // Set up listener for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -429,49 +485,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(false)
       }, 3000) // 3 secondes maximum
       
-      // Forcer la déconnexion/reconnexion du client Supabase
-      await supabase.auth.refreshSession()
-      
-      // Get current user and session
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
-      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (userError || sessionError) {
-        console.error("Error reloading auth state:", userError || sessionError)
-        setUser(null)
-        setSession(null)
-        setIsAdmin(false)
-        clearTimeout(timeoutId)
-        setIsLoading(false)
-        return
-      }
-      
-      if (currentUser && currentSession) {
-        console.log("Auth reloaded successfully:", currentUser.email)
-        // Utiliser la fonction sécurisée pour définir l'utilisateur
-        safeSetUser(currentUser)
-        setSession(currentSession)
-        
-        // Check if user is admin avec un timeout
+      // Protection contre les promesses qui ne se résolvent jamais
+      const reloadPromise = async () => {
         try {
-          const roleCheckPromise = checkUserRole(currentUser.id)
-          const roleTimeout = new Promise<null>((resolve) => 
-            setTimeout(() => resolve(null), 2000)
-          )
+          // Forcer la déconnexion/reconnexion du client Supabase
+          await Promise.race([
+            supabase.auth.refreshSession(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Refresh session timeout")), 2000))
+          ])
           
-          const role = await Promise.race([roleCheckPromise, roleTimeout])
-          console.log("Role check in reloadAuthState:", role)
-          setIsAdmin(role === 'admin')
-        } catch (roleError) {
-          console.error("Error checking role in reloadAuthState:", roleError)
-          // Par défaut, ne pas modifier le statut admin en cas d'erreur
+          // Get current user and session avec timeout
+          const getUserPromise = supabase.auth.getUser();
+          const getSessionPromise = supabase.auth.getSession();
+          
+          const [userResult, sessionResult] = await Promise.all([
+            Promise.race([getUserPromise, new Promise(resolve => setTimeout(() => resolve({ data: { user: null }, error: new Error("Timeout") }), 2000))]),
+            Promise.race([getSessionPromise, new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: new Error("Timeout") }), 2000))])
+          ]);
+          
+          const { data: { user: currentUser }, error: userError } = userResult as any;
+          const { data: { session: currentSession }, error: sessionError } = sessionResult as any;
+          
+          if (userError || sessionError) {
+            console.error("Error reloading auth state:", userError || sessionError)
+            throw new Error("Failed to get user or session")
+          }
+          
+          if (currentUser && currentSession) {
+            console.log("Auth reloaded successfully:", currentUser.email)
+            // Utiliser la fonction sécurisée pour définir l'utilisateur
+            safeSetUser(currentUser)
+            setSession(currentSession)
+            
+            // Check if user is admin avec un timeout plus strict
+            try {
+              const roleCheckPromise = checkUserRole(currentUser.id)
+              const roleTimeout = new Promise<null>((resolve) => 
+                setTimeout(() => resolve(null), 1500) // Réduit à 1.5 secondes
+              )
+              
+              const role = await Promise.race([roleCheckPromise, roleTimeout])
+              console.log("Role check in reloadAuthState:", role)
+              setIsAdmin(role === 'admin')
+            } catch (roleError) {
+              console.error("Error checking role in reloadAuthState:", roleError)
+              // Par défaut, ne pas modifier le statut admin en cas d'erreur
+            }
+          } else {
+            console.log("No active user session found during reload")
+            setUser(null)
+            setSession(null)
+            setIsAdmin(false)
+          }
+        } catch (innerError) {
+          console.error("Inner error in reloadAuthState:", innerError)
+          throw innerError
         }
-      } else {
-        console.log("No active user session found during reload")
-        setUser(null)
-        setSession(null)
-        setIsAdmin(false)
       }
+      
+      // Exécuter avec un timeout global
+      await Promise.race([
+        reloadPromise(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Global reloadAuthState timeout")), 2500))
+      ]).catch(err => {
+        console.error("Caught in reloadAuthState race:", err)
+        // Ne pas propager l'erreur
+      })
       
       clearTimeout(timeoutId)
     } catch (error) {
@@ -480,6 +559,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null)
       setIsAdmin(false)
     } finally {
+      // Garantir que isLoading est toujours mis à false, quoi qu'il arrive
+      console.log("Setting isLoading to false from reloadAuthState finally block")
       setIsLoading(false)
     }
   }
