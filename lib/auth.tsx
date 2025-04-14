@@ -16,6 +16,7 @@ type AuthContextType = {
   resetPassword: (email: string) => Promise<{ data: any | null; error: Error | null }>
   checkUserRole: (userId: string) => Promise<string | null>
   reloadAuthState: () => Promise<void>
+  ensureUserProfile: (userId: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -241,6 +242,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (event === 'SIGNED_IN') {
                 console.log("Updating last sign in timestamp")
                 try {
+                  // Assurer qu'un profil existe avant de tenter de le mettre à jour
+                  await ensureUserProfile(session.user.id);
+                  
+                  // Mise à jour du timestamp de dernière connexion
                   await supabase
                     .from('profiles')
                     .update({ last_sign_in_at: new Date().toISOString() })
@@ -248,18 +253,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 } catch (updateError) {
                   console.error('Error updating last sign in time:', updateError)
                   // Non-critical error, continue execution
-                }
-                
-                // Forcer la récupération de l'utilisateur après SIGNED_IN pour s'assurer d'avoir les dernières données
-                console.log("Forcing getUser after SIGNED_IN")
-                try {
-                  const { data: { user: updatedUser }, error: userError } = await supabase.auth.getUser()
-                  if (!userError && updatedUser) {
-                    console.log("Updated user after SIGNED_IN:", updatedUser.email)
-                    safeSetUser(updatedUser)
-                  }
-                } catch (userError) {
-                  console.error("Error getting updated user after SIGNED_IN:", userError)
                 }
               }
             } else {
@@ -491,6 +484,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  // Fonction pour s'assurer qu'un profil existe pour l'utilisateur
+  const ensureUserProfile = async (userId: string) => {
+    try {
+      if (!userId) {
+        console.error("Invalid user ID provided to ensureUserProfile");
+        return;
+      }
+      
+      console.log(`Ensuring profile exists for user: ${userId}`);
+      
+      // Vérifier si le profil existe
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      // Si le profil n'existe pas ou il y a une erreur, tenter de le créer
+      if (error || !data) {
+        console.log('Profile not found or error, attempting to create one for user:', userId);
+        
+        // Récupérer les informations utilisateur
+        const { data: userData } = await supabase.auth.getUser();
+        
+        if (userData && userData.user) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              full_name: userData.user.user_metadata?.full_name || '',
+              email: userData.user.email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+          } else {
+            console.log('Successfully created profile for user:', userId);
+          }
+        } else {
+          console.error('No user data available to create profile');
+        }
+      } else {
+        console.log('Profile already exists for user:', userId);
+      }
+    } catch (err) {
+      console.error('Exception in ensureUserProfile:', err);
+    }
+  };
+
   // Create context value
   const value = {
     user,
@@ -503,6 +547,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resetPassword,
     checkUserRole,
     reloadAuthState,
+    ensureUserProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

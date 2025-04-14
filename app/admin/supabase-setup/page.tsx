@@ -120,6 +120,133 @@ export default function SupabaseSetupPage() {
     }
   }
 
+  // Vérifier et réparer les politiques RLS sur la table profiles
+  const verifyAndFixProfilesRLS = async () => {
+    try {
+      // Vérifier d'abord si la table profiles existe
+      const { data: tablesData, error: tablesError } = await supabase
+        .from('pg_catalog.pg_tables')
+        .select('tablename')
+        .eq('schemaname', 'public')
+        .eq('tablename', 'profiles');
+      
+      if (tablesError) {
+        console.error('Erreur lors de la vérification de la table profiles:', tablesError);
+        toast({
+          title: "Erreur",
+          description: `Erreur: ${tablesError.message}`,
+          variant: "destructive",
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Si la table n'existe pas, on ne peut rien faire
+      if (!tablesData || tablesData.length === 0) {
+        toast({
+          title: "Erreur",
+          description: "La table profiles n'existe pas",
+          variant: "destructive",
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Exécuter une requête SQL pour activer RLS sur la table profiles
+      const { error: rlsError } = await supabase.rpc('execute_sql', {
+        sql: 'ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;'
+      });
+      
+      if (rlsError) {
+        console.error('Erreur lors de l\'activation de RLS:', rlsError);
+        toast({
+          title: "Erreur",
+          description: `Impossible d'activer RLS: ${rlsError.message}`,
+          variant: "destructive",
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Créer ou remplacer les politiques pour SELECT
+      const { error: selectPolicyError } = await supabase.rpc('execute_sql', {
+        sql: `
+          CREATE POLICY IF NOT EXISTS "Users can view their own profile" 
+          ON public.profiles 
+          FOR SELECT 
+          USING (auth.uid() = id);
+        `
+      });
+      
+      if (selectPolicyError) {
+        console.error('Erreur lors de la création de la politique SELECT:', selectPolicyError);
+        toast({
+          title: "Erreur",
+          description: `Erreur dans la politique SELECT: ${selectPolicyError.message}`,
+          variant: "destructive",
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Créer ou remplacer les politiques pour UPDATE
+      const { error: updatePolicyError } = await supabase.rpc('execute_sql', {
+        sql: `
+          CREATE POLICY IF NOT EXISTS "Users can update their own profile" 
+          ON public.profiles 
+          FOR UPDATE 
+          USING (auth.uid() = id);
+        `
+      });
+      
+      if (updatePolicyError) {
+        console.error('Erreur lors de la création de la politique UPDATE:', updatePolicyError);
+        toast({
+          title: "Erreur",
+          description: `Erreur dans la politique UPDATE: ${updatePolicyError.message}`,
+          variant: "destructive",
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Créer ou remplacer les politiques pour INSERT (tous les utilisateurs peuvent créer leur profil)
+      const { error: insertPolicyError } = await supabase.rpc('execute_sql', {
+        sql: `
+          CREATE POLICY IF NOT EXISTS "Users can insert their own profile" 
+          ON public.profiles 
+          FOR INSERT 
+          WITH CHECK (auth.uid() = id);
+        `
+      });
+      
+      if (insertPolicyError) {
+        console.error('Erreur lors de la création de la politique INSERT:', insertPolicyError);
+        toast({
+          title: "Erreur",
+          description: `Erreur dans la politique INSERT: ${insertPolicyError.message}`,
+          variant: "destructive",
+          duration: 5000,
+        });
+        return;
+      }
+      
+      toast({
+        title: "Succès",
+        description: "Politiques RLS vérifiées et mises à jour avec succès",
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error('Erreur inattendue lors de la vérification des politiques RLS:', error);
+      toast({
+        title: "Erreur",
+        description: "Erreur inattendue lors de la vérification des politiques RLS",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+  };
+
   if (!mounted || isLoading || !user || !isAdmin) {
     return (
       <div className="container mx-auto py-6">
@@ -191,6 +318,13 @@ export default function SupabaseSetupPage() {
                 <Button onClick={createTestUser}>Créer un utilisateur test</Button>
                 <p className="text-sm text-gray-500 mt-2">
                   Crée un utilisateur avec un email aléatoire et le mot de passe "password123"
+                </p>
+              </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <Button onClick={verifyAndFixProfilesRLS}>Vérifier/Réparer les politiques RLS</Button>
+                <p className="text-sm text-gray-500 mt-2">
+                  Vérifie et répare les politiques RLS sur la table profiles pour résoudre les problèmes d'accès
                 </p>
               </div>
             </CardContent>

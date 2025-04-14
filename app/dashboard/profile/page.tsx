@@ -18,27 +18,52 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const router = useRouter()
-  const { user, signOut } = useAuth()
+  const { user, signOut, ensureUserProfile } = useAuth()
   const { toast } = useToast()
 
   useEffect(() => {
-    if (user) {
-      loadProfile()
-    } else if (!user && !isLoading) {
-      router.push('/login')
+    async function initProfile() {
+      if (user) {
+        try {
+          // S'assurer qu'un profil existe avant de le charger
+          await ensureUserProfile(user.id);
+          loadProfile();
+        } catch (error) {
+          console.error('Error ensuring user profile exists:', error);
+          loadProfile(); // Tenter de charger le profil même si la création a échoué
+        }
+      } else if (!user && !isLoading) {
+        router.push('/login')
+      }
     }
+    
+    initProfile();
   }, [user, router])
 
   async function loadProfile() {
     setIsLoading(true)
     try {
-      if (!user) return;
+      if (!user) {
+        console.log('No user available, aborting profile load');
+        return;
+      }
       
+      console.log('Loading profile for user ID:', user.id);
       setEmail(user.email || '')
 
       const profileData = await getProfileData(user.id)
+      console.log('Profile data loaded:', profileData ? 'Success' : 'Failed');
+      
       if (profileData) {
         setFullName(profileData.full_name || '')
+      } else {
+        console.warn('No profile data returned for user ID:', user.id);
+        // Continuer l'affichage avec les données minimales disponibles
+        toast({
+          title: "Information",
+          description: "Certaines données du profil n'ont pas pu être chargées. Les informations affichées sont limitées.",
+          duration: 5000,
+        });
       }
     } catch (error) {
       console.error('Error loading profile:', error)

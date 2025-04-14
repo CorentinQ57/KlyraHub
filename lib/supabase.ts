@@ -126,18 +126,36 @@ export async function getCurrentUser() {
 }
 
 export async function getProfileData(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
-  
-  if (error) {
-    console.error('Error fetching profile data:', error)
-    return null
+  try {
+    // Vérifier que l'ID utilisateur est valide
+    if (!userId || typeof userId !== 'string') {
+      console.error('Invalid user ID provided to getProfileData:', userId);
+      return null;
+    }
+    
+    // Assurons-nous que l'ID est correctement formaté
+    const cleanUserId = userId.trim();
+    
+    // Ajouter plus de logging
+    console.log(`Fetching profile for user ID: ${cleanUserId}`);
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', cleanUserId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching profile data:', error);
+      return null;
+    }
+    
+    console.log('Profile data retrieved successfully');
+    return data;
+  } catch (err) {
+    console.error('Exception in getProfileData:', err);
+    return null;
   }
-  
-  return data
 }
 
 export async function updateProfile(userId: string, updates: Partial<User>) {
