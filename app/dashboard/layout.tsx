@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, isLoading, signOut, reloadAuthState } = useAuth()
+  const { user, userRole, isLoading, signOut, reloadAuthState } = useAuth()
   // État pour gérer un timeout de sécurité
   const [safetyTimeout, setSafetyTimeout] = useState(false)
   const [forceDisplay, setForceDisplay] = useState(false)
@@ -89,18 +89,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     console.log("Dashboard layout - loading state:", isLoading, 
                 "user type:", typeof user, 
                 "user email:", user && typeof user === 'object' ? user.email : user,
-                "has id:", user && typeof user === 'object' ? 'id' in user : false)
+                "has id:", user && typeof user === 'object' ? 'id' in user : false,
+                "user role:", userRole)
     
     if (isLoading) {
-      // Après 5 secondes, montrer un bouton pour forcer l'affichage
+      // Après 2 secondes, montrer un bouton pour forcer l'affichage
       const timeoutId = setTimeout(() => {
         console.log("Safety timeout triggered in dashboard layout")
         setSafetyTimeout(true)
-      }, 5000)
+      }, 2000) // Réduit de 5 à 2 secondes
       
       return () => clearTimeout(timeoutId)
     }
-  }, [isLoading, user, isDocsRoute])
+  }, [isLoading, user, userRole, isDocsRoute])
   
   // Fonction pour forcer la déconnexion en cas d'erreur de type
   const handleForceSignOut = async () => {

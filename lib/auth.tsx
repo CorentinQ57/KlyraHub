@@ -10,6 +10,7 @@ type AuthContextType = {
   session: Session | null
   isLoading: boolean
   isAdmin: boolean
+  userRole: string | null
   signUp: (email: string, password: string, fullName: string) => Promise<{ data: any | null; error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ data: any | null; error: Error | null }>
   signOut: () => Promise<void>
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const router = useRouter()
 
   // Fonction sécurisée pour définir l'utilisateur
@@ -54,30 +56,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user: user?.email, 
       userType: user ? typeof user : 'null',
       userHasId: user && typeof user === 'object' ? Boolean(user.id) : false,
-      isAdmin 
+      isAdmin,
+      userRole
     })
-  }, [isLoading, user, isAdmin])
+  }, [isLoading, user, isAdmin, userRole])
 
-  // Check user role function
+  // Check user role function - version améliorée
   const checkUserRole = async (userId: string): Promise<string | null> => {
     if (!userId) {
       console.error("checkUserRole appelé avec un userId invalide:", userId);
-      return null;
+      return "client"; // Valeur par défaut en cas d'identifiant invalide
     }
 
     try {
       console.log("Checking user role for:", userId)
       
-      // Utilisation d'un timeout pour éviter les requêtes bloquantes
-      const timeoutPromise = new Promise<null>((resolve) => {
+      // Timeout plus court (2 secondes au lieu de 3)
+      const timeoutPromise = new Promise<string>((resolve) => {
         setTimeout(() => {
-          console.log("Role check timed out")
-          resolve(null)
-        }, 3000) // 3 secondes maximum pour la vérification du rôle
+          console.log("Role check timed out - using default client role")
+          resolve("client") // Toujours retourner un rôle par défaut en cas de timeout
+        }, 2000)
       })
       
-      // Requête à Supabase avec timeout de sécurité
-      const rolePromise = new Promise<string | null>(async (resolve) => {
+      // Requête à Supabase simplifiée
+      const rolePromise = new Promise<string>(async (resolve) => {
         try {
           const { data, error } = await supabase
             .from('profiles')
@@ -87,32 +90,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (error) {
             console.error('Error fetching user role:', error)
-            console.log('SQL query details:', { table: 'profiles', column: 'role', id: userId })
-            
-            // Fallback attempt with user_id column
-            console.log('Attempting fallback with user_id column instead of id')
-            const fallbackResult = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('user_id', userId)
-              .single()
-              
-            if (fallbackResult.error) {
-              console.error('Fallback also failed:', fallbackResult.error)
-              resolve(null)
-              return
-            }
-            
-            console.log("Fallback user role result:", fallbackResult.data)
-            resolve(fallbackResult.data?.role || null)
+            resolve("client") // Valeur par défaut en cas d'erreur
             return
           }
 
           console.log("User role data:", data)
-          resolve(data?.role || null)
+          resolve(data?.role || "client") // Toujours retourner un rôle, même si null
         } catch (error) {
           console.error('Error in rolePromise:', error)
-          resolve(null)
+          resolve("client") // Valeur par défaut en cas d'exception
         }
       })
       
@@ -120,12 +106,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const role = await Promise.race([rolePromise, timeoutPromise])
       
       // Log plus détaillé
-      console.log(`Role check result for ${userId}: ${role || 'no role found'}`)
+      console.log(`Role check result for ${userId}: ${role || 'default: client'}`)
       
       return role
     } catch (error) {
       console.error('Error in checkUserRole:', error)
-      return null
+      return "client" // Valeur par défaut en cas d'erreur générale
     }
   }
 
@@ -161,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(null)
               setUser(null)
               setIsAdmin(false)
+              setUserRole(null)
               return
             }
             
@@ -170,34 +157,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(session)
               safeSetUser(directUser)
               
-              // Check if user is admin
+              // Check user role avec gestion de la valeur de retour
               const role = await checkUserRole(directUser.id)
+              setUserRole(role)
               setIsAdmin(role === 'admin')
             } else {
               console.error("Direct getUser also failed, user is invalid:", directUser)
               setSession(null)
               setUser(null)
               setIsAdmin(false)
+              setUserRole(null)
             }
           } catch (userError) {
             console.error("Exception in direct getUser:", userError)
             setSession(null)
             setUser(null)
             setIsAdmin(false)
+            setUserRole(null)
           }
         } else {
           // Session user is valid
           setSession(session)
           safeSetUser(session.user)
           
-          // Check if user is admin
+          // Check user role et définir les deux états (isAdmin et userRole)
           const role = await checkUserRole(session.user.id)
+          setUserRole(role)
           setIsAdmin(role === 'admin')
         }
       } else {
         setSession(null)
         setUser(null)
         setIsAdmin(false)
+        setUserRole(null)
       }
     } catch (error) {
       console.error('Error in getInitialSession:', error)
@@ -224,13 +216,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.log("Emergency user check successful:", emergencyUser.email)
               safeSetUser(emergencyUser)
               
-              // Tenter une dernière vérification du rôle avec un timout court
-              const role = await Promise.race([
-                checkUserRole(emergencyUser.id),
-                new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
-              ])
-              
-              console.log("Emergency role check result:", role)
+              // Définir un rôle par défaut en cas d'urgence pour éviter le blocage
+              const role = "client"
+              console.log("Emergency role check - using default:", role)
+              setUserRole(role)
               setIsAdmin(role === 'admin')
             }
           } catch (error) {
@@ -243,7 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         emergencyCheck()
       }
-    }, 3000) // 3 secondes maximum de loading (réduit de 5 à 3 secondes)
+    }, 2000) // 2 secondes maximum de loading (réduit de 5 à 2 secondes)
     
     getInitialSession()
 
@@ -259,8 +248,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(session)
               safeSetUser(session.user)
               
-              // Check if user is admin on auth state change
+              // Check user role et définir les deux états (isAdmin et userRole)
               const role = await checkUserRole(session.user.id)
+              setUserRole(role)
               setIsAdmin(role === 'admin')
               
               // Update last_sign_in_at in profiles table
@@ -301,32 +291,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   setSession(session)
                   safeSetUser(recoveredUser)
                   
-                  // Check if the recovered user is admin
+                  // Check user role et définir les deux états (isAdmin et userRole)
                   const role = await checkUserRole(recoveredUser.id)
+                  setUserRole(role)
                   setIsAdmin(role === 'admin')
                 } else {
                   console.error("Recovery failed, invalid user:", recoveredUser)
                   setSession(null)
                   setUser(null)
                   setIsAdmin(false)
+                  setUserRole(null)
                 }
               } catch (recoveryError) {
                 console.error("Error in recovery attempt:", recoveryError)
                 setSession(null)
                 setUser(null)
                 setIsAdmin(false)
+                setUserRole(null)
               }
             }
           } else {
             setSession(null)
             setUser(null)
             setIsAdmin(false)
+            setUserRole(null)
           }
         } catch (error) {
           console.error("Error in auth state change handler:", error)
           setSession(null)
           setUser(null)
           setIsAdmin(false)
+          setUserRole(null)
         } finally {
           console.log("Setting isLoading to false from auth state change")
           setIsLoading(false)
@@ -393,8 +388,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(data.session)
           safeSetUser(data.user)
           
-          // Check user role
+          // Check user role et définir les deux états (isAdmin et userRole)
           const role = await checkUserRole(data.user.id)
+          setUserRole(role)
           setIsAdmin(role === 'admin')
           
           // Update last_sign_in_at in profiles table
@@ -429,6 +425,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null)
       setSession(null)
       setIsAdmin(false)
+      setUserRole(null)
       router.push('/')
     } catch (error) {
       console.error('Error signing out:', error)
@@ -460,7 +457,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const timeoutId = setTimeout(() => {
         console.log("reloadAuthState safety timeout triggered")
         setIsLoading(false)
-      }, 3000) // 3 secondes maximum
+      }, 2000) // Réduit à 2 secondes maximum
       
       // Forcer la déconnexion/reconnexion du client Supabase
       await supabase.auth.refreshSession()
@@ -474,6 +471,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null)
         setSession(null)
         setIsAdmin(false)
+        setUserRole(null)
         clearTimeout(timeoutId)
         setIsLoading(false)
         return
@@ -485,25 +483,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         safeSetUser(currentUser)
         setSession(currentSession)
         
-        // Check if user is admin avec un timeout
+        // Définir directement un rôle par défaut
+        const defaultRole = "client"
+        
+        // Check user role avec un timeout très court
         try {
-          const roleCheckPromise = checkUserRole(currentUser.id)
-          const roleTimeout = new Promise<null>((resolve) => 
-            setTimeout(() => resolve(null), 2000)
-          )
+          const role = await Promise.race([
+            checkUserRole(currentUser.id),
+            new Promise<string>((resolve) => setTimeout(() => resolve(defaultRole), 1000))
+          ])
           
-          const role = await Promise.race([roleCheckPromise, roleTimeout])
           console.log("Role check in reloadAuthState:", role)
+          setUserRole(role)
           setIsAdmin(role === 'admin')
         } catch (roleError) {
           console.error("Error checking role in reloadAuthState:", roleError)
-          // Par défaut, ne pas modifier le statut admin en cas d'erreur
+          // En cas d'erreur, définir des valeurs par défaut
+          setUserRole(defaultRole)
+          setIsAdmin(false)
         }
       } else {
         console.log("No active user session found during reload")
         setUser(null)
         setSession(null)
         setIsAdmin(false)
+        setUserRole(null)
       }
       
       clearTimeout(timeoutId)
@@ -512,6 +516,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null)
       setSession(null)
       setIsAdmin(false)
+      setUserRole(null)
     } finally {
       setIsLoading(false)
     }
@@ -523,6 +528,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     isLoading,
     isAdmin,
+    userRole,
     signUp,
     signIn,
     signOut,
