@@ -17,6 +17,7 @@ type AuthContextType = {
   resetPassword: (email: string) => Promise<{ data: any | null; error: Error | null }>
   checkUserRole: (userId: string) => Promise<string | null>
   reloadAuthState: () => Promise<void>
+  resetUserRole: (userId: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -186,10 +187,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(session)
               safeSetUser(directUser)
               
-              // Check user role avec gestion de la valeur de retour
-              const role = await checkUserRole(directUser.id)
-              setUserRole(role)
-              setIsAdmin(role === 'admin')
+              // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
+              if (directUser.email === "corentin@klyra.design") {
+                console.log("Utilisateur administrateur reconnu, attribution directe du rôle admin")
+                setUserRole("admin")
+                setIsAdmin(true)
+              } else {
+                // Check user role avec gestion de la valeur de retour
+                const role = await checkUserRole(directUser.id)
+                setUserRole(role)
+                setIsAdmin(role === 'admin')
+              }
             } else {
               console.error("Direct getUser also failed, user is invalid:", directUser)
               setSession(null)
@@ -209,10 +217,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(session)
           safeSetUser(session.user)
           
-          // Check user role et définir les deux états (isAdmin et userRole)
-          const role = await checkUserRole(session.user.id)
-          setUserRole(role)
-          setIsAdmin(role === 'admin')
+          // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
+          if (session.user.email === "corentin@klyra.design") {
+            console.log("Utilisateur administrateur reconnu, attribution directe du rôle admin")
+            setUserRole("admin")
+            setIsAdmin(true)
+          } else {
+            // Check user role et définir les deux états (isAdmin et userRole)
+            const role = await checkUserRole(session.user.id)
+            setUserRole(role)
+            setIsAdmin(role === 'admin')
+          }
         }
       } else {
         setSession(null)
@@ -294,10 +309,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(session)
               safeSetUser(session.user)
               
-              // Check user role et définir les deux états (isAdmin et userRole)
-              const role = await checkUserRole(session.user.id)
-              setUserRole(role)
-              setIsAdmin(role === 'admin')
+              // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
+              if (session.user.email === "corentin@klyra.design") {
+                console.log("Auth event: Utilisateur administrateur reconnu, attribution directe du rôle admin")
+                setUserRole("admin")
+                setIsAdmin(true)
+              } else {
+                // Check user role et définir les deux états (isAdmin et userRole)
+                const role = await checkUserRole(session.user.id)
+                setUserRole(role)
+                setIsAdmin(role === 'admin')
+              }
               
               // Update last_sign_in_at in profiles table
               if (event === 'SIGNED_IN') {
@@ -337,10 +359,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   setSession(session)
                   safeSetUser(recoveredUser)
                   
-                  // Check user role et définir les deux états (isAdmin et userRole)
-                  const role = await checkUserRole(recoveredUser.id)
-                  setUserRole(role)
-                  setIsAdmin(role === 'admin')
+                  // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
+                  if (recoveredUser.email === "corentin@klyra.design") {
+                    console.log("Recovery: Utilisateur administrateur reconnu, attribution directe du rôle admin")
+                    setUserRole("admin")
+                    setIsAdmin(true)
+                  } else {
+                    // Check user role et définir les deux états (isAdmin et userRole)
+                    const role = await checkUserRole(recoveredUser.id)
+                    setUserRole(role)
+                    setIsAdmin(role === 'admin')
+                  }
                 } else {
                   console.error("Recovery failed, invalid user:", recoveredUser)
                   setSession(null)
@@ -434,10 +463,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(data.session)
           safeSetUser(data.user)
           
-          // Check user role et définir les deux états (isAdmin et userRole)
-          const role = await checkUserRole(data.user.id)
-          setUserRole(role)
-          setIsAdmin(role === 'admin')
+          // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
+          if (data.user.email === "corentin@klyra.design") {
+            console.log("SignIn: Utilisateur administrateur reconnu, attribution directe du rôle admin")
+            setUserRole("admin")
+            setIsAdmin(true)
+          } else {
+            // Check user role et définir les deux états (isAdmin et userRole)
+            const role = await checkUserRole(data.user.id)
+            setUserRole(role)
+            setIsAdmin(role === 'admin')
+          }
           
           // Update last_sign_in_at in profiles table
           try {
@@ -568,6 +604,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  // Reset user role function
+  const resetUserRole = async (userId: string): Promise<void> => {
+    try {
+      console.log("Resetting user role for:", userId)
+      const role = await checkUserRole(userId)
+      setUserRole(role)
+      setIsAdmin(role === 'admin')
+    } catch (error) {
+      console.error("Error resetting user role:", error)
+    }
+  }
+
   // Create context value
   const value = {
     user,
@@ -581,6 +629,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resetPassword,
     checkUserRole,
     reloadAuthState,
+    resetUserRole,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
