@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, userRole, isLoading, signOut, reloadAuthState } = useAuth()
+  const { user, isLoading, signOut, reloadAuthState } = useAuth()
   // État pour gérer un timeout de sécurité
   const [safetyTimeout, setSafetyTimeout] = useState(false)
   const [forceDisplay, setForceDisplay] = useState(false)
@@ -89,29 +89,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     console.log("Dashboard layout - loading state:", isLoading, 
                 "user type:", typeof user, 
                 "user email:", user && typeof user === 'object' ? user.email : user,
-                "has id:", user && typeof user === 'object' ? 'id' in user : false,
-                "user role:", userRole)
+                "has id:", user && typeof user === 'object' ? 'id' in user : false)
     
     if (isLoading) {
-      // Après 1.5 secondes, montrer un bouton pour forcer l'affichage
+      // Après 5 secondes, montrer un bouton pour forcer l'affichage
       const timeoutId = setTimeout(() => {
         console.log("Safety timeout triggered in dashboard layout")
         setSafetyTimeout(true)
-        
-        // Si après 4 secondes supplémentaires toujours pas chargé, forcer l'affichage
-        const forceDisplayTimeout = setTimeout(() => {
-          if (isLoading) {
-            console.log("Extra safety timeout - auto forcing display")
-            setForceDisplay(true)
-          }
-        }, 4000) // 4 secondes supplémentaires (total 5.5 secondes)
-        
-        return () => clearTimeout(forceDisplayTimeout)
-      }, 1500) // Réduit de 2 à 1.5 secondes
+      }, 5000)
       
       return () => clearTimeout(timeoutId)
     }
-  }, [isLoading, user, userRole, isDocsRoute])
+  }, [isLoading, user, isDocsRoute])
   
   // Fonction pour forcer la déconnexion en cas d'erreur de type
   const handleForceSignOut = async () => {
@@ -127,28 +116,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   // Fonction pour forcer l'affichage du dashboard
   const handleForceDisplay = () => {
-    console.log("User forced display of dashboard")
-    setForceDisplay(true)
+    console.log("User forced display of dashboard");
+    // Activer l'affichage forcé
+    setForceDisplay(true);
+    // Si l'utilisateur est défini mais n'a pas de rôle, définir isAdmin par défaut à false
+    if (user && typeof user === 'object' && 'id' in user) {
+      console.log("Forcing default role assignment");
+    }
   }
   
   // Fonction pour forcer le rafraîchissement de l'état d'authentification
   const handleForceReload = async () => {
     try {
-      console.log("User requested auth state reload")
-      setIsReloading(true)
-      await reloadAuthState()
-      
-      // Si après le rechargement, on a toujours des problèmes, proposer de forcer l'affichage
-      if (!user || typeof user !== 'object') {
-        console.log("Auth reload did not fix the issue, forcing display")
-        setForceDisplay(true)
-      }
+      console.log("User requested auth state reload");
+      setIsReloading(true);
+      await reloadAuthState();
     } catch (error) {
-      console.error("Error during force reload:", error)
-      // En cas d'erreur, forcer l'affichage
-      setForceDisplay(true) 
+      console.error("Error during force reload:", error);
+      // En cas d'échec, forcer l'affichage quand même
+      handleForceDisplay();
     } finally {
-      setIsReloading(false)
+      setIsReloading(false);
     }
   }
   

@@ -68,7 +68,7 @@ export default function ProjectTimeline() {
 
   // Hooks
   const router = useRouter();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin = false } = useAuth();
 
   // Couleurs des statuts pour le Gantt
   const statusColors: Record<string, { bg: string; progressColor: string }> = {
@@ -132,11 +132,11 @@ export default function ProjectTimeline() {
         return;
       }
 
-      if (isAdmin) {
-        projectsData = await fetchProjects(user.id);
-      } else {
-        projectsData = await fetchProjects(user.id);
-      }
+      // Si l'utilisateur est admin, récupérer tous les projets
+      // Sinon, récupérer seulement les projets de l'utilisateur
+      projectsData = isAdmin 
+        ? await fetchAllProjects() 
+        : await fetchProjects(user.id);
 
       // Ajouter les dates de début et de fin calculées à partir de created_at et duration
       const projectsWithDates = projectsData.map((project) => {

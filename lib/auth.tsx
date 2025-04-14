@@ -10,14 +10,12 @@ type AuthContextType = {
   session: Session | null
   isLoading: boolean
   isAdmin: boolean
-  userRole: string | null
   signUp: (email: string, password: string, fullName: string) => Promise<{ data: any | null; error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ data: any | null; error: Error | null }>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ data: any | null; error: Error | null }>
   checkUserRole: (userId: string) => Promise<string | null>
   reloadAuthState: () => Promise<void>
-  resetUserRole: (userId: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -27,7 +25,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [userRole, setUserRole] = useState<string | null>(null)
   const router = useRouter()
 
   // Fonction sécurisée pour définir l'utilisateur
@@ -57,91 +54,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user: user?.email, 
       userType: user ? typeof user : 'null',
       userHasId: user && typeof user === 'object' ? Boolean(user.id) : false,
-      isAdmin,
-      userRole
+      isAdmin 
     })
-  }, [isLoading, user, isAdmin, userRole])
+  }, [isLoading, user, isAdmin])
 
-  // Check user role function - version améliorée et sans cache
+  // Check user role function
   const checkUserRole = async (userId: string): Promise<string | null> => {
     if (!userId) {
       console.error("checkUserRole appelé avec un userId invalide:", userId);
-      return "client"; // Valeur par défaut en cas d'identifiant invalide
+      return null;
     }
 
     try {
-      console.log("Checking user role for:", userId)
+      console.log("Checking user role for:", userId);
       
-      // Désactivation temporaire du cache pour diagnostiquer le problème
-      // if (user && user.id === userId && userRole) {
-      //   console.log("Using cached role:", userRole)
-      //   return userRole
-      // }
-      
-      // Timeout plus court (1.5 secondes au lieu de 2)
-      const timeoutPromise = new Promise<string>((resolve) => {
-        setTimeout(() => {
-          console.log("Role check timed out - using default client role")
-          resolve("client") // Toujours retourner un rôle par défaut en cas de timeout
-        }, 1500)
-      })
-      
-      // Requête à Supabase simplifiée
-      const rolePromise = new Promise<string>(async (resolve) => {
-        try {
-          console.log("Début de la requête à Supabase pour vérifier le rôle")
-          
-          // Requête détaillée avec plus de logs
-          console.log("Exécution de la requête profiles.select().eq('id', userId)")
-          
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')  // Sélectionner toutes les colonnes pour déboguer
-            .eq('id', userId)
-            .single()
-
-          console.log("Réponse complète de Supabase:", { data, error })
-
-          if (error) {
-            console.error('Error fetching user role:', error)
-            resolve("client") // Valeur par défaut en cas d'erreur
-            return
-          }
-
-          if (!data) {
-            console.warn("Aucune donnée retournée pour l'utilisateur:", userId)
-            resolve("client")
-            return
-          }
-
-          console.log("Profil complet trouvé dans la base de données:", data)
-          console.log("Rôle trouvé:", data.role)
-          
-          // Forcer le rôle "admin" pour déboguer si le profil existe
-          // et si nous sommes sur l'utilisateur corentin@klyra.design
-          if (data.email === "corentin@klyra.design") {
-            console.log("Utilisateur administrateur détecté, forçage du rôle admin")
-            resolve("admin")
-            return
-          }
-          
-          resolve(data?.role || "client") // Toujours retourner un rôle, même si null
-        } catch (error) {
-          console.error('Exception complète dans rolePromise:', error)
-          resolve("client") // Valeur par défaut en cas d'exception
+      // Vérifier si le rôle est déjà en cache dans localStorage
+      if (typeof window !== 'undefined') {
+        const cachedRole = localStorage.getItem(`user_role_${userId}`);
+        if (cachedRole) {
+          console.log("Using cached role from localStorage:", cachedRole);
+          return cachedRole;
         }
-      })
+      }
       
-      // Utilisation de Promise.race pour implémenter un timeout
-      const role = await Promise.race([rolePromise, timeoutPromise])
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return null;
+      }
+
+      const role = data?.role || null;
+      console.log("User role data:", data);
       
-      // Log plus détaillé
-      console.log(`Role check result for ${userId}: ${role || 'default: client'}`)
+      // Sauvegarder le rôle dans localStorage pour les futures vérifications
+      if (typeof window !== 'undefined' && role) {
+        localStorage.setItem(`user_role_${userId}`, role);
+      }
       
-      return role
+      return role;
     } catch (error) {
-      console.error('Error in checkUserRole:', error)
-      return "client" // Valeur par défaut en cas d'erreur générale
+      console.error('Error in checkUserRole:', error);
+      return null;
     }
   }
 
@@ -177,7 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(null)
               setUser(null)
               setIsAdmin(false)
-              setUserRole(null)
               return
             }
             
@@ -187,53 +144,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(session)
               safeSetUser(directUser)
               
-              // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
-              if (directUser.email === "corentin@klyra.design") {
-                console.log("Utilisateur administrateur reconnu, attribution directe du rôle admin")
-                setUserRole("admin")
-                setIsAdmin(true)
-              } else {
-                // Check user role avec gestion de la valeur de retour
-                const role = await checkUserRole(directUser.id)
-                setUserRole(role)
-                setIsAdmin(role === 'admin')
-              }
+              // Check if user is admin
+              const role = await checkUserRole(directUser.id)
+              setIsAdmin(role === 'admin')
             } else {
               console.error("Direct getUser also failed, user is invalid:", directUser)
               setSession(null)
               setUser(null)
               setIsAdmin(false)
-              setUserRole(null)
             }
           } catch (userError) {
             console.error("Exception in direct getUser:", userError)
             setSession(null)
             setUser(null)
             setIsAdmin(false)
-            setUserRole(null)
           }
         } else {
           // Session user is valid
           setSession(session)
           safeSetUser(session.user)
           
-          // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
-          if (session.user.email === "corentin@klyra.design") {
-            console.log("Utilisateur administrateur reconnu, attribution directe du rôle admin")
-            setUserRole("admin")
-            setIsAdmin(true)
-          } else {
-            // Check user role et définir les deux états (isAdmin et userRole)
-            const role = await checkUserRole(session.user.id)
-            setUserRole(role)
-            setIsAdmin(role === 'admin')
-          }
+          // Check if user is admin
+          const role = await checkUserRole(session.user.id)
+          setIsAdmin(role === 'admin')
         }
       } else {
         setSession(null)
         setUser(null)
         setIsAdmin(false)
-        setUserRole(null)
       }
     } catch (error) {
       console.error('Error in getInitialSession:', error)
@@ -246,21 +184,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log("Setting up auth state listener...")
     
-    // Initialiser la session une seule fois avec une période plus courte
-    const initPromise = getInitialSession()
-    
     // Mettre un timeout de sécurité pour empêcher un loading infini
     const safetyTimeout = setTimeout(() => {
       if (isLoading) {
         console.log("⚠️ Safety timeout triggered - forcing isLoading to false")
-        
-        // Si l'utilisateur est déjà défini, on peut utiliser ces informations
-        if (user && typeof user === 'object' && user.id) {
-          console.log("User already defined, using existing data:", user.email)
-          // On garde l'utilisateur mais on force la fin du chargement
-          setIsLoading(false)
-          return
-        }
         
         // Forcer une dernière tentative de récupération de l'utilisateur et vérification du rôle
         const emergencyCheck = async () => {
@@ -271,12 +198,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.log("Emergency user check successful:", emergencyUser.email)
               safeSetUser(emergencyUser)
               
-              // Définir un rôle par défaut en cas d'urgence pour éviter le blocage
-              // En utilisant une variable string au lieu d'une chaîne littérale pour éviter l'erreur de type
-              const defaultRole = "client"
-              console.log("Emergency role check - using default:", defaultRole)
-              setUserRole(defaultRole)
-              setIsAdmin(false) // Dans ce cas d'urgence, on sait que le rôle est 'client', donc isAdmin est false
+              // Tenter une dernière vérification du rôle avec un timout court
+              const role = await Promise.race([
+                checkUserRole(emergencyUser.id),
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
+              ])
+              
+              console.log("Emergency role check result:", role)
+              setIsAdmin(role === 'admin')
             }
           } catch (error) {
             console.error("Error in emergency user check:", error)
@@ -288,19 +217,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         emergencyCheck()
       }
-    }, 1500) // 1.5 secondes maximum de loading (réduit de 2 à 1.5 secondes)
+    }, 3000) // 3 secondes maximum de loading (réduit de 5 à 3 secondes)
+    
+    getInitialSession()
 
     // Set up listener for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log(`Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session")
-        
-        // Si c'est juste un TOKEN_REFRESHED, ne pas refaire la vérification complète
-        if (event === 'TOKEN_REFRESHED' && user && session && session.user.id === user.id) {
-          console.log("Token refreshed, keeping existing user state")
-          setSession(session)
-          return
-        }
         
         try {
           if (session) {
@@ -309,17 +233,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(session)
               safeSetUser(session.user)
               
-              // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
-              if (session.user.email === "corentin@klyra.design") {
-                console.log("Auth event: Utilisateur administrateur reconnu, attribution directe du rôle admin")
-                setUserRole("admin")
-                setIsAdmin(true)
-              } else {
-                // Check user role et définir les deux états (isAdmin et userRole)
-                const role = await checkUserRole(session.user.id)
-                setUserRole(role)
-                setIsAdmin(role === 'admin')
-              }
+              // Check if user is admin on auth state change
+              const role = await checkUserRole(session.user.id)
+              setIsAdmin(role === 'admin')
               
               // Update last_sign_in_at in profiles table
               if (event === 'SIGNED_IN') {
@@ -359,44 +275,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   setSession(session)
                   safeSetUser(recoveredUser)
                   
-                  // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
-                  if (recoveredUser.email === "corentin@klyra.design") {
-                    console.log("Recovery: Utilisateur administrateur reconnu, attribution directe du rôle admin")
-                    setUserRole("admin")
-                    setIsAdmin(true)
-                  } else {
-                    // Check user role et définir les deux états (isAdmin et userRole)
-                    const role = await checkUserRole(recoveredUser.id)
-                    setUserRole(role)
-                    setIsAdmin(role === 'admin')
-                  }
+                  // Check if the recovered user is admin
+                  const role = await checkUserRole(recoveredUser.id)
+                  setIsAdmin(role === 'admin')
                 } else {
                   console.error("Recovery failed, invalid user:", recoveredUser)
                   setSession(null)
                   setUser(null)
                   setIsAdmin(false)
-                  setUserRole(null)
                 }
               } catch (recoveryError) {
                 console.error("Error in recovery attempt:", recoveryError)
                 setSession(null)
                 setUser(null)
                 setIsAdmin(false)
-                setUserRole(null)
               }
             }
           } else {
             setSession(null)
             setUser(null)
             setIsAdmin(false)
-            setUserRole(null)
           }
         } catch (error) {
           console.error("Error in auth state change handler:", error)
           setSession(null)
           setUser(null)
           setIsAdmin(false)
-          setUserRole(null)
         } finally {
           console.log("Setting isLoading to false from auth state change")
           setIsLoading(false)
@@ -463,17 +367,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(data.session)
           safeSetUser(data.user)
           
-          // Solution temporaire: hardcode le rôle admin pour l'email corentin@klyra.design
-          if (data.user.email === "corentin@klyra.design") {
-            console.log("SignIn: Utilisateur administrateur reconnu, attribution directe du rôle admin")
-            setUserRole("admin")
-            setIsAdmin(true)
-          } else {
-            // Check user role et définir les deux états (isAdmin et userRole)
-            const role = await checkUserRole(data.user.id)
-            setUserRole(role)
-            setIsAdmin(role === 'admin')
-          }
+          // Check user role
+          const role = await checkUserRole(data.user.id)
+          setIsAdmin(role === 'admin')
           
           // Update last_sign_in_at in profiles table
           try {
@@ -507,7 +403,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null)
       setSession(null)
       setIsAdmin(false)
-      setUserRole(null)
       router.push('/')
     } catch (error) {
       console.error('Error signing out:', error)
@@ -539,7 +434,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const timeoutId = setTimeout(() => {
         console.log("reloadAuthState safety timeout triggered")
         setIsLoading(false)
-      }, 2000) // Réduit à 2 secondes maximum
+      }, 3000) // 3 secondes maximum
       
       // Forcer la déconnexion/reconnexion du client Supabase
       await supabase.auth.refreshSession()
@@ -553,7 +448,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null)
         setSession(null)
         setIsAdmin(false)
-        setUserRole(null)
         clearTimeout(timeoutId)
         setIsLoading(false)
         return
@@ -565,31 +459,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         safeSetUser(currentUser)
         setSession(currentSession)
         
-        // Définir directement un rôle par défaut
-        const defaultRole = "client"
-        
-        // Check user role avec un timeout très court
+        // Check if user is admin avec un timeout
         try {
-          const role = await Promise.race([
-            checkUserRole(currentUser.id),
-            new Promise<string>((resolve) => setTimeout(() => resolve(defaultRole), 1000))
-          ])
+          const roleCheckPromise = checkUserRole(currentUser.id)
+          const roleTimeout = new Promise<null>((resolve) => 
+            setTimeout(() => resolve(null), 2000)
+          )
           
+          const role = await Promise.race([roleCheckPromise, roleTimeout])
           console.log("Role check in reloadAuthState:", role)
-          setUserRole(role)
           setIsAdmin(role === 'admin')
         } catch (roleError) {
           console.error("Error checking role in reloadAuthState:", roleError)
-          // En cas d'erreur, définir des valeurs par défaut
-          setUserRole(defaultRole)
-          setIsAdmin(false)
+          // Par défaut, ne pas modifier le statut admin en cas d'erreur
         }
       } else {
         console.log("No active user session found during reload")
         setUser(null)
         setSession(null)
         setIsAdmin(false)
-        setUserRole(null)
       }
       
       clearTimeout(timeoutId)
@@ -598,21 +486,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null)
       setSession(null)
       setIsAdmin(false)
-      setUserRole(null)
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  // Reset user role function
-  const resetUserRole = async (userId: string): Promise<void> => {
-    try {
-      console.log("Resetting user role for:", userId)
-      const role = await checkUserRole(userId)
-      setUserRole(role)
-      setIsAdmin(role === 'admin')
-    } catch (error) {
-      console.error("Error resetting user role:", error)
     }
   }
 
@@ -622,14 +497,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     isLoading,
     isAdmin,
-    userRole,
     signUp,
     signIn,
     signOut,
     resetPassword,
     checkUserRole,
     reloadAuthState,
-    resetUserRole,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
