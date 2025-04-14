@@ -71,12 +71,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log("Checking user role for:", userId)
       
-      // Timeout plus court (2 secondes au lieu de 3)
+      // Vérification en cache pour éviter les requêtes répétées
+      // Si on a déjà un userRole et qu'il correspond à l'utilisateur actuel, on le retourne directement
+      if (user && user.id === userId && userRole) {
+        console.log("Using cached role:", userRole)
+        return userRole
+      }
+      
+      // Timeout plus court (1.5 secondes au lieu de 2)
       const timeoutPromise = new Promise<string>((resolve) => {
         setTimeout(() => {
           console.log("Role check timed out - using default client role")
           resolve("client") // Toujours retourner un rôle par défaut en cas de timeout
-        }, 2000)
+        }, 1500)
       })
       
       // Requête à Supabase simplifiée
@@ -202,10 +209,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log("Setting up auth state listener...")
     
+    // Initialiser la session une seule fois avec une période plus courte
+    const initPromise = getInitialSession()
+    
     // Mettre un timeout de sécurité pour empêcher un loading infini
     const safetyTimeout = setTimeout(() => {
       if (isLoading) {
         console.log("⚠️ Safety timeout triggered - forcing isLoading to false")
+        
+        // Si l'utilisateur est déjà défini, on peut utiliser ces informations
+        if (user && typeof user === 'object' && user.id) {
+          console.log("User already defined, using existing data:", user.email)
+          // On garde l'utilisateur mais on force la fin du chargement
+          setIsLoading(false)
+          return
+        }
         
         // Forcer une dernière tentative de récupération de l'utilisateur et vérification du rôle
         const emergencyCheck = async () => {
@@ -233,14 +251,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         emergencyCheck()
       }
-    }, 2000) // 2 secondes maximum de loading (réduit de 5 à 2 secondes)
-    
-    getInitialSession()
+    }, 1500) // 1.5 secondes maximum de loading (réduit de 2 à 1.5 secondes)
 
     // Set up listener for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log(`Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session")
+        
+        // Si c'est juste un TOKEN_REFRESHED, ne pas refaire la vérification complète
+        if (event === 'TOKEN_REFRESHED' && user && session && session.user.id === user.id) {
+          console.log("Token refreshed, keeping existing user state")
+          setSession(session)
+          return
+        }
         
         try {
           if (session) {

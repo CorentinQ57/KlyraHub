@@ -93,11 +93,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 "user role:", userRole)
     
     if (isLoading) {
-      // Après 2 secondes, montrer un bouton pour forcer l'affichage
+      // Après 1.5 secondes, montrer un bouton pour forcer l'affichage
       const timeoutId = setTimeout(() => {
         console.log("Safety timeout triggered in dashboard layout")
         setSafetyTimeout(true)
-      }, 2000) // Réduit de 5 à 2 secondes
+        
+        // Si après 4 secondes supplémentaires toujours pas chargé, forcer l'affichage
+        const forceDisplayTimeout = setTimeout(() => {
+          if (isLoading) {
+            console.log("Extra safety timeout - auto forcing display")
+            setForceDisplay(true)
+          }
+        }, 4000) // 4 secondes supplémentaires (total 5.5 secondes)
+        
+        return () => clearTimeout(forceDisplayTimeout)
+      }, 1500) // Réduit de 2 à 1.5 secondes
       
       return () => clearTimeout(timeoutId)
     }
@@ -127,8 +137,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       console.log("User requested auth state reload")
       setIsReloading(true)
       await reloadAuthState()
+      
+      // Si après le rechargement, on a toujours des problèmes, proposer de forcer l'affichage
+      if (!user || typeof user !== 'object') {
+        console.log("Auth reload did not fix the issue, forcing display")
+        setForceDisplay(true)
+      }
     } catch (error) {
       console.error("Error during force reload:", error)
+      // En cas d'erreur, forcer l'affichage
+      setForceDisplay(true) 
     } finally {
       setIsReloading(false)
     }
