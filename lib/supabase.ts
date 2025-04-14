@@ -812,8 +812,21 @@ export async function fetchProjects(userId: string) {
   }
 }
 
+// Add caching variables for fetchAllProjects
+let cachedProjects: any[] = [];
+let lastProjectsFetchTime = 0;
+const CACHE_DURATION = 5000; // 5 seconds cache
+
 export async function fetchAllProjects() {
   try {
+    // Check if we have a recent cache that we can return
+    const now = Date.now();
+    if (cachedProjects.length > 0 && now - lastProjectsFetchTime < CACHE_DURATION) {
+      console.log(`Using cached projects (${cachedProjects.length} items, cache age: ${(now - lastProjectsFetchTime)/1000}s)`);
+      return cachedProjects;
+    }
+    
+    console.log('Cache expired or empty, fetching fresh projects data...');
     const { data, error } = await supabase
       .from('projects')
       .select(`
@@ -848,11 +861,23 @@ export async function fetchAllProjects() {
     // Normaliser les données des projets
     const normalizedData = data ? normalizeProjectsData(data) : [];
     
+    // Update cache
+    cachedProjects = normalizedData;
+    lastProjectsFetchTime = now;
+    console.log(`Updated projects cache with ${normalizedData.length} items`);
+    
     return normalizedData
   } catch (error) {
     console.error('Exception in fetchAllProjects:', error)
     return []
   }
+}
+
+// Manual cache invalidation function
+export function invalidateProjectsCache() {
+  console.log('Manually invalidating projects cache');
+  cachedProjects = [];
+  lastProjectsFetchTime = 0;
 }
 
 /**
