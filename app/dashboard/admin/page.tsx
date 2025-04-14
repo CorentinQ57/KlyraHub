@@ -132,7 +132,7 @@ export default function AdminDashboardPage() {
 
   // Synchronize loading states
   useEffect(() => {
-    setIsLoading(projectsLoading || (user?.id && !authChecked))
+    setIsLoading(Boolean(projectsLoading || (user?.id && !authChecked)))
   }, [projectsLoading, user?.id, authChecked])
 
   // Filter projects when status filter changes
