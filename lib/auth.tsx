@@ -217,10 +217,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               safeSetUser(emergencyUser)
               
               // Définir un rôle par défaut en cas d'urgence pour éviter le blocage
-              const role = "client"
-              console.log("Emergency role check - using default:", role)
-              setUserRole(role)
-              setIsAdmin(role === 'admin')
+              // En utilisant une variable string au lieu d'une chaîne littérale pour éviter l'erreur de type
+              const defaultRole = "client"
+              console.log("Emergency role check - using default:", defaultRole)
+              setUserRole(defaultRole)
+              setIsAdmin(false) // Dans ce cas d'urgence, on sait que le rôle est 'client', donc isAdmin est false
             }
           } catch (error) {
             console.error("Error in emergency user check:", error)
