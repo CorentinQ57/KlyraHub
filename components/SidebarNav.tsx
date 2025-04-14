@@ -67,7 +67,7 @@ export function SidebarNav() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const { user, userRole, reloadAuthState } = useAuth()
+  const { user, isAdmin, reloadAuthState } = useAuth()
   
   // Vérifier si le chemin actuel est dans la section documentation
   const isDocsRoute = pathname.startsWith('/dashboard/docs')
@@ -184,9 +184,6 @@ export function SidebarNav() {
   // Détermine les liens à afficher selon l'authentification
   const navLinks = user || !isDocsRoute ? userNavLinks : docsVisitorLinks
   
-  // Vérifier si l'utilisateur est administrateur en tenant compte de userRole
-  const hasAdminAccess = userRole === 'admin';
-  
   return (
     <>
       {/* Mobile Header & Trigger */}
@@ -280,7 +277,7 @@ export function SidebarNav() {
                     </Link>
                   ))}
                   
-                  {hasAdminAccess && (
+                  {isAdmin && (
                     <Link 
                       href={adminLink.href}
                       className={cn(
