@@ -689,7 +689,44 @@ export async function getProfileData(userId: string) {
       .single();
     
     if (error) {
-      console.error('Error fetching profile data:', error);
+      // Vérifier si c'est une erreur de données manquantes
+      if (error.code === 'PGRST116') {
+        console.log(`Profile not found for user ID: ${cleanUserId}, will attempt to create one`);
+        
+        // Si le profil n'existe pas, tenter de le créer automatiquement
+        try {
+          // Récupérer les données utilisateur
+          const { data: userData } = await supabase.auth.getUser();
+          
+          if (userData && userData.user) {
+            const newProfile = {
+              id: cleanUserId,
+              full_name: userData.user.user_metadata?.full_name || '',
+              email: userData.user.email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            
+            const { data: insertedProfile, error: insertError } = await supabase
+              .from('profiles')
+              .insert(newProfile)
+              .select()
+              .single();
+              
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+              return null;
+            }
+            
+            console.log('Profile created successfully');
+            return insertedProfile;
+          }
+        } catch (createError) {
+          console.error('Error in automatic profile creation:', createError);
+        }
+      } else {
+        console.error('Error fetching profile data:', error);
+      }
       return null;
     }
     
