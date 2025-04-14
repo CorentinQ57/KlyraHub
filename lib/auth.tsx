@@ -4,15 +4,35 @@ import React, { createContext, useContext, useEffect, useState, useRef, ReactNod
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'react-hot-toast'
-import { User, Session } from '@supabase/supabase-js'
-import type { AuthChangeEvent } from '@supabase/supabase-js'
+import { User, Session, SupabaseClient, AuthChangeEvent, AuthError } from '@supabase/supabase-js'
 import { enhancedStorage, debugAuthState, checkAuthTokensExist } from './supabase'
 import { checkUserRole } from './auth-utils'
+import { useToast } from '@/components/ui/use-toast'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
-// Define the type for auth subscription
+// Constantes pour optimiser le temps de chargement initial
+const MAX_SESSION_RETRIEVAL_ATTEMPTS = 3;
+const SESSION_RETRIEVAL_TIMEOUT = 500; // 500ms par tentative
+
+// Define the type for a subscription
 type SupabaseAuthSubscription = {
   unsubscribe: () => void;
 };
+
+// Define the type for auth state change tracking
+type AuthStateChange = {
+  subscription: SupabaseAuthSubscription | null;
+  timeout: NodeJS.Timeout | null;
+  attempts: number;
+};
+
+// Define the return type for getInitialSession
+type InitialSessionResult = {
+  session: Session | null;
+  user: User | null;
+  error: Error | null;
+}
 
 // Type definition for Auth Context
 interface AuthContextType {
@@ -43,6 +63,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const adminEmails = ['admin@klyra.com', 'tech@klyra.com', 'corentin@klyra.com']
+  const { toast } = useToast()
+  const authStateChange = useRef<AuthStateChange>({
+    subscription: null,
+    timeout: null,
+    attempts: 0,
+  });
+  const hasCheckedLocalStorage = useRef<boolean>(false);
 
   // Fonction sécurisée pour définir l'utilisateur
   const safeSetUser = (newUser: User | null) => {
@@ -289,7 +316,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const getInitialSession = async (): Promise<{ 
     session: Session | null, 
     user: User | null, 
-    error: any 
+    error: Error | null 
   }> => {
     // Create auth event listener and promise resolver
     let authListener: SupabaseAuthSubscription | null = null;
@@ -298,14 +325,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log("🚀 Starting session recovery process")
       
       // Create a listener for auth state changes during recovery
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
         console.log(`🔔 Auth event during recovery: ${event}`)
       });
       
       // Store the unsubscribe function if available
-      if (subscription && typeof subscription === 'object') {
+      if (data?.subscription && typeof data.subscription === 'object' && 'unsubscribe' in data.subscription) {
         authListener = {
-          unsubscribe: () => subscription.unsubscribe()
+          unsubscribe: () => data.subscription.unsubscribe()
         };
       } else {
         console.log("⚠️ Auth subscription doesn't have an unsubscribe method");
@@ -602,13 +629,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const setupAuthListener = async () => {
       console.log("🔄 Setting up auth state change listener")
       try {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data } = supabase.auth.onAuthStateChange((event, session) => {
           handleAuthStateChange(event, session);
         });
         
         // Store the unsubscribe function safely
-        if (subscription && typeof subscription === 'object' && subscription !== null) {
-          authListener = { unsubscribe: () => subscription.unsubscribe() };
+        if (data?.subscription && typeof data.subscription === 'object' && 'unsubscribe' in data.subscription) {
+          authListener = { unsubscribe: () => data.subscription.unsubscribe() };
         } else {
           console.warn("⚠️ Auth state change listener doesn't have expected unsubscribe method");
           authListener = { 
@@ -800,69 +827,102 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Reload auth state function - Optimisée
   const reloadAuthState = async (): Promise<void> => {
-    try {
-      console.log("🔄 Manually reloading auth state")
-      setIsLoading(true)
-      
-      // Check if we have any tokens in localStorage
-      let hasLocalTokens = false;
-      let accessToken = null;
-      let refreshToken = null;
+    console.log("🔄 Manually reloading auth state")
+    setIsLoading(true)
+    
+    // Check if we have any tokens in localStorage
+    let hasLocalTokens = false;
+    let accessToken = null;
+    let refreshToken = null;
 
-      if (typeof window !== 'undefined') {
-        // Check various token formats that Supabase might use
-        accessToken = localStorage.getItem('supabase.auth.token') || 
-                      localStorage.getItem('sb-access-token') || 
-                      localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
+    if (typeof window !== 'undefined') {
+      // Check various token formats that Supabase might use
+      accessToken = localStorage.getItem('supabase.auth.token') || 
+                    localStorage.getItem('sb-access-token') || 
+                    localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-token');
                       
-        refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
-                      localStorage.getItem('sb-refresh-token') || 
-                      localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
+      refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
+                    localStorage.getItem('sb-refresh-token') || 
+                    localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL + '-auth-refresh-token');
         
-        hasLocalTokens = !!(accessToken || refreshToken);
-        console.log('📝 reloadAuthState tokens check:', hasLocalTokens ? 'Tokens found' : 'No tokens');
+      hasLocalTokens = !!(accessToken || refreshToken);
+      console.log('📝 reloadAuthState tokens check:', hasLocalTokens ? 'Tokens found' : 'No tokens');
+    }
+    
+    // Timeout de sécurité global pour garantir que isLoading passe à false
+    const timeoutId = setTimeout(() => {
+      console.log("⚠️ reloadAuthState safety timeout triggered")
+      setIsLoading(false)
+    }, 2500) // Réduit à 2.5 secondes max
+    
+    // Optimisation: si on a déjà un utilisateur valide, on peut avancer plus vite
+    // et juste vérifier son rôle
+    if (user && typeof user === 'object' && 'id' in user) {
+      console.log("🔍 User already valid, checking role directly");
+      try {
+        const role = await Promise.race([
+          checkUserRole(user.id),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 800))
+        ]);
+        
+        console.log("👤 Quick role check result:", role);
+        setIsAdmin(role === 'admin');
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+        return;
+      } catch (quickError) {
+        console.error("Error in quick role check:", quickError);
+        // Continue avec le processus normal en cas d'erreur
       }
+    }
+    
+    // Active session recovery - start with refreshSession
+    console.log("🔄 Actively trying to recover session...");
+    
+    // First try: Direct session refresh
+    try {
+      const { data, error } = await Promise.race([
+        supabase.auth.refreshSession(),
+        new Promise((resolve) => setTimeout(() => 
+          resolve({ data: null, error: new Error("Refresh session timeout") }), 2000))
+      ]) as any;
       
-      // Timeout de sécurité global pour garantir que isLoading passe à false
-      const timeoutId = setTimeout(() => {
-        console.log("⚠️ reloadAuthState safety timeout triggered")
-        setIsLoading(false)
-      }, 2500) // Réduit à 2.5 secondes max
-      
-      // Optimisation: si on a déjà un utilisateur valide, on peut avancer plus vite
-      // et juste vérifier son rôle
-      if (user && typeof user === 'object' && 'id' in user) {
-        console.log("🔍 User already valid, checking role directly");
-        try {
-          const role = await Promise.race([
-            checkUserRole(user.id),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 800))
-          ]);
-          
-          console.log("👤 Quick role check result:", role);
+      if (data?.session && data.session.user) {
+        console.log('✅ Session refreshed successfully!', data.session.user.email);
+        setSession(data.session);
+        safeSetUser(data.session.user);
+        
+        // Check role with a short timeout
+        Promise.race([
+          checkUserRole(data.session.user.id),
+          new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
+        ]).then(role => {
+          console.log("🛡️ Role check for refreshed session:", role);
           setIsAdmin(role === 'admin');
-          clearTimeout(timeoutId);
-          setIsLoading(false);
-          return;
-        } catch (quickError) {
-          console.error("Error in quick role check:", quickError);
-          // Continue avec le processus normal en cas d'erreur
-        }
+        });
+        
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+        return;
+      } else if (error) {
+        console.warn('⚠️ Session refresh failed:', error.message);
       }
-      
-      // Active session recovery - start with refreshSession
-      console.log("🔄 Actively trying to recover session...");
-      
-      // First try: Direct session refresh
+    } catch (refreshErr) {
+      console.warn('⚠️ Error during reloadAuthState refresh:', refreshErr);
+    }
+    
+    // Second try: If refresh failed but we have a refresh token, try a manual token refresh
+    if (refreshToken) {
+      console.log('🔄 Attempting manual token refresh with stored refresh token...');
       try {
         const { data, error } = await Promise.race([
-          supabase.auth.refreshSession(),
+          supabase.auth.refreshSession({ refresh_token: refreshToken }),
           new Promise((resolve) => setTimeout(() => 
-            resolve({ data: null, error: new Error("Refresh session timeout") }), 2000))
+            resolve({ data: null, error: new Error("Manual refresh timeout") }), 2000))
         ]) as any;
         
         if (data?.session && data.session.user) {
-          console.log('✅ Session refreshed successfully!', data.session.user.email);
+          console.log('✅ Manual session refresh successful!', data.session.user.email);
           setSession(data.session);
           safeSetUser(data.session.user);
           
@@ -871,7 +931,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             checkUserRole(data.session.user.id),
             new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
           ]).then(role => {
-            console.log("🛡️ Role check for refreshed session:", role);
+            console.log("🛡️ Role check for manually refreshed session:", role);
             setIsAdmin(role === 'admin');
           });
           
@@ -879,314 +939,280 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsLoading(false);
           return;
         } else if (error) {
-          console.warn('⚠️ Session refresh failed:', error.message);
+          console.warn('⚠️ Manual session refresh failed:', error.message);
         }
-      } catch (refreshErr) {
-        console.warn('⚠️ Error during reloadAuthState refresh:', refreshErr);
+      } catch (manualRefreshErr) {
+        console.warn('⚠️ Error during manual token refresh:', manualRefreshErr);
       }
-      
-      // Second try: If refresh failed but we have a refresh token, try a manual token refresh
-      if (refreshToken) {
-        console.log('🔄 Attempting manual token refresh with stored refresh token...');
-        try {
-          const { data, error } = await Promise.race([
-            supabase.auth.refreshSession({ refresh_token: refreshToken }),
-            new Promise((resolve) => setTimeout(() => 
-              resolve({ data: null, error: new Error("Manual refresh timeout") }), 2000))
-          ]) as any;
+    }
+    
+    // Third try: If we have an access token but no session, try direct getUser
+    if (accessToken) {
+      console.log('🔄 Attempting to get user directly with stored access token...');
+      try {
+        const { data, error } = await Promise.race([
+          supabase.auth.getUser(),
+          new Promise((resolve) => setTimeout(() => 
+            resolve({ data: { user: null }, error: new Error("getUser timeout") }), 2000))
+        ]) as any;
+        
+        if (data?.user && typeof data.user === 'object' && data.user.id) {
+          console.log('✅ Got user directly:', data.user.email);
           
-          if (data?.session && data.session.user) {
-            console.log('✅ Manual session refresh successful!', data.session.user.email);
-            setSession(data.session);
-            safeSetUser(data.session.user);
-            
-            // Check role with a short timeout
-            Promise.race([
-              checkUserRole(data.session.user.id),
-              new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
-            ]).then(role => {
-              console.log("🛡️ Role check for manually refreshed session:", role);
-              setIsAdmin(role === 'admin');
-            });
-            
-            clearTimeout(timeoutId);
-            setIsLoading(false);
-            return;
-          } else if (error) {
-            console.warn('⚠️ Manual session refresh failed:', error.message);
-          }
-        } catch (manualRefreshErr) {
-          console.warn('⚠️ Error during manual token refresh:', manualRefreshErr);
+          // Create a minimal session object
+          const minimalSession = {
+            user: data.user,
+            access_token: accessToken
+          } as any;
+          
+          setSession(minimalSession);
+          safeSetUser(data.user);
+          
+          // Check role with a short timeout
+          Promise.race([
+            checkUserRole(data.user.id),
+            new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
+          ]).then(role => {
+            console.log("🛡️ Role check for direct user:", role);
+            setIsAdmin(role === 'admin');
+          });
+          
+          clearTimeout(timeoutId);
+          setIsLoading(false);
+          return;
+        } else if (error) {
+          console.warn('⚠️ getUser failed:', error.message);
         }
+      } catch (getUserErr) {
+        console.warn('⚠️ Error during getUser:', getUserErr);
       }
-      
-      // Third try: If we have an access token but no session, try direct getUser
-      if (accessToken) {
-        console.log('🔄 Attempting to get user directly with stored access token...');
-        try {
-          const { data, error } = await Promise.race([
-            supabase.auth.getUser(),
-            new Promise((resolve) => setTimeout(() => 
-              resolve({ data: { user: null }, error: new Error("getUser timeout") }), 2000))
-          ]) as any;
-          
-          if (data?.user && typeof data.user === 'object' && data.user.id) {
-            console.log('✅ Got user directly:', data.user.email);
-            
-            // Create a minimal session object
-            const minimalSession = {
-              user: data.user,
-              access_token: accessToken
-            } as any;
-            
-            setSession(minimalSession);
-            safeSetUser(data.user);
-            
-            // Check role with a short timeout
-            Promise.race([
-              checkUserRole(data.user.id),
-              new Promise<string>((resolve) => setTimeout(() => resolve('client'), 800))
-            ]).then(role => {
-              console.log("🛡️ Role check for direct user:", role);
-              setIsAdmin(role === 'admin');
-            });
-            
-            clearTimeout(timeoutId);
-            setIsLoading(false);
-            return;
-          } else if (error) {
-            console.warn('⚠️ getUser failed:', error.message);
-          }
-        } catch (getUserErr) {
-          console.warn('⚠️ Error during getUser:', getUserErr);
+    }
+    
+    // Last resort: full getSession as before with optimizations
+    console.log('🔄 All recovery attempts failed, trying standard getSession...');
+    
+    // Protection contre les promesses qui ne se résolvent jamais
+    const reloadPromise = async () => {
+      try {
+        // Récupération séquentielle pour optimiser: d'abord l'utilisateur, puis la session si nécessaire
+        const { data: { user: currentUser }, error: userError } = await Promise.race([
+          supabase.auth.getUser(),
+          new Promise(resolve => setTimeout(() => resolve({ data: { user: null }, error: new Error("Timeout") }), 1000))
+        ]) as any;
+        
+        // Log détaillé de la récupération user
+        console.log("👤 User retrieval:", currentUser ? `success (${currentUser.email})` : "failed", userError ? `error: ${userError.message}` : "");
+        
+        if (userError) {
+          throw new Error("Failed to get user");
         }
-      }
-      
-      // Last resort: full getSession as before with optimizations
-      console.log('🔄 All recovery attempts failed, trying standard getSession...');
-      
-      // Protection contre les promesses qui ne se résolvent jamais
-      const reloadPromise = async () => {
-        try {
-          // Récupération séquentielle pour optimiser: d'abord l'utilisateur, puis la session si nécessaire
-          const { data: { user: currentUser }, error: userError } = await Promise.race([
-            supabase.auth.getUser(),
-            new Promise(resolve => setTimeout(() => resolve({ data: { user: null }, error: new Error("Timeout") }), 1000))
-          ]) as any;
+        
+        // Si on a récupéré un utilisateur valide, on l'utilise immédiatement
+        // et on continue en parallèle
+        if (currentUser && typeof currentUser === 'object' && currentUser.id) {
+          // Mettre à jour l'utilisateur immédiatement pour débloquer l'UI
+          safeSetUser(currentUser);
           
-          // Log détaillé de la récupération user
-          console.log("👤 User retrieval:", currentUser ? `success (${currentUser.email})` : "failed", userError ? `error: ${userError.message}` : "");
-          
-          if (userError) {
-            throw new Error("Failed to get user");
-          }
-          
-          // Si on a récupéré un utilisateur valide, on l'utilise immédiatement
-          // et on continue en parallèle
-          if (currentUser && typeof currentUser === 'object' && currentUser.id) {
-            // Mettre à jour l'utilisateur immédiatement pour débloquer l'UI
-            safeSetUser(currentUser);
-            
-            // Lancer en parallèle la récupération de la session et du rôle
-            Promise.all([
-              // Récupérer la session
-              (async () => {
-                try {
-                  const { data: { session: currentSession }, error: sessionError } = await Promise.race([
-                    supabase.auth.getSession(),
-                    new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: new Error("Session timeout") }), 1000))
-                  ]) as any;
-                  
-                  if (sessionError) {
-                    console.error("Session retrieval error:", sessionError);
-                    return;
-                  }
-                  
-                  if (currentSession) {
-                    setSession(currentSession);
-                  } else {
-                    // If we have a valid user but no session, create a minimal session
-                    setSession({ user: currentUser, access_token: accessToken || 'recovered' } as any);
-                  }
-                } catch (sessionError) {
-                  console.error("Error getting session:", sessionError);
+          // Lancer en parallèle la récupération de la session et du rôle
+          Promise.all([
+            // Récupérer la session
+            (async () => {
+              try {
+                const { data: { session: currentSession }, error: sessionError } = await Promise.race([
+                  supabase.auth.getSession(),
+                  new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: new Error("Session timeout") }), 1000))
+                ]) as any;
+                
+                if (sessionError) {
+                  console.error("Session retrieval error:", sessionError);
+                  return;
                 }
-              })(),
-              
-              // Vérifier le rôle
-              (async () => {
-                try {
-                  const role = await Promise.race([
-                    checkUserRole(currentUser.id),
-                    new Promise<null>((resolve) => setTimeout(() => resolve(null), 800))
-                  ]);
-                  
-                  console.log("🛡️ Role check result:", role);
-                  setIsAdmin(role === 'admin');
-                } catch (roleError) {
-                  console.error("Error checking role:", roleError);
-                  
-                  // For known admin emails, set admin role even if check fails
-                  if (currentUser.email && adminEmails.includes(currentUser.email.toLowerCase())) {
-                    console.log("👑 Admin recognized by email during recovery:", currentUser.email);
-                    setIsAdmin(true);
-                  }
+                
+                if (currentSession) {
+                  setSession(currentSession);
+                } else {
+                  // If we have a valid user but no session, create a minimal session
+                  setSession({ user: currentUser, access_token: accessToken || 'recovered' } as any);
                 }
-              })()
-            ]).catch(parallelError => {
-              console.error("Error in parallel operations:", parallelError);
-            }).finally(() => {
-              // S'assurer que isLoading passe à false une fois tout terminé
-              console.log("✅ Parallel operations completed");
-              clearTimeout(timeoutId);
-              setIsLoading(false);
-            });
+              } catch (sessionError) {
+                console.error("Error getting session:", sessionError);
+              }
+            })(),
             
-            // Retourner rapidement pour débloquer l'interface
-            return;
-          }
-          
-          // Si on n'a pas pu récupérer l'utilisateur, récupérer la session
-          if (!currentUser) {
-            const { data: { session: currentSession }, error: sessionError } = await Promise.race([
-              supabase.auth.getSession(),
-              new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: new Error("Session timeout") }), 1000))
-            ]) as any;
-            
-            if (sessionError) {
-              console.error("Session retrieval error:", sessionError);
-              throw new Error("Failed to get session");
-            }
-            
-            if (currentSession && currentSession.user) {
-              console.log("🔐 Got user from session:", currentSession.user.email);
-              setSession(currentSession);
-              safeSetUser(currentSession.user);
-              
-              // Vérifier le rôle avec un timeout court
+            // Vérifier le rôle
+            (async () => {
               try {
                 const role = await Promise.race([
-                  checkUserRole(currentSession.user.id),
+                  checkUserRole(currentUser.id),
                   new Promise<null>((resolve) => setTimeout(() => resolve(null), 800))
                 ]);
                 
-                console.log("🛡️ Role check from session:", role);
+                console.log("🛡️ Role check result:", role);
                 setIsAdmin(role === 'admin');
               } catch (roleError) {
-                console.error("Error checking role from session:", roleError);
+                console.error("Error checking role:", roleError);
                 
                 // For known admin emails, set admin role even if check fails
-                if (currentSession.user.email && adminEmails.includes(currentSession.user.email.toLowerCase())) {
-                  console.log("👑 Admin recognized by email during session recovery:", currentSession.user.email);
+                if (currentUser.email && adminEmails.includes(currentUser.email.toLowerCase())) {
+                  console.log("👑 Admin recognized by email during recovery:", currentUser.email);
                   setIsAdmin(true);
                 }
               }
-            } else {
-              console.log("No user available from any source");
-              setUser(null);
-              setSession(null);
-              setIsAdmin(false);
-            }
-          }
-        } catch (innerError) {
-          console.error("Inner error in reloadAuthState:", innerError);
-          setUser(null);
-          setSession(null);
-          setIsAdmin(false);
-          throw innerError;
-        }
-      };
-      
-      // Exécuter avec un timeout global raccourci
-      await Promise.race([
-        reloadPromise(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Global reloadAuthState timeout")), 2000))
-      ]).catch(err => {
-        console.error("Caught in reloadAuthState race:", err);
-        // Ne pas propager l'erreur
-      }).finally(() => {
-        clearTimeout(timeoutId);
-        setIsLoading(false);
-      });
-    } catch (error) {
-      console.error("Exception in reloadAuthState:", error);
-      setUser(null);
-      setSession(null);
-      setIsAdmin(false);
-    } finally {
-      // Garantir que isLoading est toujours mis à false, quoi qu'il arrive
-      console.log("✅ Setting isLoading to false from reloadAuthState finally block");
-      setIsLoading(false);
-    }
-  };
-
-  // Fonction pour s'assurer qu'un profil existe pour l'utilisateur
-  const ensureUserProfile = async (userId: string) => {
-    try {
-      if (!userId) {
-        console.error("Invalid user ID provided to ensureUserProfile");
-        return;
-      }
-      
-      console.log(`Ensuring profile exists for user: ${userId}`);
-      
-      // Vérifier si le profil existe
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .single();
-      
-      // Si le profil n'existe pas ou il y a une erreur, tenter de le créer
-      if (error || !data) {
-        console.log('Profile not found or error, attempting to create one for user:', userId);
-        
-        // Récupérer les informations utilisateur
-        const { data: userData } = await supabase.auth.getUser();
-        
-        if (userData && userData.user) {
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              full_name: userData.user.user_metadata?.full_name || '',
-              email: userData.user.email,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
+            })()
+          ]).catch(parallelError => {
+            console.error("Error in parallel operations:", parallelError);
+          }).finally(() => {
+            // S'assurer que isLoading passe à false une fois tout terminé
+            console.log("✅ Parallel operations completed");
+            clearTimeout(timeoutId);
+            setIsLoading(false);
+          });
           
-          if (insertError) {
-            console.error('Error creating profile:', insertError);
-          } else {
-            console.log('Successfully created profile for user:', userId);
+          // Retourner rapidement pour débloquer l'interface
+          return;
+        }
+        
+        // Si on n'a pas pu récupérer l'utilisateur, récupérer la session
+        if (!currentUser) {
+          const { data: { session: currentSession }, error: sessionError } = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: new Error("Session timeout") }), 1000))
+          ]) as any;
+          
+          if (sessionError) {
+            console.error("Session retrieval error:", sessionError);
+            throw new Error("Failed to get session");
           }
+          
+          if (currentSession && currentSession.user) {
+            console.log("🔐 Got user from session:", currentSession.user.email);
+            setSession(currentSession);
+            safeSetUser(currentSession.user);
+            
+            // Vérifier le rôle avec un timeout court
+            try {
+              const role = await Promise.race([
+                checkUserRole(currentSession.user.id),
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 800))
+              ]);
+              
+              console.log("🛡️ Role check from session:", role);
+              setIsAdmin(role === 'admin');
+            } catch (roleError) {
+              console.error("Error checking role from session:", roleError);
+              
+              // For known admin emails, set admin role even if check fails
+              if (currentSession.user.email && adminEmails.includes(currentSession.user.email.toLowerCase())) {
+                console.log("👑 Admin recognized by email during session recovery:", currentSession.user.email);
+                setIsAdmin(true);
+              }
+            }
+          } else {
+            console.log("No user available from any source");
+            setUser(null);
+            setSession(null);
+            setIsAdmin(false);
+          }
+        }
+      } catch (innerError) {
+        console.error("Inner error in reloadAuthState:", innerError);
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        throw innerError;
+      }
+    };
+    
+    // Exécuter avec un timeout global raccourci
+    await Promise.race([
+      reloadPromise(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Global reloadAuthState timeout")), 2000))
+    ]).catch(err => {
+      console.error("Caught in reloadAuthState race:", err);
+      // Ne pas propager l'erreur
+    }).finally(() => {
+      clearTimeout(timeoutId);
+      setIsLoading(false);
+    });
+  } catch (error) {
+    console.error("Exception in reloadAuthState:", error);
+    setUser(null);
+    setSession(null);
+    setIsAdmin(false);
+  } finally {
+    // Garantir que isLoading est toujours mis à false, quoi qu'il arrive
+    console.log("✅ Setting isLoading to false from reloadAuthState finally block");
+    setIsLoading(false);
+  }
+};
+
+// Fonction pour s'assurer qu'un profil existe pour l'utilisateur
+const ensureUserProfile = async (userId: string) => {
+  try {
+    if (!userId) {
+      console.error("Invalid user ID provided to ensureUserProfile");
+      return;
+    }
+    
+    console.log(`Ensuring profile exists for user: ${userId}`);
+    
+    // Vérifier si le profil existe
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    // Si le profil n'existe pas ou il y a une erreur, tenter de le créer
+    if (error || !data) {
+      console.log('Profile not found or error, attempting to create one for user:', userId);
+      
+      // Récupérer les informations utilisateur
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (userData && userData.user) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name: userData.user.user_metadata?.full_name || '',
+            email: userData.user.email,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
         } else {
-          console.error('No user data available to create profile');
+          console.log('Successfully created profile for user:', userId);
         }
       } else {
-        console.log('Profile already exists for user:', userId);
+        console.error('No user data available to create profile');
       }
-    } catch (err) {
-      console.error('Exception in ensureUserProfile:', err);
+    } else {
+      console.log('Profile already exists for user:', userId);
     }
-  };
-
-  // Create context value
-  const value = {
-    user,
-    session,
-    isLoading,
-    isAdmin,
-    signUp,
-    signIn,
-    signOut,
-    resetPassword,
-    reloadAuthState,
-    ensureUserProfile,
-    checkUserRole,
+  } catch (err) {
+    console.error('Exception in ensureUserProfile:', err);
   }
+};
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+// Create context value
+const value = {
+  user,
+  session,
+  isLoading,
+  isAdmin,
+  signUp,
+  signIn,
+  signOut,
+  resetPassword,
+  reloadAuthState,
+  ensureUserProfile,
+  checkUserRole,
+}
+
+return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 // Custom hook to use the auth context
