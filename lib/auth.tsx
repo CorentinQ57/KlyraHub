@@ -40,6 +40,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isSessionRestoring: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ data: any | null; error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ data: any | null; error: Error | null }>;
   signOut: () => Promise<void>;
@@ -61,6 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isSessionRestoring, setIsSessionRestoring] = useState(true)
   const router = useRouter()
   const adminEmails = ['admin@klyra.com', 'tech@klyra.com', 'corentin@klyra.com']
   const { toast } = useToast()
@@ -567,6 +569,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     console.log("🔧 Setting up auth state listener...")
     
+    // Indiquer que la restauration de session commence
+    setIsSessionRestoring(true);
+    
     // Mettre un timeout de sécurité pour empêcher un loading infini
     const safetyTimeout = setTimeout(() => {
       if (isLoading) {
@@ -691,6 +696,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Resolve loading state regardless of result
         setIsLoading(false);
+        
+        // Ajouter un délai avant de désactiver isSessionRestoring pour permettre à l'UI de se mettre à jour
+        setTimeout(() => {
+          setIsSessionRestoring(false);
+          console.log("✅ Session restoration complete, isSessionRestoring set to false");
+        }, 1500); // Délai de grâce de 1.5s
       } catch (e) {
         console.error("❌ Fatal error during auth initialization:", e);
         
@@ -699,6 +710,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(null);
         setIsAdmin(false);
         setIsLoading(false);
+        setIsSessionRestoring(false);
       }
     };
 
@@ -1202,6 +1214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     session,
     isLoading,
     isAdmin,
+    isSessionRestoring,
     signUp,
     signIn,
     signOut,

@@ -32,7 +32,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const { signIn, user } = useAuth()
+  const [redirectTimer, setRedirectTimer] = useState<NodeJS.Timeout | null>(null)
+  const { signIn, user, isSessionRestoring } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -41,12 +42,35 @@ export default function LoginPage() {
     setMounted(true)
   }, [])
 
-  // Redirect if user is already logged in
+  // Redirect if user is already logged in but add a delay
   useEffect(() => {
-    if (user) {
-      router.push('/dashboard')
+    // Ne pas rediriger pendant la restauration de session
+    if (isSessionRestoring) {
+      return;
     }
-  }, [user, router])
+    
+    // Nettoyer le timer précédent si on recharge l'état
+    if (redirectTimer) {
+      clearTimeout(redirectTimer);
+      setRedirectTimer(null);
+    }
+    
+    if (user) {
+      console.log("✅ Utilisateur connecté détecté sur la page de login, préparation de la redirection");
+      
+      // Ajouter un délai de grâce avant la redirection
+      const timer = setTimeout(() => {
+        console.log("✅ Redirection vers /dashboard depuis login après délai");
+        router.push('/dashboard');
+      }, 1500); // Délai de grâce de 1.5s
+      
+      setRedirectTimer(timer);
+      
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [user, router, isSessionRestoring, redirectTimer])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

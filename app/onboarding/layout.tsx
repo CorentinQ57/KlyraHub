@@ -12,49 +12,71 @@ export default function OnboardingLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, isSessionRestoring } = useAuth()
   const router = useRouter()
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null)
   
   // Check if user has completed onboarding
   useEffect(() => {
+    // Ne pas rediriger pendant la restauration de session
+    if (isSessionRestoring) {
+      console.log("🔄 Restauration de session en cours dans onboarding, pas de redirection");
+      return;
+    }
+    
     if (!isLoading) {
       if (!user) {
-        // Rediriger vers la page de connexion si non connecté
-        router.push('/login')
+        // Rediriger vers la page de connexion si non connecté après un délai
+        console.log("⚠️ Onboarding: utilisateur non authentifié, préparation redirection vers login");
+        setRedirectTarget('/login');
       } else if (user?.user_metadata?.onboarded === true) {
-        // Rediriger vers le dashboard si l'onboarding est déjà complété
-        console.log('Utilisateur déjà onboardé, redirection vers le dashboard')
-        router.push('/dashboard')
+        // Rediriger vers le dashboard si l'onboarding est déjà complété après un délai
+        console.log('✅ Utilisateur déjà onboardé, préparation redirection vers dashboard');
+        setRedirectTarget('/dashboard');
       } else {
-        console.log('Onboarding en cours pour l\'utilisateur', user?.email)
+        console.log('ℹ️ Onboarding en cours pour l\'utilisateur', user?.email);
+        setRedirectTarget(null);
       }
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, isSessionRestoring])
   
+  // Effectuer la redirection avec un délai de grâce
+  useEffect(() => {
+    if (redirectTarget && !isSessionRestoring) {
+      // Ajouter un délai de grâce avant la redirection
+      const redirectTimer = setTimeout(() => {
+        console.log(`✅ Redirection vers ${redirectTarget} après délai`);
+        router.push(redirectTarget);
+      }, 1500); // Délai de grâce de 1.5s
+      
+      return () => {
+        clearTimeout(redirectTimer);
+      };
+    }
+  }, [redirectTarget, router, isSessionRestoring]);
+
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>
-      <div className="flex flex-col min-h-screen">
-        <header className="py-6 border-b border-[#E2E8F0] bg-white/60 backdrop-blur-sm sticky top-0 z-10 flex justify-center">
-          <Link href="/" className="flex items-center justify-center">
-            <Image 
-              src="/images/logo.png" 
-              alt="Klyra" 
-              width={120} 
-              height={36} 
-              className="h-9 object-contain"
-            />
-          </Link>
+      <div className="relative z-10 min-h-screen flex flex-col">
+        <header className="border-b bg-white/80 backdrop-blur-sm">
+          <div className="container flex h-16 items-center px-4 sm:px-6">
+            <Link href="/" className="flex items-center gap-2">
+              <Image 
+                src="/logo.svg" 
+                alt="Klyra Logo" 
+                width={32} 
+                height={32} 
+              />
+              <span className="text-xl font-semibold">Klyra</span>
+            </Link>
+          </div>
         </header>
         
-        <main className="flex-grow container mx-auto px-4 py-8 overflow-x-hidden">
-          {children}
-        </main>
-        
-        <footer className="py-6 border-t border-[#E2E8F0] bg-white/60 backdrop-blur-sm">
-          <div className="container mx-auto px-4 text-center text-sm text-[#64748B]">
-            &copy; {new Date().getFullYear()} Klyra Design. Tous droits réservés.
+        <main className="flex-1">
+          <div className="container py-6">
+            {children}
           </div>
-        </footer>
+        </main>
       </div>
     </AuroraBackground>
   )

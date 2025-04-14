@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, isLoading, signOut, reloadAuthState, isAdmin } = useAuth()
+  const { user, isLoading, signOut, reloadAuthState, isAdmin, isSessionRestoring } = useAuth()
   // État pour gérer un timeout de sécurité
   const [safetyTimeout, setSafetyTimeout] = useState(false)
   const [forceDisplay, setForceDisplay] = useState(false)
@@ -22,6 +22,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userDetectedButStillLoading, setUserDetectedButStillLoading] = useState(false)
   // Nouvel état pour suivre si l'utilisateur authentifié est sur la page suffisamment longtemps
   const [authConfirmed, setAuthConfirmed] = useState(false)
+  // Nouvel état pour gérer la redirection après un délai
+  const [redirectToLogin, setRedirectToLogin] = useState(false)
   
   // Vérifier si le chemin actuel est dans la section documentation
   const isDocsRoute = pathname.startsWith('/dashboard/docs')
@@ -77,12 +79,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setUserTypeError(false)
     }
     
+    // Ne pas rediriger si nous sommes en train de restaurer la session
+    if (isSessionRestoring) {
+      console.log("🔄 Restauration de session en cours, pas de redirection");
+      return;
+    }
+    
     // Rediriger vers la page de connexion si l'utilisateur n'est pas authentifié
     // et qu'il n'est pas sur une route de documentation
     if (!isLoading && !user) {
-      router.push('/login')
+      console.log("⚠️ Utilisateur non authentifié détecté, préparation de la redirection vers login");
+      
+      // Marquer qu'une redirection est nécessaire mais avec un délai
+      setRedirectToLogin(true);
+    } else {
+      setRedirectToLogin(false);
     }
-  }, [user, isLoading, router, pathname, isDocsRoute])
+  }, [user, isLoading, pathname, isDocsRoute, isSessionRestoring])
+  
+  // Effectuer la redirection avec un délai de grâce
+  useEffect(() => {
+    if (redirectToLogin && !isSessionRestoring) {
+      // Ajouter un délai de grâce avant la redirection
+      const redirectTimer = setTimeout(() => {
+        console.log("⚠️ Redirection vers /login après le délai de grâce");
+        router.push('/login');
+      }, 1500); // Délai de grâce de 1.5s
+      
+      return () => {
+        clearTimeout(redirectTimer);
+      };
+    }
+  }, [redirectToLogin, router, isSessionRestoring]);
   
   // Timeout de sécurité pour éviter un loading infini
   useEffect(() => {
