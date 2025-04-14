@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,6 @@ import { useAuth } from '@/lib/auth'
 import { updateProfile, getProfileData } from '@/lib/supabase'
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
 import { User, KeyRound, ArrowLeft, Save, LogOut } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 
 export default function ProfilePage() {
   // Consolidated state management
@@ -21,90 +20,20 @@ export default function ProfilePage() {
   })
   const [status, setStatus] = useState({
     isLoading: true,
-    isUpdating: false,
-    hasError: false,
-    errorMessage: '',
-    loadAttempts: 0
+    isUpdating: false
   })
   
   const router = useRouter()
   const { user, signOut, ensureUserProfile } = useAuth()
   const { toast } = useToast()
 
-  // Effect to load profile data when user is available
-  useEffect(() => {
-    let mounted = true;
+  // Load profile data from Supabase - Défini avec useCallback pour stabiliser la référence
+  const loadProfile = useCallback(async () => {
+    if (!user) return;
     
-    // Limiter le nombre de tentatives de chargement en utilisant la valeur actuelle de l'état
-    setStatus(prev => {
-      if (prev.loadAttempts > 3) {
-        console.error("Trop de tentatives de chargement, abandon");
-        return { 
-          ...prev, 
-          isLoading: false,
-          hasError: true,
-          errorMessage: "Trop de tentatives de chargement automatique. Veuillez réessayer manuellement."
-        };
-      }
-      
-      // Sinon, incrémenter le compteur
-      return { ...prev, loadAttempts: prev.loadAttempts + 1 };
-    });
-    
-    if (user) {
-      // Utiliser une IIFE pour éviter les problèmes de promesse
-      (async () => {
-        try {
-          await ensureUserProfile(user.id);
-          if (mounted) {
-            loadProfile();
-          }
-        } catch (error) {
-          console.error("Erreur lors de la préparation du profil:", error);
-          if (mounted) {
-            setStatus(prev => ({ 
-              ...prev, 
-              isLoading: false,
-              hasError: true,
-              errorMessage: "Erreur lors de la préparation du profil"
-            }));
-          }
-        }
-      })();
-    } else if (!status.isLoading) {
-      router.push('/login');
-    }
-    
-    // Nettoyer l'effet lors du démontage
-    return () => {
-      mounted = false;
-    };
-  }, [user, router]);
-
-  // Load profile data from Supabase
-  async function loadProfile() {
-    // Éviter de recharger si déjà en train de charger
-    if (status.isLoading) return;
-    
-    setStatus(prev => ({ 
-      ...prev, 
-      isLoading: true,
-      hasError: false,
-      errorMessage: ''
-    }))
+    setStatus(prev => ({ ...prev, isLoading: true }))
     
     try {
-      if (!user) {
-        console.log('Tentative de chargement de profil sans utilisateur authentifié');
-        setStatus(prev => ({ 
-          ...prev, 
-          isLoading: false,
-          hasError: true,
-          errorMessage: 'Utilisateur non authentifié'
-        }));
-        return;
-      }
-      
       // Set email from auth data
       setProfileData(prev => ({ ...prev, email: user.email || '' }))
       
@@ -117,15 +46,6 @@ export default function ProfilePage() {
           fullName: data.full_name || '' 
         }))
       } else {
-        console.log('Données de profil non disponibles, utilisation des données utilisateur');
-        // Utiliser les données de l'utilisateur si disponibles
-        if (user.user_metadata?.full_name) {
-          setProfileData(prev => ({ 
-            ...prev, 
-            fullName: user.user_metadata.full_name || '' 
-          }));
-        }
-        
         toast({
           title: "Information",
           description: "Certaines données du profil n'ont pas pu être chargées.",
@@ -134,11 +54,6 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error('Error loading profile:', error)
-      setStatus(prev => ({ 
-        ...prev, 
-        hasError: true,
-        errorMessage: "Impossible de charger les données du profil"
-      }))
       toast({
         title: "Erreur",
         description: "Impossible de charger les données du profil",
@@ -147,34 +62,45 @@ export default function ProfilePage() {
     } finally {
       setStatus(prev => ({ ...prev, isLoading: false }))
     }
-  }
+  }, [user, toast]);
+
+  // Effect to load profile data when user is available
+  useEffect(() => {
+    let isMounted = true;
+    
+    const initProfile = async () => {
+      if (!user || !isMounted) return;
+      
+      try {
+        await ensureUserProfile(user.id);
+        
+        // Seulement si le composant est toujours monté
+        if (isMounted) {
+          loadProfile();
+        }
+      } catch (error) {
+        console.error('Error initializing profile:', error);
+      }
+    };
+    
+    // N'exécutez initProfile que si l'utilisateur est présent et que les données ne sont pas déjà chargées
+    if (user && status.isLoading) {
+      initProfile();
+    } else if (!user && !status.isLoading) {
+      // Rediriger si l'utilisateur n'est pas présent et que le chargement est terminé
+      router.push('/login');
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  // Dépendances améliorées pour éviter les rendus en boucle
+  }, [user, router, status.isLoading, loadProfile, ensureUserProfile]);
 
   // Handle profile update
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Aucun utilisateur connecté",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Vérifier si des changements ont été faits
-    const { data } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .single();
-      
-    if (data && data.full_name === profileData.fullName) {
-      toast({
-        title: "Information",
-        description: "Aucun changement détecté",
-      });
-      return;
-    }
+    if (!user) return
     
     setStatus(prev => ({ ...prev, isUpdating: true }))
     
@@ -192,8 +118,6 @@ export default function ProfilePage() {
           title: "Profil mis à jour",
           description: "Vos informations ont été mises à jour avec succès",
         })
-      } else {
-        throw new Error("Échec de la mise à jour du profil");
       }
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -225,33 +149,6 @@ export default function ProfilePage() {
           <div className="text-center">
             <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
             <p className="mt-4 text-sm text-[#64748B]">Chargement du profil...</p>
-          </div>
-        </div>
-      </PageContainer>
-    )
-  }
-  
-  // Error state
-  if (status.hasError) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="h-16 w-16 mx-auto flex items-center justify-center rounded-full bg-red-100 text-red-600 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-red-600 mb-2">Erreur de chargement</h3>
-            <p className="text-sm text-[#64748B] mb-6">{status.errorMessage || "Impossible de charger les données du profil"}</p>
-            <Button 
-              onClick={() => {
-                setStatus(prev => ({ ...prev, isLoading: true, hasError: false }));
-                loadProfile();
-              }}
-            >
-              Réessayer
-            </Button>
           </div>
         </div>
       </PageContainer>
