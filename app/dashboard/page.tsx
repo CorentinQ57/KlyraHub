@@ -451,13 +451,31 @@ export default function DashboardPage() {
     isLoading: projectsLoading,
     refetch: refetchProjects
   } = useSafeFetch<ProjectWithRelations[]>(
-    async (userId) => {
+    async () => {
+      // Get user ID from user context
+      if (!user?.id) {
+        console.log("No user ID available, cannot fetch projects");
+        return [];
+      }
+      
       // Choose the right fetch function based on admin status
-      return isAdmin 
-        ? await fetchAllProjects()
-        : await fetchProjects(userId);
+      console.log("Fetching projects for user:", user.id, "isAdmin:", isAdmin);
+      try {
+        if (isAdmin) {
+          const allProjects = await fetchAllProjects();
+          console.log(`Fetched ${allProjects.length} projects as admin`);
+          return allProjects;
+        } else {
+          const userProjects = await fetchProjects(user.id);
+          console.log(`Fetched ${userProjects.length} projects for user`);
+          return userProjects;
+        }
+      } catch (err) {
+        console.error("Error fetching projects:", err);
+        return [];
+      }
     },
-    [isAdmin] // Re-fetch when admin status changes
+    [isAdmin, user?.id] // Re-fetch when admin status or user ID changes
   )
   
   // Update projects state when fetchedProjects changes
