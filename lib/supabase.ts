@@ -11,7 +11,7 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
 }
 
 // Enhanced logging of session debug info in localStorage, cookies and initial state
-const debugAuthState = (source = 'default') => {
+export const debugAuthState = (source = 'default') => {
   if (typeof window !== 'undefined') {
     try {
       // Check all possible localStorage token formats
@@ -95,7 +95,7 @@ const debugAuthState = (source = 'default') => {
 };
 
 // Enhanced cookie-aware storage implementation
-const enhancedStorage = {
+export const enhancedStorage = {
   getItem: (key: string) => {
     if (typeof window === 'undefined') return null;
     
@@ -1925,4 +1925,38 @@ export async function checkSessionStatus() {
     console.error('Error checking session status:', error);
     return false;
   }
-} 
+}
+
+// Function to check if auth tokens exist in any format
+export const checkAuthTokensExist = () => {
+  if (typeof window === 'undefined') return false;
+  
+  try {
+    // Check for tokens in localStorage
+    const tokenKeys = [
+      'supabase.auth.token',
+      `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
+      'sb-access-token',
+    ];
+    
+    for (const key of tokenKeys) {
+      if (localStorage.getItem(key)) {
+        return true;
+      }
+    }
+    
+    // Check for tokens in cookies
+    if (typeof document !== 'undefined') {
+      const cookieString = document.cookie;
+      const sbCookieRegex = /sb-(access|refresh)-token/;
+      if (sbCookieRegex.test(cookieString)) {
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking auth tokens:', error);
+    return false;
+  }
+}; 

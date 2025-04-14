@@ -1,56 +1,68 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Session, User, AuthChangeEvent, AuthError } from '@supabase/supabase-js'
-import toast from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
+import { User, Session } from '@supabase/supabase-js'
+import type { AuthChangeEvent } from '@supabase/supabase-js'
+import { enhancedStorage, debugAuthState, checkAuthTokensExist } from './supabase'
+import { checkUserRole } from './auth-utils'
 
-// Define subscription type for auth
+// Define the type for auth subscription
 type SupabaseAuthSubscription = {
-  unsubscribe: () => void
+  unsubscribe: () => void;
+};
+
+// Type definition for Auth Context
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  isLoading: boolean;
+  isAdmin: boolean;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ data: any | null; error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ data: any | null; error: Error | null }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ data: any | null; error: Error | null }>;
+  reloadAuthState: () => Promise<void>;
+  checkUserRole: (userId: string) => Promise<string | null>;
+  ensureUserProfile: (userId: string) => Promise<void>;
 }
 
-type AuthContextType = {
-  user: User | null
-  session: Session | null
-  isLoading: boolean
-  isAdmin: boolean
-  signUp: (email: string, password: string, fullName: string) => Promise<{ data: any | null; error: Error | null }>
-  signIn: (email: string, password: string) => Promise<{ data: any | null; error: Error | null }>
-  signOut: () => Promise<void>
-  resetPassword: (email: string) => Promise<{ data: any | null; error: Error | null }>
-  checkUserRole: (userId: string) => Promise<string | null>
-  reloadAuthState: () => Promise<void>
-  ensureUserProfile: (userId: string) => Promise<void>
-}
-
+// Create auth context with undefined initial value
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface AuthProviderProps {
+  children: ReactNode
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
+  const adminEmails = ['admin@klyra.com', 'tech@klyra.com', 'corentin@klyra.com']
 
   // Fonction sécurisée pour définir l'utilisateur
-  const safeSetUser = (userData: any) => {
-    // Vérifie si userData est un objet valide avec un ID
-    if (userData && typeof userData === 'object' && userData.id) {
-      console.log("Setting user object:", userData.email);
-      setUser(userData);
-    } else if (typeof userData === 'string') {
-      // Si c'est une chaîne, c'est probablement une erreur
-      console.error("ERREUR: Tentative de définir user comme une chaîne:", userData);
-      // Ne pas définir l'utilisateur
-    } else if (userData === null) {
-      // Réinitialisation normale
-      setUser(null);
-    } else {
-      // Autre cas invalide
-      console.error("ERREUR: Tentative de définir user avec une valeur invalide:", userData);
-      // Ne pas définir l'utilisateur
+  const safeSetUser = (newUser: User | null) => {
+    try {
+      // Protection contre les utilisateurs malformés
+      if (newUser !== null && typeof newUser !== 'object') {
+        console.error("⚠️ ERREUR: User n'est pas un objet:", typeof newUser)
+        return
+      }
+      
+      // Vérifier que l'objet utilisateur a au moins un ID valide
+      if (newUser && (!newUser.id || typeof newUser.id !== 'string')) {
+        console.error("⚠️ ERREUR: Objet User sans ID valide", newUser)
+        return
+      }
+      
+      console.log("👤 Setting user:", newUser?.email || newUser?.id || "null")
+      setUser(newUser)
+    } catch (error) {
+      console.error("⚠️ Erreur lors de setUser:", error)
     }
   }
 
@@ -273,291 +285,255 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  // Get initial session and set up auth state listener - Completely Redesigned
-  const getInitialSession = async (): Promise<{
-    session: Session | null
-    user: User | null
-    error: string | null
+  // Function to get the initial session on mount with enhanced recovery
+  const getInitialSession = async (): Promise<{ 
+    session: Session | null, 
+    user: User | null, 
+    error: any 
   }> => {
-    console.log("📝 Starting session recovery process...")
+    // Create auth event listener and promise resolver
+    let authListener: SupabaseAuthSubscription | null = null;
     
-    // Wait for Supabase to be ready before proceeding
-    await waitForSupabase()
-    
-    // Short-circuit if we have a session in memory and it matches what's in storage
-    if (session) {
-      console.log("🔍 Using existing session from memory")
-      return { session, user, error: null }
-    }
-
-    // Attempt to restore from cached user in localStorage first for immediate UI response
-    if (typeof window !== 'undefined') {
-      try {
-        const cachedUserData = localStorage.getItem('klyra_cached_user')
-        if (cachedUserData) {
-          const cachedUser = JSON.parse(cachedUserData)
-          
-          // Use cached user data as a fallback while we recover the real session
-          if (cachedUser && typeof cachedUser === 'object' && cachedUser.id) {
-            console.log("⚡ Using cached user data from localStorage:", cachedUser.email)
-            
-            // Set user data from cache immediately to prevent UI flickering
-            safeSetUser(cachedUser)
-            
-            // Create a minimal temporary session
-            const tempSession = {
-              user: cachedUser,
-              access_token: localStorage.getItem('supabase.auth.token') || 
-                            localStorage.getItem('sb-access-token') || 
-                            localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`) || 
-                            'temporary-token'
-            } as any
-            
-            setSession(tempSession)
-            console.log("⚡ Set temporary session from cached data")
-            
-            // We'll still continue session recovery in background to get a proper session
-          }
-        }
-      } catch (cacheError) {
-        console.warn("⚠️ Error reading cached user:", cacheError)
-        // Continue with regular recovery even if cache fails
-      }
-    }
-    
-    console.log("🔄 Session not found in memory, attempting recovery")
-    let authListener: SupabaseAuthSubscription | null = null
-    
-    // Set up a more aggressive auth state listener that works even when session recovery fails
-    const authChangePromise = new Promise<{session: Session | null, user: User | null}>((resolve) => {
-      try {
-        // Listen for auth changes during startup
-        authListener = supabase.auth.onAuthStateChange((event, newSession) => {
-          console.log(`🔔 Auth event during initialization: ${event}`)
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-            resolve({session: newSession, user: newSession?.user || null})
-          }
-        })
-        
-        // Set timeout to avoid waiting forever - longer timeout to give more chance for events
-        setTimeout(() => {
-          resolve({session: null, user: null})
-        }, 3000)
-      } catch (err) {
-        console.error("❌ Error setting up auth listener:", err)
-        resolve({session: null, user: null})
-      }
-    })
-
     try {
-      // Try multiple methods in parallel instead of sequentially to speed up recovery
-      const results = await Promise.allSettled([
-        // Attempt 1: Modern API (getSession)
-        Promise.race([
-          (async () => {
-            console.log("🔍 Attempt 1: Trying getSession()")
-            const { data, error } = await supabase.auth.getSession()
-            
-            if (data?.session) {
-              console.log("✅ Session recovered using getSession()")
-              return { method: 'getSession', result: { session: data.session, user: data.session.user } }
-            }
-            
-            console.log("⚠️ getSession() failed:", error?.message || "No session found")
-            return null
-          })(),
-          new Promise(resolve => setTimeout(() => {
-            console.log("⏱️ getSession timeout reached")
-            resolve(null)
-          }, 2000))
-        ]),
-        
-        // Attempt 2: Get user directly
-        Promise.race([
-          (async () => {
-            console.log("🔍 Attempt 2: Trying getUser()")
-            const { data, error } = await supabase.auth.getUser()
-            
-            if (data?.user) {
-              console.log("✅ User found using getUser()")
-              return { method: 'getUser', result: { user: data.user, session: null } }
-            }
-            
-            console.log("⚠️ getUser() failed:", error?.message || "No user found")
-            return null
-          })(),
-          new Promise(resolve => setTimeout(() => {
-            console.log("⏱️ getUser timeout reached")
-            resolve(null)
-          }, 2000))
-        ]),
-        
-        // Attempt 3: Try refreshing session
-        Promise.race([
-          (async () => {
-            console.log("🔍 Attempt 3: Trying refreshSession()")
-            const { data, error } = await supabase.auth.refreshSession()
-            
-            if (data?.session) {
-              console.log("✅ Session refreshed successfully")
-              return { method: 'refreshSession', result: { session: data.session, user: data.session.user } }
-            }
-            
-            console.log("⚠️ Session refresh failed:", error?.message || "No session created")
-            return null
-          })(),
-          new Promise(resolve => setTimeout(() => {
-            console.log("⏱️ refreshSession timeout reached")
-            resolve(null)
-          }, 2500))
-        ]),
-        
-        // Attempt 4: Wait for auth state changes
-        (async () => {
-          console.log("🔍 Attempt 4: Waiting for auth events")
-          const result = await authChangePromise
-          
-          if (result.session) {
-            console.log("✅ Session recovered from auth state change")
-            return { method: 'authStateChange', result }
-          }
-          
-          return null
-        })()
-      ])
+      console.log("🚀 Starting session recovery process")
       
-      // Check results for first successful recovery
-      for (const result of results) {
-        if (result.status === 'fulfilled' && result.value) {
-          const recoveryData = result.value.result
+      // Create a listener for auth state changes during recovery
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log(`🔔 Auth event during recovery: ${event}`)
+      });
+      
+      // Store the unsubscribe function if available
+      if (subscription && typeof subscription === 'object') {
+        authListener = {
+          unsubscribe: () => subscription.unsubscribe()
+        };
+      } else {
+        console.log("⚠️ Auth subscription doesn't have an unsubscribe method");
+        authListener = {
+          unsubscribe: () => { console.log("No-op unsubscribe during initial session recovery"); }
+        };
+      }
+      
+      // Log the current auth state
+      console.log("Checking auth state")
+      
+      // Health check: test client connection
+      const { data: healthCheckData, error: healthCheckError } = await supabase.from('health_check').select('*').limit(1)
+      if (healthCheckError) {
+        console.error("❌ Supabase client health check failed:", healthCheckError)
+        return { session: null, user: null, error: healthCheckError }
+      }
+      
+      console.log("✅ Supabase client health check passed")
+      
+      // Try to get current session
+      console.log("Attempting to get session...")
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("❌ Failed to get session:", sessionError)
+      } else if (sessionData?.session) {
+        console.log("✅ Got session success")
+        return { 
+          session: sessionData.session, 
+          user: sessionData.session.user, 
+          error: null 
+        }
+      } else {
+        console.log("⚠️ No session found from getSession()")
+      }
+      
+      // If we're here, we didn't get a session from getSession()
+      // Try to get the user as fallback
+      console.log("Attempting to get user...")
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        console.error("❌ Failed to get user:", userError)
+      } else if (userData?.user) {
+        console.log("✅ Got user success")
+        // We have a user but no session, try to refresh the session
+        console.log("Attempting to refresh session...")
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+        
+        if (refreshError) {
+          console.error("❌ Failed to refresh session:", refreshError)
+          return { session: null, user: userData.user, error: refreshError }
+        } else if (refreshData?.session) {
+          console.log("✅ Session refresh success")
+          return { 
+            session: refreshData.session, 
+            user: refreshData.session.user || userData.user, 
+            error: null 
+          }
+        } else {
+          console.log("⚠️ Refresh didn't return a session, but we still have a user")
+          return { session: null, user: userData.user, error: null }
+        }
+      } else {
+        console.log("⚠️ No user found")
+      }
+      
+      // If we reach here, we couldn't get a session or user through standard means
+      // Return empty state
+      return { session: null, user: null, error: null }
+    } catch (error) {
+      console.error("❌ Critical error in getInitialSession:", error)
+      return { session: null, user: null, error }
+    } finally {
+      // Clean up auth listener if it exists
+      if (authListener) {
+        console.log("🧹 Cleaning up auth listener from session recovery")
+        authListener.unsubscribe()
+      }
+    }
+  }
+
+  // Define the auth state change handler here
+  const handleAuthStateChange = async (event: AuthChangeEvent, session: Session | null) => {
+    console.log(`🔔 Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session")
+    
+    try {
+      if (session) {
+        // Vérification supplémentaire pour s'assurer que user est un objet valide
+        if (typeof session.user === 'object' && session.user?.id) {
+          setSession(session)
+          safeSetUser(session.user)
           
-          // Cache user data for future recovery
-          if (recoveryData.user && typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('klyra_cached_user', JSON.stringify(recoveryData.user))
-              console.log("💾 Cached user data in localStorage")
-            } catch (cacheError) {
-              console.warn("⚠️ Error caching user data:", cacheError)
+          // Mettre à jour le cache utilisateur pour les futures récupérations
+          try {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('klyra_cached_user', JSON.stringify(session.user))
+              console.log("💾 User cached from auth event:", event)
             }
+          } catch (cacheError) {
+            console.warn("⚠️ Error caching user from auth event:", cacheError)
           }
           
-          // Clean up listener
-          authListener?.unsubscribe()
+          // Vérifier en mémoire si c'est un admin connu pour une réponse immédiate
+          if (session.user.email && adminEmails.includes(session.user.email.toLowerCase())) {
+            console.log("👑 Admin reconnu par email (event):", session.user.email);
+            setIsAdmin(true);
+          } else {
+            // Check if user is admin on auth state change - en parallèle
+            const rolePromise = checkUserRole(session.user.id);
+            const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 800));
+            
+            Promise.race([rolePromise, timeout])
+              .then(role => {
+                console.log("🛡️ Auth event role check:", role);
+                setIsAdmin(role === 'admin');
+              })
+              .catch(error => {
+                console.error("Error in auth event role check:", error);
+              });
+          }
           
-          return {
-            session: recoveryData.session,
-            user: recoveryData.user,
-            error: null
+          // Update last_sign_in_at in profiles table
+          if (event === 'SIGNED_IN') {
+            console.log("📝 Updating last sign in timestamp")
+            try {
+              // Assurer qu'un profil existe avant de tenter de le mettre à jour
+              await ensureUserProfile(session.user.id);
+              
+              // Mise à jour du timestamp de dernière connexion
+              await supabase
+                .from('profiles')
+                .update({ last_sign_in_at: new Date().toISOString() })
+                .eq('id', session.user.id)
+            } catch (updateError) {
+              console.error('Error updating last sign in time:', updateError)
+              // Non-critical error, continue execution
+            }
+          }
+        } else {
+          console.error("⚠️ ERREUR: session.user n'est pas un objet valide dans onAuthStateChange:", session.user)
+          
+          // Attempt to recover by directly calling getUser
+          try {
+            console.log("🛠️ Attempting to recover user from auth event")
+            const { data: { user: recoveredUser } } = await Promise.race([
+              supabase.auth.getUser(),
+              new Promise(resolve => setTimeout(() => resolve({ data: { user: null }, error: new Error("Recovery timeout") }), 1000))
+            ]) as any;
+            
+            if (recoveredUser && typeof recoveredUser === 'object' && recoveredUser.id) {
+              console.log("✅ Recovered user:", recoveredUser.email)
+              setSession(session)
+              safeSetUser(recoveredUser)
+              
+              // Mettre à jour le cache utilisateur pour les futures récupérations
+              try {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('klyra_cached_user', JSON.stringify(recoveredUser))
+                  console.log("💾 Recovered user cached")
+                }
+              } catch (cacheError) {
+                console.warn("⚠️ Error caching recovered user:", cacheError)
+              }
+              
+              // Vérifier en mémoire si c'est un admin connu
+              if (recoveredUser.email && adminEmails.includes(recoveredUser.email.toLowerCase())) {
+                console.log("👑 Admin reconnu par email (recovery):", recoveredUser.email);
+                setIsAdmin(true);
+              } else {
+                // Check if the recovered user is admin - en parallèle
+                Promise.race([
+                  checkUserRole(recoveredUser.id),
+                  new Promise<null>((resolve) => setTimeout(() => resolve(null), 800))
+                ]).then(role => {
+                  console.log("🛡️ Recovery role check:", role);
+                  setIsAdmin(role === 'admin');
+                }).catch(error => {
+                  console.error("Error in recovery role check:", error);
+                });
+              }
+            } else {
+              console.error("⚠️ Recovery failed, invalid user:", recoveredUser)
+              setSession(null)
+              setUser(null)
+              setIsAdmin(false)
+              
+              // Nettoyer le cache si la récupération échoue
+              if (typeof window !== 'undefined') {
+                try {
+                  localStorage.removeItem('klyra_cached_user')
+                  console.log("🧹 Removed invalid cached user data")
+                } catch (clearCacheError) {
+                  console.warn("⚠️ Error clearing invalid cached user:", clearCacheError)
+                }
+              }
+            }
+          } catch (recoveryError) {
+            console.error("⚠️ Error in recovery attempt:", recoveryError)
+            setSession(null)
+            setUser(null)
+            setIsAdmin(false)
+          }
+        }
+      } else {
+        setSession(null)
+        setUser(null)
+        setIsAdmin(false)
+        
+        // Si on reçoit une session null et qu'il y a un SIGNED_OUT event, nettoyer le cache
+        if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem('klyra_cached_user')
+            console.log("🧹 Removed cached user data on explicit sign out")
+          } catch (clearCacheError) {
+            console.warn("⚠️ Error clearing cached user on sign out:", clearCacheError)
           }
         }
       }
-      
-      // Check if we have a manual fallback option with localStorage
-      if (typeof window !== 'undefined') {
-        try {
-          // Attempt to manually construct a session from tokens
-          const accessToken = localStorage.getItem('supabase.auth.token') || 
-                            localStorage.getItem('sb-access-token') || 
-                            localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`)
-          
-          const refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
-                              localStorage.getItem('sb-refresh-token') || 
-                              localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`)
-          
-          // If we have tokens but no session, try a direct manual token refresh
-          if (refreshToken) {
-            console.log("🔄 Last resort: Manual token refresh with stored refresh token")
-            try {
-              const { data, error } = await Promise.race([
-                supabase.auth.refreshSession({ refresh_token: refreshToken }),
-                new Promise(resolve => setTimeout(() => resolve({ 
-                  data: null, 
-                  error: new Error("Manual refresh timeout") 
-                }), 2500))
-              ]) as any
-              
-              if (data?.session) {
-                console.log("✅ Manual token refresh successful!")
-                
-                // Cache user data for future recovery
-                if (data.session.user && typeof window !== 'undefined') {
-                  try {
-                    localStorage.setItem('klyra_cached_user', JSON.stringify(data.session.user))
-                  } catch (cacheError) {
-                    console.warn("⚠️ Error caching user data:", cacheError)
-                  }
-                }
-                
-                // Clean up listener
-                authListener?.unsubscribe()
-                
-                return {
-                  session: data.session,
-                  user: data.session.user,
-                  error: null
-                }
-              }
-            } catch (manualRefreshError) {
-              console.warn("⚠️ Manual token refresh failed:", manualRefreshError)
-            }
-          }
-          
-          // Try to get user from cached data as a last resort
-          const cachedUserData = localStorage.getItem('klyra_cached_user')
-          if (cachedUserData && accessToken) {
-            const cachedUser = JSON.parse(cachedUserData)
-            if (cachedUser && typeof cachedUser === 'object' && cachedUser.id) {
-              console.log("🔄 Creating manual session from cached user and tokens")
-              
-              // Create a minimal session object using cached data
-              const manualSession = {
-                user: cachedUser,
-                access_token: accessToken,
-                refresh_token: refreshToken || undefined,
-                provider_token: null,
-                provider_refresh_token: null
-              } as any
-              
-              // Clean up listener
-              authListener?.unsubscribe()
-              
-              return {
-                session: manualSession,
-                user: cachedUser,
-                error: null
-              }
-            }
-          }
-        } catch (fallbackError) {
-          console.warn("⚠️ Error in localStorage fallback logic:", fallbackError)
-        }
-      }
-      
-      // Final attempt: Check if cookies contain auth data but Supabase didn't load it
-      console.log("🔍 Final check: Reviewing local storage and cookies")
-      const hasLocalStorageAuth = typeof window !== 'undefined' && localStorage.getItem('supabase.auth.token')
-      const hasCookieAuth = typeof document !== 'undefined' && document.cookie.includes('sb-')
-      
-      if (hasLocalStorageAuth || hasCookieAuth) {
-        console.log("⚠️ Auth data found in storage, but session recovery failed. User may need to log in again.")
-      }
-      
-      // Clean up listener if still active
-      authListener?.unsubscribe()
-      
-      console.log("⚠️ All session recovery attempts failed")
-      return { session: null, user: null, error: "Session recovery failed" }
-    } catch (err) {
-      console.error("❌ Fatal error during session recovery:", err)
-      
-      // Clean up listener if still active
-      authListener?.unsubscribe()
-      
-      return {
-        session: null,
-        user: null,
-        error: `Fatal error: ${(err as Error).message}`
-      }
+    } catch (error) {
+      console.error("⚠️ Error in auth state change handler:", error)
+      setSession(null)
+      setUser(null)
+      setIsAdmin(false)
+    } finally {
+      console.log("✅ Setting isLoading to false from auth state change")
+      setIsLoading(false)
     }
   }
 
@@ -594,15 +570,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
               
               // Liste des emails admin connus (hardcoded pour DEV) - Copie de checkUserRole pour éviter les dépendances circulaires
-              const knownAdminEmails = [
-                'corentin@klyra.design',
-                'dev@klyra.design',
-                'admin@klyra.design',
-                'test.admin@example.com'
-              ];
-              
-              // Vérifier directement si l'email correspond à un admin connu
-              if (emergencyUser.email && knownAdminEmails.includes(emergencyUser.email.toLowerCase())) {
+              if (emergencyUser.email && adminEmails.includes(emergencyUser.email.toLowerCase())) {
                 console.log("👑 Admin reconnu par email (emergency):", emergencyUser.email);
                 setIsAdmin(true);
               } else {
@@ -626,222 +594,99 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         emergencyCheck()
       }
-    }, 2500) // 2.5 secondes maximum de loading
+    }, 8000)
+
+    // Set up auth state listener
+    let authListener: { unsubscribe?: () => void } = {};
     
-    // Exécuter getInitialSession avec une protection timeout
-    const initSession = async () => {
+    const setupAuthListener = async () => {
+      console.log("🔄 Setting up auth state change listener")
       try {
-        const result = await Promise.race([
-          getInitialSession(),
-          new Promise<{ session: Session | null, user: User | null, error: string | null }>((resolve) => 
-            setTimeout(() => {
-              console.log("⏱️ getInitialSession timeout reached")
-              // Plutôt que de rejeter, on force juste isLoading à false
-              setIsLoading(false)
-              // On résout pour éviter une erreur non gérée
-              return resolve({ session: null, user: null, error: "Timeout" })
-            }, 3000)
-          )
-        ])
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          handleAuthStateChange(event, session);
+        });
         
-        // Si on a un utilisateur de getInitialSession, mettre à jour le cache
-        if (result.user && typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('klyra_cached_user', JSON.stringify(result.user))
-            console.log("💾 Cached user from initSession")
-          } catch (cacheError) {
-            console.warn("⚠️ Error caching user data from initSession:", cacheError)
-          }
+        // Store the unsubscribe function safely
+        if (subscription && typeof subscription === 'object' && subscription !== null) {
+          authListener = { unsubscribe: () => subscription.unsubscribe() };
+        } else {
+          console.warn("⚠️ Auth state change listener doesn't have expected unsubscribe method");
+          authListener = { 
+            unsubscribe: () => console.log("No-op unsubscribe called") 
+          };
         }
-        
       } catch (error) {
-        console.error("⚠️ Error in initSession:", error)
-        // Garantir que isLoading est mis à false même en cas d'erreur
-        setIsLoading(false)
+        console.error("❌ Error setting up auth listener:", error);
       }
-    }
-    
-    initSession()
+    };
 
-    // Set up listener for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log(`🔔 Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session")
+    // Start the auth recovery process
+    const initAuth = async () => {
+      try {
+        console.log("🔄 Initializing authentication state...")
+        const { session: initialSession, user: initialUser, error } = await getInitialSession();
         
-        try {
-          if (session) {
-            // Vérification supplémentaire pour s'assurer que user est un objet valide
-            if (typeof session.user === 'object' && session.user?.id) {
-              setSession(session)
-              safeSetUser(session.user)
-              
-              // Mettre à jour le cache utilisateur pour les futures récupérations
-              try {
-                if (typeof window !== 'undefined') {
-                  localStorage.setItem('klyra_cached_user', JSON.stringify(session.user))
-                  console.log("💾 User cached from auth event:", event)
-                }
-              } catch (cacheError) {
-                console.warn("⚠️ Error caching user from auth event:", cacheError)
-              }
-              
-              // Vérifier en mémoire si c'est un admin connu pour une réponse immédiate
-              const knownAdminEmails = [
-                'corentin@klyra.design',
-                'dev@klyra.design',
-                'admin@klyra.design',
-                'test.admin@example.com'
-              ];
-              
-              if (session.user.email && knownAdminEmails.includes(session.user.email.toLowerCase())) {
-                console.log("👑 Admin reconnu par email (event):", session.user.email);
-                setIsAdmin(true);
-              } else {
-                // Check if user is admin on auth state change - en parallèle
-                const rolePromise = checkUserRole(session.user.id);
-                const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 800));
-                
-                Promise.race([rolePromise, timeout])
-                  .then(role => {
-                    console.log("🛡️ Auth event role check:", role);
-                    setIsAdmin(role === 'admin');
-                  })
-                  .catch(error => {
-                    console.error("Error in auth event role check:", error);
-                  });
-              }
-              
-              // Update last_sign_in_at in profiles table
-              if (event === 'SIGNED_IN') {
-                console.log("📝 Updating last sign in timestamp")
-                try {
-                  // Assurer qu'un profil existe avant de tenter de le mettre à jour
-                  await ensureUserProfile(session.user.id);
-                  
-                  // Mise à jour du timestamp de dernière connexion
-                  await supabase
-                    .from('profiles')
-                    .update({ last_sign_in_at: new Date().toISOString() })
-                    .eq('id', session.user.id)
-                } catch (updateError) {
-                  console.error('Error updating last sign in time:', updateError)
-                  // Non-critical error, continue execution
-                }
-              }
-              
-              // Si l'événement est SIGNED_OUT, supprimer les données du cache
-              if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
-                try {
-                  localStorage.removeItem('klyra_cached_user')
-                  console.log("🧹 Removed cached user data on sign out")
-                } catch (clearCacheError) {
-                  console.warn("⚠️ Error clearing cached user:", clearCacheError)
-                }
-              }
-            } else {
-              console.error("⚠️ ERREUR: session.user n'est pas un objet valide dans onAuthStateChange:", session.user)
-              
-              // Attempt to recover by directly calling getUser
-              try {
-                console.log("🛠️ Attempting to recover user from auth event")
-                const { data: { user: recoveredUser } } = await Promise.race([
-                  supabase.auth.getUser(),
-                  new Promise(resolve => setTimeout(() => resolve({ data: { user: null }, error: new Error("Recovery timeout") }), 1000))
-                ]) as any;
-                
-                if (recoveredUser && typeof recoveredUser === 'object' && recoveredUser.id) {
-                  console.log("✅ Recovered user:", recoveredUser.email)
-                  setSession(session)
-                  safeSetUser(recoveredUser)
-                  
-                  // Mettre à jour le cache utilisateur pour les futures récupérations
-                  try {
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('klyra_cached_user', JSON.stringify(recoveredUser))
-                      console.log("💾 Recovered user cached")
-                    }
-                  } catch (cacheError) {
-                    console.warn("⚠️ Error caching recovered user:", cacheError)
-                  }
-                  
-                  // Vérifier en mémoire si c'est un admin connu
-                  const knownAdminEmails = [
-                    'corentin@klyra.design',
-                    'dev@klyra.design',
-                    'admin@klyra.design',
-                    'test.admin@example.com'
-                  ];
-                  
-                  if (recoveredUser.email && knownAdminEmails.includes(recoveredUser.email.toLowerCase())) {
-                    console.log("👑 Admin reconnu par email (recovery):", recoveredUser.email);
-                    setIsAdmin(true);
-                  } else {
-                    // Check if the recovered user is admin - en parallèle
-                    Promise.race([
-                      checkUserRole(recoveredUser.id),
-                      new Promise<null>((resolve) => setTimeout(() => resolve(null), 800))
-                    ]).then(role => {
-                      console.log("🛡️ Recovery role check:", role);
-                      setIsAdmin(role === 'admin');
-                    }).catch(error => {
-                      console.error("Error in recovery role check:", error);
-                    });
-                  }
-                } else {
-                  console.error("⚠️ Recovery failed, invalid user:", recoveredUser)
-                  setSession(null)
-                  setUser(null)
-                  setIsAdmin(false)
-                  
-                  // Nettoyer le cache si la récupération échoue
-                  if (typeof window !== 'undefined') {
-                    try {
-                      localStorage.removeItem('klyra_cached_user')
-                      console.log("🧹 Removed invalid cached user data")
-                    } catch (clearCacheError) {
-                      console.warn("⚠️ Error clearing invalid cached user:", clearCacheError)
-                    }
-                  }
-                }
-              } catch (recoveryError) {
-                console.error("⚠️ Error in recovery attempt:", recoveryError)
-                setSession(null)
-                setUser(null)
-                setIsAdmin(false)
-              }
-            }
-          } else {
-            setSession(null)
-            setUser(null)
-            setIsAdmin(false)
-            
-            // Si on reçoit une session null et qu'il y a un SIGNED_OUT event, nettoyer le cache
-            if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
-              try {
-                localStorage.removeItem('klyra_cached_user')
-                console.log("🧹 Removed cached user data on explicit sign out")
-              } catch (clearCacheError) {
-                console.warn("⚠️ Error clearing cached user on sign out:", clearCacheError)
-              }
-            }
-          }
-        } catch (error) {
-          console.error("⚠️ Error in auth state change handler:", error)
-          setSession(null)
-          setUser(null)
-          setIsAdmin(false)
-        } finally {
-          console.log("✅ Setting isLoading to false from auth state change")
-          setIsLoading(false)
+        if (error) {
+          console.error("❌ Error in getInitialSession:", error);
         }
+        
+        console.log("📊 getInitialSession result:", { 
+          hasSession: !!initialSession, 
+          hasUser: !!initialUser,
+          userEmail: initialUser?.email || 'none'
+        });
+        
+        if (initialUser) {
+          safeSetUser(initialUser);
+          setSession(initialSession);
+          
+          // Check if user is admin
+          try {
+            const role = await checkUserRole(initialUser.id);
+            console.log("👑 User role check result:", role);
+            setIsAdmin(role === 'admin');
+          } catch (roleError) {
+            console.error("❌ Error checking user role:", roleError);
+          }
+          
+          // Ensure the user has a profile
+          try {
+            await ensureUserProfile(initialUser.id);
+          } catch (profileError) {
+            console.error("❌ Error ensuring user profile:", profileError);
+          }
+        } else {
+          // No user, go to anonymous state
+          safeSetUser(null);
+          setSession(null);
+          setIsAdmin(false);
+        }
+        
+        // Resolve loading state regardless of result
+        setIsLoading(false);
+      } catch (e) {
+        console.error("❌ Fatal error during auth initialization:", e);
+        
+        // In case of fatal error, set to anonymous state
+        safeSetUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        setIsLoading(false);
       }
-    )
+    };
 
-    // Cleanup subscription and timeout on unmount
+    // Kick off auth initialization
+    setupAuthListener();
+    initAuth();
+
+    // Clean up function
     return () => {
-      console.log("🧹 Cleanup: unsubscribing from auth changes")
-      subscription.unsubscribe()
+      console.log("🧹 Cleaning up auth effect")
       clearTimeout(safetyTimeout)
+      // Safely unsubscribe from auth listener if it exists
+      if (authListener && typeof authListener.unsubscribe === 'function') {
+        authListener.unsubscribe()
+      }
     }
   }, [])
 
@@ -855,8 +700,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           data: {
-            full_name: fullName,
-            role: 'client'
+            role: 'client',
+            full_name: fullName
           }
         }
       })
@@ -1182,14 +1027,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   console.error("Error checking role:", roleError);
                   
                   // For known admin emails, set admin role even if check fails
-                  const knownAdminEmails = [
-                    'corentin@klyra.design',
-                    'dev@klyra.design',
-                    'admin@klyra.design',
-                    'test.admin@example.com'
-                  ];
-                  
-                  if (currentUser.email && knownAdminEmails.includes(currentUser.email.toLowerCase())) {
+                  if (currentUser.email && adminEmails.includes(currentUser.email.toLowerCase())) {
                     console.log("👑 Admin recognized by email during recovery:", currentUser.email);
                     setIsAdmin(true);
                   }
@@ -1238,14 +1076,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error("Error checking role from session:", roleError);
                 
                 // For known admin emails, set admin role even if check fails
-                const knownAdminEmails = [
-                  'corentin@klyra.design',
-                  'dev@klyra.design',
-                  'admin@klyra.design',
-                  'test.admin@example.com'
-                ];
-                
-                if (currentSession.user.email && knownAdminEmails.includes(currentSession.user.email.toLowerCase())) {
+                if (currentSession.user.email && adminEmails.includes(currentSession.user.email.toLowerCase())) {
                   console.log("👑 Admin recognized by email during session recovery:", currentSession.user.email);
                   setIsAdmin(true);
                 }
@@ -1350,9 +1181,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
     resetPassword,
-    checkUserRole,
     reloadAuthState,
     ensureUserProfile,
+    checkUserRole,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
