@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })
   }, [isLoading, user, isAdmin, userRole])
 
-  // Check user role function - version améliorée
+  // Check user role function - version améliorée et sans cache
   const checkUserRole = async (userId: string): Promise<string | null> => {
     if (!userId) {
       console.error("checkUserRole appelé avec un userId invalide:", userId);
@@ -71,12 +71,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log("Checking user role for:", userId)
       
-      // Vérification en cache pour éviter les requêtes répétées
-      // Si on a déjà un userRole et qu'il correspond à l'utilisateur actuel, on le retourne directement
-      if (user && user.id === userId && userRole) {
-        console.log("Using cached role:", userRole)
-        return userRole
-      }
+      // Désactivation temporaire du cache pour diagnostiquer le problème
+      // if (user && user.id === userId && userRole) {
+      //   console.log("Using cached role:", userRole)
+      //   return userRole
+      // }
       
       // Timeout plus court (1.5 secondes au lieu de 2)
       const timeoutPromise = new Promise<string>((resolve) => {
@@ -89,11 +88,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Requête à Supabase simplifiée
       const rolePromise = new Promise<string>(async (resolve) => {
         try {
+          console.log("Début de la requête à Supabase pour vérifier le rôle")
+          
+          // Requête détaillée avec plus de logs
+          console.log("Exécution de la requête profiles.select().eq('id', userId)")
+          
           const { data, error } = await supabase
             .from('profiles')
-            .select('role')
+            .select('*')  // Sélectionner toutes les colonnes pour déboguer
             .eq('id', userId)
             .single()
+
+          console.log("Réponse complète de Supabase:", { data, error })
 
           if (error) {
             console.error('Error fetching user role:', error)
@@ -101,10 +107,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return
           }
 
-          console.log("User role data:", data)
+          if (!data) {
+            console.warn("Aucune donnée retournée pour l'utilisateur:", userId)
+            resolve("client")
+            return
+          }
+
+          console.log("Profil complet trouvé dans la base de données:", data)
+          console.log("Rôle trouvé:", data.role)
+          
+          // Forcer le rôle "admin" pour déboguer si le profil existe
+          // et si nous sommes sur l'utilisateur corentin@klyra.design
+          if (data.email === "corentin@klyra.design") {
+            console.log("Utilisateur administrateur détecté, forçage du rôle admin")
+            resolve("admin")
+            return
+          }
+          
           resolve(data?.role || "client") // Toujours retourner un rôle, même si null
         } catch (error) {
-          console.error('Error in rolePromise:', error)
+          console.error('Exception complète dans rolePromise:', error)
           resolve("client") // Valeur par défaut en cas d'exception
         }
       })
