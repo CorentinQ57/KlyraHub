@@ -1438,67 +1438,108 @@ async function refreshSession(): Promise<boolean> {
   try {
     console.log("🔄 Tentative de rafraîchissement de session...");
     
+    // Vérifier si nous sommes côté client
+    if (typeof window === 'undefined') {
+      console.log("⚠️ refreshSession appelé côté serveur, ignoré");
+      return false;
+    }
+    
     // Récupérer le refreshToken actuel
-    const refreshToken = localStorage.getItem('sb-refresh-token');
+    let refreshToken;
+    try {
+      refreshToken = localStorage.getItem('sb-refresh-token');
+    } catch (storageError) {
+      console.error("❌ Erreur d'accès au localStorage:", storageError);
+      return false;
+    }
+    
     if (!refreshToken) {
       console.log("❌ Pas de refresh token disponible pour le rafraîchissement");
       return false;
     }
     
-    // Appeler l'API de rafraîchissement avec timeout
+    // Appeler l'API de rafraîchissement avec timeout augmenté
     const refreshPromise = supabase.auth.refreshSession({ refresh_token: refreshToken });
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Refresh timeout')), 5000);
+      setTimeout(() => reject(new Error('Refresh timeout')), 15000); // Augmenté à 15 secondes
     });
     
-    const { data, error } = await Promise.race([refreshPromise, timeoutPromise]) as any;
-    
-    if (error) {
-      console.error("❌ Erreur lors du rafraîchissement de la session:", error);
-      return false;
-    }
-    
-    if (data?.session) {
+    try {
+      const { data, error } = await Promise.race([refreshPromise, timeoutPromise]) as any;
+      
+      if (error) {
+        console.error("❌ Erreur lors du rafraîchissement de la session:", error);
+        return false;
+      }
+      
+      if (!data?.session) {
+        console.log("❌ Aucune session retournée lors du rafraîchissement");
+        return false;
+      }
+      
       console.log("✅ Session rafraîchie avec succès");
       
-      // Mettre à jour les tokens dans le stockage
-      if (data.session.access_token) {
-        localStorage.setItem('sb-access-token', data.session.access_token);
-        // Mettre à jour les autres emplacements de stockage
-        localStorage.setItem('supabase.auth.token', data.session.access_token);
-        localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, data.session.access_token);
+      // Mettre à jour les tokens dans le stockage de manière sécurisée
+      try {
+        // Mettre à jour les tokens dans le stockage
+        if (data.session.access_token) {
+          localStorage.setItem('sb-access-token', data.session.access_token);
+          // Mettre à jour les autres emplacements de stockage
+          localStorage.setItem('supabase.auth.token', data.session.access_token);
+          localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, data.session.access_token);
+          
+          try {
+            // Mettre à jour le cookie également
+            const secure = window.location.protocol === 'https:';
+            const domain = window.location.hostname;
+            const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+            document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+            document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+          } catch (cookieError) {
+            console.warn("⚠️ Erreur lors de la mise à jour des cookies:", cookieError);
+            // Continue even if cookie update fails
+          }
+        }
         
-        // Mettre à jour le cookie également
-        const secure = window.location.protocol === 'https:';
-        const domain = window.location.hostname;
-        const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
-        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
-        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
-      }
-      
-      if (data.session.refresh_token) {
-        localStorage.setItem('sb-refresh-token', data.session.refresh_token);
+        if (data.session.refresh_token) {
+          localStorage.setItem('sb-refresh-token', data.session.refresh_token);
+          
+          try {
+            // Mettre à jour le cookie également
+            const secure = window.location.protocol === 'https:';
+            const domain = window.location.hostname;
+            const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+            document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+            document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+          } catch (cookieError) {
+            console.warn("⚠️ Erreur lors de la mise à jour des cookies:", cookieError);
+            // Continue even if cookie update fails
+          }
+        }
         
-        // Mettre à jour le cookie également
-        const secure = window.location.protocol === 'https:';
-        const domain = window.location.hostname;
-        const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
-        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
-        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+        localStorage.setItem('sb-token-last-refresh', Date.now().toString());
+      } catch (storageError) {
+        console.error("❌ Erreur lors de la mise à jour des tokens:", storageError);
+        // Continue despite storage errors, as the session was successfully refreshed
       }
-      
-      localStorage.setItem('sb-token-last-refresh', Date.now().toString());
       
       // Dispatcher un événement pour informer l'application du rafraîchissement
-      window.dispatchEvent(new CustomEvent('klyra:token-refreshed', {
-        detail: {
-          timestamp: Date.now()
-        }
-      }));
+      try {
+        window.dispatchEvent(new CustomEvent('klyra:token-refreshed', {
+          detail: { timestamp: Date.now() }
+        }));
+      } catch (eventError) {
+        console.warn("⚠️ Erreur lors de la distribution de l'événement:", eventError);
+        // Continue despite event dispatch error
+      }
       
       return true;
-    } else {
-      console.log("❌ Aucune session retournée lors du rafraîchissement");
+    } catch (raceError: any) {
+      if (raceError.message === 'Refresh timeout') {
+        console.error("❌ Timeout lors du rafraîchissement de session (15s)");
+      } else {
+        console.error("❌ Erreur lors du rafraîchissement de session:", raceError);
+      }
       return false;
     }
   } catch (error) {

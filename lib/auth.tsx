@@ -24,40 +24,51 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
+  const [initialized, setInitialized] = useState(false)
 
   // Fonction sécurisée pour définir l'utilisateur
   const safeSetUser = (userData: any) => {
-    // Vérifie si userData est un objet valide avec un ID
-    if (userData && typeof userData === 'object' && userData.id) {
-      console.log("Setting user object:", userData.email);
-      setUser(userData);
-    } else if (typeof userData === 'string') {
-      // Si c'est une chaîne, c'est probablement une erreur
-      console.error("ERREUR: Tentative de définir user comme une chaîne:", userData);
-      // Ne pas définir l'utilisateur
-    } else if (userData === null) {
-      // Réinitialisation normale
-      setUser(null);
-    } else {
-      // Autre cas invalide
-      console.error("ERREUR: Tentative de définir user avec une valeur invalide:", userData);
-      // Ne pas définir l'utilisateur
+    try {
+      // Vérifie si userData est un objet valide avec un ID
+      if (userData && typeof userData === 'object' && userData.id) {
+        console.log("Setting user object:", userData.email);
+        setUser(userData);
+      } else if (typeof userData === 'string') {
+        // Si c'est une chaîne, c'est probablement une erreur
+        console.error("ERREUR: Tentative de définir user comme une chaîne:", userData);
+        // Ne pas définir l'utilisateur
+      } else if (userData === null) {
+        // Réinitialisation normale
+        setUser(null);
+      } else {
+        // Autre cas invalide
+        console.error("ERREUR: Tentative de définir user avec une valeur invalide:", userData);
+        // Ne pas définir l'utilisateur
+      }
+    } catch (error) {
+      console.error("Exception dans safeSetUser:", error);
+      // Ne pas définir l'utilisateur en cas d'erreur
     }
   }
 
   // Log d'état pour debugging
   useEffect(() => {
-    console.log("Auth state:", { 
-      isLoading, 
-      user: user?.email, 
-      userType: user ? typeof user : 'null',
-      userHasId: user && typeof user === 'object' ? Boolean(user.id) : false,
-      isAdmin 
-    })
-  }, [isLoading, user, isAdmin])
+    try {
+      console.log("Auth state:", { 
+        isLoading, 
+        user: user?.email, 
+        userType: user ? typeof user : 'null',
+        userHasId: user && typeof user === 'object' ? Boolean(user.id) : false,
+        isAdmin,
+        initialized
+      })
+    } catch (error) {
+      console.error("Erreur lors du log d'état:", error);
+    }
+  }, [isLoading, user, isAdmin, initialized])
 
   // Check user role function
   const checkUserRole = async (userId: string): Promise<string | null> => {
@@ -104,218 +115,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  // Get initial session and set up auth state listener
-  const getInitialSession = async () => {
-    try {
-      console.log("Getting initial session...")
-      setIsLoading(true)
-
-      // Check for active session
-      const { data: { session }, error } = await supabase.auth.getSession()
-      
-      if (error) {
-        console.error('Error getting session:', error)
-        setIsLoading(false)
-        return
-      }
-
-      console.log("Initial session result:", session ? "Session found" : "No session")
-
-      if (session) {
-        console.log("Session user:", session.user?.email, "Type:", typeof session.user)
+  // Initialisation plus légère et moins bloquante
+  useEffect(() => {
+    let isMounted = true;
+    
+    const initializeAuth = async () => {
+      try {
+        // Ne pas bloquer l'interface pendant la vérification
+        const { data, error } = await supabase.auth.getSession();
         
-        // Si session.user existe mais n'est pas un objet valide, essayer de récupérer directement l'utilisateur
-        if (!session.user || typeof session.user !== 'object' || !session.user.id) {
-          console.log("Session user invalid, forcing getUser call")
-          try {
-            // Forcer la récupération directe de l'utilisateur
-            const { data: { user: directUser }, error: userError } = await supabase.auth.getUser()
+        if (!isMounted) return;
+        
+        if (error) {
+          console.error('Error getting initial session:', error);
+          setInitialized(true);
+          return;
+        }
+        
+        if (data?.session) {
+          setSession(data.session);
+          
+          if (data.session.user) {
+            safeSetUser(data.session.user);
             
-            if (userError) {
-              console.error("Error forcing getUser:", userError)
-              setSession(null)
-              setUser(null)
-              setIsAdmin(false)
-              return
+            try {
+              // Vérifier le rôle d'admin en arrière-plan
+              const role = await checkUserRole(data.session.user.id);
+              if (isMounted) {
+                setIsAdmin(role === 'admin');
+              }
+            } catch (roleError) {
+              console.error('Error checking user role:', roleError);
             }
+          }
+        }
+      } catch (error) {
+        console.error('Error in auth initialization:', error);
+      } finally {
+        if (isMounted) {
+          setInitialized(true);
+        }
+      }
+    };
+    
+    // Appeler l'initialisation
+    initializeAuth();
+    
+    // Mettre en place l'écouteur d'événements
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      
+      console.log(`Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session");
+      
+      try {
+        if (session) {
+          setSession(session);
+          
+          if (session.user) {
+            safeSetUser(session.user);
             
-            console.log("Direct getUser result:", directUser)
-            
-            if (directUser && typeof directUser === 'object' && directUser.id) {
-              setSession(session)
-              safeSetUser(directUser)
-              
-              // Check if user is admin
-              const role = await checkUserRole(directUser.id)
-              setIsAdmin(role === 'admin')
-            } else {
-              console.error("Direct getUser also failed, user is invalid:", directUser)
-              setSession(null)
-              setUser(null)
-              setIsAdmin(false)
+            try {
+              const role = await checkUserRole(session.user.id);
+              if (isMounted) {
+                setIsAdmin(role === 'admin');
+              }
+            } catch (roleError) {
+              console.error('Error checking user role:', roleError);
             }
-          } catch (userError) {
-            console.error("Exception in direct getUser:", userError)
-            setSession(null)
-            setUser(null)
-            setIsAdmin(false)
           }
         } else {
-          // Session user is valid
-          setSession(session)
-          safeSetUser(session.user)
-          
-          // Check if user is admin
-          const role = await checkUserRole(session.user.id)
-          setIsAdmin(role === 'admin')
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
         }
-      } else {
-        setSession(null)
-        setUser(null)
-        setIsAdmin(false)
+      } catch (error) {
+        console.error('Error in auth state change handler:', error);
       }
-    } catch (error) {
-      console.error('Error in getInitialSession:', error)
-    } finally {
-      console.log("Setting isLoading to false from getInitialSession")
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    console.log("Setting up auth state listener...")
+    });
     
-    // Mettre un timeout de sécurité pour empêcher un loading infini
-    const safetyTimeout = setTimeout(() => {
-      if (isLoading) {
-        console.log("⚠️ Safety timeout triggered - forcing isLoading to false")
-        
-        // Forcer une dernière tentative de récupération de l'utilisateur et vérification du rôle
-        const emergencyCheck = async () => {
-          try {
-            const { data: { user: emergencyUser } } = await supabase.auth.getUser()
-            
-            if (emergencyUser && typeof emergencyUser === 'object' && emergencyUser.id) {
-              console.log("Emergency user check successful:", emergencyUser.email)
-              safeSetUser(emergencyUser)
-              
-              // Tenter une dernière vérification du rôle avec un timout court
-              const role = await Promise.race([
-                checkUserRole(emergencyUser.id),
-                new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000))
-              ])
-              
-              console.log("Emergency role check result:", role)
-              setIsAdmin(role === 'admin')
-            }
-          } catch (error) {
-            console.error("Error in emergency user check:", error)
-          } finally {
-            // Dans tous les cas, forcer la fin du chargement
-            setIsLoading(false)
-          }
-        }
-        
-        emergencyCheck()
-      }
-    }, 3000) // 3 secondes maximum de loading (réduit de 5 à 3 secondes)
-    
-    getInitialSession()
-
-    // Set up listener for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log(`Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session")
-        
-        try {
-          if (session) {
-            // Vérification supplémentaire pour s'assurer que user est un objet valide
-            if (typeof session.user === 'object' && session.user?.id) {
-              setSession(session)
-              safeSetUser(session.user)
-              
-              // Check if user is admin on auth state change
-              const role = await checkUserRole(session.user.id)
-              setIsAdmin(role === 'admin')
-              
-              // Update last_sign_in_at in profiles table
-              if (event === 'SIGNED_IN') {
-                console.log("Updating last sign in timestamp")
-                try {
-                  await supabase
-                    .from('profiles')
-                    .update({ last_sign_in_at: new Date().toISOString() })
-                    .eq('id', session.user.id)
-                } catch (updateError) {
-                  console.error('Error updating last sign in time:', updateError)
-                  // Non-critical error, continue execution
-                }
-                
-                // Forcer la récupération de l'utilisateur après SIGNED_IN pour s'assurer d'avoir les dernières données
-                console.log("Forcing getUser after SIGNED_IN")
-                try {
-                  const { data: { user: updatedUser }, error: userError } = await supabase.auth.getUser()
-                  if (!userError && updatedUser) {
-                    console.log("Updated user after SIGNED_IN:", updatedUser.email)
-                    safeSetUser(updatedUser)
-                  }
-                } catch (userError) {
-                  console.error("Error getting updated user after SIGNED_IN:", userError)
-                }
-              }
-            } else {
-              console.error("ERREUR: session.user n'est pas un objet valide dans onAuthStateChange:", session.user)
-              
-              // Attempt to recover by directly calling getUser
-              try {
-                console.log("Attempting to recover user from auth event")
-                const { data: { user: recoveredUser } } = await supabase.auth.getUser()
-                
-                if (recoveredUser && typeof recoveredUser === 'object' && recoveredUser.id) {
-                  console.log("Recovered user:", recoveredUser.email)
-                  setSession(session)
-                  safeSetUser(recoveredUser)
-                  
-                  // Check if the recovered user is admin
-                  const role = await checkUserRole(recoveredUser.id)
-                  setIsAdmin(role === 'admin')
-                } else {
-                  console.error("Recovery failed, invalid user:", recoveredUser)
-                  setSession(null)
-                  setUser(null)
-                  setIsAdmin(false)
-                }
-              } catch (recoveryError) {
-                console.error("Error in recovery attempt:", recoveryError)
-                setSession(null)
-                setUser(null)
-                setIsAdmin(false)
-              }
-            }
-          } else {
-            setSession(null)
-            setUser(null)
-            setIsAdmin(false)
-          }
-        } catch (error) {
-          console.error("Error in auth state change handler:", error)
-          setSession(null)
-          setUser(null)
-          setIsAdmin(false)
-        } finally {
-          console.log("Setting isLoading to false from auth state change")
-          setIsLoading(false)
-        }
-      }
-    )
-
-    // Cleanup subscription and timeout on unmount
+    // Nettoyage
     return () => {
-      console.log("Cleanup: unsubscribing from auth changes")
-      subscription.unsubscribe()
-      clearTimeout(safetyTimeout)
-    }
-  }, [])
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Sign up function
   const signUp = async (email: string, password: string, fullName: string) => {
