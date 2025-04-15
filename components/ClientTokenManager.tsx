@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { enforceTokenStorage } from '@/lib/supabase'
-import { supabase } from '@/lib/supabase'
+import { enforceTokenStorage, supabase } from '@/lib/supabase'
 
 // Variable globale pour suivre si une tentative de récupération de session a été faite
 let hasAttemptedPreloadSession = false;

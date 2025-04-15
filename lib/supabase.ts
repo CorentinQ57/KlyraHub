@@ -24,6 +24,37 @@ export const supabase = createClient(
   }
 );
 
+/**
+ * Fonction pour s'assurer que les tokens d'authentification sont correctement stockés
+ * Utiliser pour résoudre les problèmes de persistance de session
+ */
+export function enforceTokenStorage() {
+  if (typeof window === 'undefined') return; // N'exécuter que côté client
+  
+  try {
+    // Vérifier s'il y a un token dans le localStorage sous les différents formats possibles
+    const accessToken = localStorage.getItem('sb-access-token') || 
+                         localStorage.getItem('supabase.auth.token') ||
+                         localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+    
+    if (accessToken) {
+      console.log('Token trouvé, persistance assurée');
+      
+      // S'assurer que goTrueClient a la bonne configuration
+      if (!localStorage.getItem('supabase.auth.refreshSession')) {
+        console.log('Mise à jour du refreshSession');
+        localStorage.setItem('supabase.auth.refreshSession', 'true');
+      }
+    } else {
+      console.log('Aucun token trouvé dans le stockage local');
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'application du stockage des tokens:', error);
+  }
+  
+  return;
+}
+
 // Database types
 export type User = {
   id: string
