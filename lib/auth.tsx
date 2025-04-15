@@ -350,6 +350,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Signing in user:', email)
       
+      // Nettoyer d'abord les jetons existants pour éviter les conflits
+      localStorage.removeItem('sb-access-token');
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+      
+      // Cookies
+      document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      
+      // Réinitialiser l'état de Supabase au cas où
+      await supabase.auth.signOut({ scope: 'local' });
+      
+      // Attendre 100ms pour s'assurer que tout est nettoyé
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -374,12 +389,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Forcer explicitement la persistance du token
           if (data.session?.access_token) {
-            // Nettoyer d'abord les jetons existants
-            localStorage.removeItem('sb-access-token');
-            localStorage.removeItem('supabase.auth.token');
-            localStorage.removeItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+            console.log("Persisting authentication tokens explicitly");
             
-            // Stocker le nouveau jeton
+            // Stocker le nouveau jeton dans plusieurs emplacements
             localStorage.setItem('sb-access-token', data.session.access_token);
             localStorage.setItem('supabase.auth.token', data.session.access_token);
             localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, data.session.access_token);
@@ -394,13 +406,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const domain = window.location.hostname;
             const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
             
+            // Cookie avec domaine spécifique
             document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+            
+            // Cookie sans domaine spécifique (pour localhost)
             document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+            
+            // Si refresh token disponible, aussi le stocker dans un cookie
+            if (data.session.refresh_token) {
+              document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+              document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+            }
             
             localStorage.setItem('sb-token-last-refresh', Date.now().toString());
             
-            // Attendre un court délai pour s'assurer que tout est correctement enregistré
-            await new Promise(resolve => setTimeout(resolve, 300));
+            // Attendre un délai plus long pour s'assurer que tout est correctement enregistré
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Vérifier que le token est bien persisté
+            const storedToken = localStorage.getItem('sb-access-token');
+            if (!storedToken) {
+              console.error("⚠️ Token not persisted in localStorage after explicit attempt");
+              
+              // Dernier essai avec localStorage direct
+              try {
+                window.localStorage.setItem('sb-access-token', data.session.access_token);
+                console.log("Direct localStorage access successful");
+              } catch (storageError) {
+                console.error("⚠️ Direct localStorage access failed:", storageError);
+              }
+            } else {
+              console.log("✅ Token successfully persisted in localStorage");
+            }
+            
+            // Vérifier que la session est bien active
+            try {
+              const { data: sessionCheck } = await supabase.auth.getSession();
+              if (sessionCheck?.session) {
+                console.log("✅ Session check successful after login");
+              } else {
+                console.error("⚠️ Session check failed after login - attempting recovery");
+                // Essayer de récupérer la session en la définissant manuellement
+                await supabase.auth.setSession({
+                  access_token: data.session.access_token,
+                  refresh_token: data.session.refresh_token || ''
+                });
+              }
+            } catch (sessionCheckError) {
+              console.error("⚠️ Error checking session after login:", sessionCheckError);
+            }
           }
           
           // Update last_sign_in_at in profiles table

@@ -1,30 +1,30 @@
 "use client"
 
 import { useEffect, useState, useRef } from 'react'
-import { enforceTokenStorage } from '@/lib/supabase'
+import { enforceTokenStorage, debugAuthState } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
 import { AuthResponse } from '@supabase/supabase-js'
 import { useRouter, usePathname } from 'next/navigation'
 
 // Routes qui ne nécessitent pas d'authentification
-const PUBLIC_ROUTES = ['/login', '/signup', '/reset-password', '/success', '/docs'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/reset-password', '/success', '/docs', '/', '/services', '/about', '/contact'];
 
 // Initialisation synchrone au chargement du module
 if (typeof window !== 'undefined') {
   try {
-    // Essayer de récupérer le token à partir de plusieurs sources
-    const accessToken = 
-      localStorage.getItem('sb-access-token') || 
-      localStorage.getItem('supabase.auth.token') ||
-      localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`) ||
-      document.cookie.split(';').find(c => c.trim().startsWith('sb-access-token='))?.split('=')[1];
+    // Vérifier si une session est déjà présente et l'afficher
+    const hasSession = debugAuthState();
     
-    if (accessToken) {
-      console.error('[ClientTokenManager] Found access token during init');
+    if (hasSession) {
+      console.log('[ClientTokenManager] Found auth tokens during init, enforcing storage');
       enforceTokenStorage();
     } else {
-      console.error('[ClientTokenManager] No token found during init - will proceed with app loading');
+      console.log('[ClientTokenManager] No tokens found during init - will proceed with app loading');
     }
+    
+    // Stocker l'information sur la détection de session pour le débogage
+    localStorage.setItem('auth_init_check', hasSession ? 'true' : 'false');
+    localStorage.setItem('auth_init_time', new Date().toISOString());
   } catch (error) {
     console.error('[ClientTokenManager] Error during init:', error);
   }
@@ -38,9 +38,13 @@ export default function ClientTokenManager() {
   const initializationAttempted = useRef(false);
   const retryCount = useRef(0);
   const redirectCount = useRef(0);
+  const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAuthCheckTime = useRef<number>(0);
+  const isRedirecting = useRef(false);
   const MAX_RETRIES = 3;
   const MAX_REDIRECTS = 2; // Limite le nombre de redirections pour éviter les boucles
   const RETRY_DELAY = 1000;
+  const MIN_AUTH_CHECK_INTERVAL = 2000; // Temps minimum entre deux vérifications d'auth
   const router = useRouter();
   const pathname = usePathname();
   
@@ -52,10 +56,15 @@ export default function ClientTokenManager() {
   
   // Fonction pour rediriger vers la page de login si nécessaire
   const redirectIfNeeded = () => {
+    // Éviter les redirections si on est déjà en train de rediriger
+    if (isRedirecting.current) {
+      return;
+    }
+    
     if (authStatus === 'unauthenticated' && !isPublicRoute()) {
       // Protection contre les boucles de redirection
       if (redirectCount.current >= MAX_REDIRECTS) {
-        console.error(`[ClientTokenManager] Max redirections (${MAX_REDIRECTS}) reached - stopping redirect loop`);
+        console.log(`[ClientTokenManager] Max redirections (${MAX_REDIRECTS}) reached - stopping redirect loop`);
         // Stocker dans le localStorage pour déboguer
         if (typeof window !== 'undefined') {
           localStorage.setItem('auth_redirect_blocked', 'true');
@@ -65,51 +74,118 @@ export default function ClientTokenManager() {
         return;
       }
       
-      console.error('[ClientTokenManager] User not authenticated, redirecting to login');
+      console.log(`[ClientTokenManager] User not authenticated on protected route (${pathname}), redirecting to login`);
       redirectCount.current++;
+      isRedirecting.current = true;
       
       // Ajouter un paramètre de redirection pour revenir à la page après login
       const returnTo = encodeURIComponent(pathname || '/dashboard');
       router.push(`/login?returnTo=${returnTo}`);
+      
+      // Réinitialiser le statut de redirection après un délai
+      setTimeout(() => {
+        isRedirecting.current = false;
+      }, 1000);
     }
   };
   
+  // Fonction pour récupérer le token d'accès depuis différentes sources
+  const getAccessToken = () => {
+    try {
+      // Essayer localStorage avec plusieurs clés
+      const localStorageToken = 
+        localStorage.getItem('sb-access-token') || 
+        localStorage.getItem('supabase.auth.token') ||
+        localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+        
+      if (localStorageToken) {
+        return localStorageToken;
+      }
+      
+      // Essayer les cookies
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const trimmedCookie = cookie.trim();
+        if (trimmedCookie.startsWith('sb-access-token=')) {
+          return trimmedCookie.substring('sb-access-token='.length);
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      console.error('[ClientTokenManager] Error getting access token:', e);
+      return null;
+    }
+  };
+  
+  const emergencyRecovery = async (accessToken: string) => {
+    console.log('[ClientTokenManager] Attempting emergency session recovery');
+    
+    try {
+      // Tenter de définir manuellement la session
+      await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: localStorage.getItem('sb-refresh-token') || ''
+      });
+      
+      // Vérifier si la session a été établie
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) {
+        console.log('[ClientTokenManager] Emergency recovery successful');
+        return true;
+      }
+    } catch (error) {
+      console.error('[ClientTokenManager] Emergency recovery failed:', error);
+    }
+    
+    // Si toutes les tentatives échouent, essayer un dernier refresh du token
+    try {
+      const refreshed = enforceTokenStorage();
+      if (refreshed) {
+        console.log('[ClientTokenManager] Token refreshed in emergency recovery');
+        // Donner du temps au système pour enregistrer les changements
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return true;
+      }
+    } catch (error) {
+      console.error('[ClientTokenManager] Token refresh failed in emergency recovery:', error);
+    }
+    
+    return false;
+  };
+  
   const checkSession = async () => {
+    // Éviter les vérifications trop fréquentes
+    const now = Date.now();
+    if (now - lastAuthCheckTime.current < MIN_AUTH_CHECK_INTERVAL) {
+      console.log('[ClientTokenManager] Auth check too frequent, skipping');
+      return;
+    }
+    
+    // Éviter les vérifications concurrentes ou si le composant est démonté
     if (sessionCheckInProgress.current || !mountedRef.current) {
-      console.error('[ClientTokenManager] Session check skipped:', {
+      console.log('[ClientTokenManager] Session check skipped:', {
         sessionCheckInProgress: sessionCheckInProgress.current,
         mounted: mountedRef.current
       });
       return;
     }
     
+    lastAuthCheckTime.current = now;
     sessionCheckInProgress.current = true;
     
     try {
-      console.error('[ClientTokenManager] Starting session check');
+      console.log('[ClientTokenManager] Starting session check');
       
-      // Vérifier si des tokens sont disponibles - essayer plusieurs sources avec plus de robustesse
-      const getTokenFromCookie = () => {
-        try {
-          return document.cookie
-            .split(';')
-            .map(cookie => cookie.trim())
-            .find(cookie => cookie.startsWith('sb-access-token='))
-            ?.split('=')[1];
-        } catch (e) {
-          console.error('[ClientTokenManager] Error getting token from cookie:', e);
-          return null;
-        }
-      };
+      // Sur les routes publiques, on vérifie de manière moins agressive
+      const isOnPublicRoute = isPublicRoute();
+      console.log(`[ClientTokenManager] Current route (${pathname}) is ${isOnPublicRoute ? 'public' : 'protected'}`);
       
-      const accessToken = 
-        localStorage.getItem('sb-access-token') || 
-        localStorage.getItem('supabase.auth.token') ||
-        localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`) ||
-        getTokenFromCookie();
+      // Vérifier si des tokens sont disponibles
+      const accessToken = getAccessToken();
       
       if (!accessToken) {
-        console.error('[ClientTokenManager] No access token found - user unauthenticated');
+        console.log('[ClientTokenManager] No access token found - user unauthenticated');
         setAuthStatus('unauthenticated');
         setSessionLoaded(true);
         
@@ -121,100 +197,170 @@ export default function ClientTokenManager() {
         return;
       }
       
-      console.error('[ClientTokenManager] Access token found, checking refresh');
+      console.log('[ClientTokenManager] Access token found, checking refresh');
       
       // Vérifier si le token a besoin d'être rafraîchi
       const lastRefresh = localStorage.getItem('sb-token-last-refresh');
-      const now = Date.now();
       const refreshInterval = 30 * 60 * 1000;
       
       if (!lastRefresh || (now - parseInt(lastRefresh)) > refreshInterval) {
-        console.error('[ClientTokenManager] Token refresh needed');
+        console.log('[ClientTokenManager] Token refresh needed');
         const tokenUpdated = enforceTokenStorage();
         if (!tokenUpdated) {
           throw new Error('Token refresh failed');
         }
-        console.error('[ClientTokenManager] Token refreshed successfully');
+        console.log('[ClientTokenManager] Token refreshed successfully');
       }
       
-      // Vérifier la session avec un timeout plus long
-      const timeoutPromise = new Promise((_, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Session check timeout'));
-        }, 10000);
-        return () => clearTimeout(timeout);
-      });
+      // Approche multi-étapes pour vérifier la session
+      let sessionData = null;
       
-      console.error('[ClientTokenManager] Checking session with Supabase');
+      // Temps d'attente plus court pour la vérification sur routes publiques
+      const timeoutDuration = isOnPublicRoute ? 3000 : 5000;
       
-      const sessionPromise = supabase.auth.getSession();
-      
-      let result;
+      // Étape 1: Vérification principale avec un timeout
       try {
-        result = await Promise.race([
-          sessionPromise,
-          timeoutPromise
+        console.log(`[ClientTokenManager] Checking session - primary attempt (timeout: ${timeoutDuration}ms)`);
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Session check timeout')), timeoutDuration))
         ]) as AuthResponse;
+        
+        sessionData = sessionResult.data;
+        
+        if (sessionData?.session) {
+          console.log('[ClientTokenManager] Session verified successfully');
+          setAuthStatus('authenticated');
+          setSessionLoaded(true);
+          
+          // Publier un événement pour notifier les autres composants
+          window.dispatchEvent(new CustomEvent('klyra:auth-status-changed', { 
+            detail: { status: 'authenticated', session: sessionData.session } 
+          }));
+          
+          // Mettre à jour le timestamp du dernier refresh
+          localStorage.setItem('sb-token-last-refresh', now.toString());
+          
+          // Réinitialiser le compteur de tentatives
+          retryCount.current = 0;
+          return;
+        }
       } catch (error) {
-        console.error('[ClientTokenManager] Session race error:', error);
-        // En cas d'erreur dans Promise.race, on marque l'utilisateur comme non authentifié
+        console.error('[ClientTokenManager] Primary session check failed:', error);
+      }
+      
+      // Sur une route publique, on peut être moins strict sur l'authentification
+      if (isOnPublicRoute && !sessionData?.session) {
+        console.log('[ClientTokenManager] On public route, proceeding without full authentication');
         setAuthStatus('unauthenticated');
         setSessionLoaded(true);
         return;
       }
       
-      const { data, error } = result;
-      
-      if (error) {
-        console.error('[ClientTokenManager] Session check error:', error);
-        throw error;
+      // Étape 2: Si getSession échoue, essayer getUser comme fallback
+      if (!sessionData?.session) {
+        try {
+          console.log('[ClientTokenManager] Trying getUser as fallback');
+          const timeoutDuration = isOnPublicRoute ? 2000 : 3000;
+          const userResult = await Promise.race([
+            supabase.auth.getUser(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('User check timeout')), timeoutDuration))
+          ]) as AuthResponse;
+          
+          if (userResult.data?.user) {
+            console.log('[ClientTokenManager] User found, attempting to reconstruct session');
+            
+            // Tentative de récupération d'urgence seulement si nécessaire
+            if (!isOnPublicRoute) {
+              const recovered = await emergencyRecovery(accessToken);
+              
+              if (recovered) {
+                // Vérifier si la session a été récupérée
+                const finalCheck = await supabase.auth.getSession();
+                if (finalCheck.data?.session) {
+                  console.log('[ClientTokenManager] Session reconstructed successfully');
+                  setAuthStatus('authenticated');
+                  setSessionLoaded(true);
+                  
+                  window.dispatchEvent(new CustomEvent('klyra:auth-status-changed', {
+                    detail: { status: 'authenticated', session: finalCheck.data.session }
+                  }));
+                  
+                  return;
+                }
+              }
+            } else {
+              // Sur route publique avec utilisateur valide, considérer comme "suffisant" pour procéder
+              console.log('[ClientTokenManager] On public route with valid user, proceeding');
+              setAuthStatus('authenticated');
+              setSessionLoaded(true);
+              return;
+            }
+          }
+        } catch (userError) {
+          console.error('[ClientTokenManager] User fallback check failed:', userError);
+        }
       }
       
-      if (data?.session) {
-        console.error('[ClientTokenManager] Session verified successfully');
-        setAuthStatus('authenticated');
-        setSessionLoaded(true);
-        
-        // Publier un événement personnalisé pour notifier les autres composants
-        window.dispatchEvent(new CustomEvent('klyra:auth-status-changed', { 
-          detail: { status: 'authenticated', session: data.session } 
-        }));
-      } else {
-        console.error('[ClientTokenManager] No session data received');
-        // Cas où getSession() retourne un objet mais pas de session
+      // Si on arrive ici, toutes les tentatives ont échoué
+      console.log('[ClientTokenManager] All authentication attempts failed');
+      
+      // Sur route publique, permettre de continuer même sans authentification complète
+      if (isOnPublicRoute) {
+        console.log('[ClientTokenManager] Allowing access to public route without authentication');
         setAuthStatus('unauthenticated');
         setSessionLoaded(true);
-        
-        // Nettoyer les tokens obsolètes
+        return;
+      }
+      
+      // Nettoyer les tokens obsolètes ou corrompus
+      if (retryCount.current >= MAX_RETRIES) {
+        console.log('[ClientTokenManager] Max retries reached, cleaning up tokens');
         localStorage.removeItem('sb-access-token');
         localStorage.removeItem('supabase.auth.token');
         localStorage.removeItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+        document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         
-        // Publier un événement
-        window.dispatchEvent(new CustomEvent('klyra:auth-status-changed', { 
-          detail: { status: 'unauthenticated' } 
+        // Définir l'état final comme non authentifié
+        setAuthStatus('unauthenticated');
+        setSessionLoaded(true);
+        
+        window.dispatchEvent(new CustomEvent('klyra:auth-status-changed', {
+          detail: { status: 'unauthenticated' }
         }));
-        
-        throw new Error('No session data');
+      } else {
+        // Si on n'a pas atteint le nombre max de tentatives, réessayer
+        retryCount.current++;
+        console.log(`[ClientTokenManager] Retrying (${retryCount.current}/${MAX_RETRIES})...`);
+        setTimeout(checkSession, RETRY_DELAY * retryCount.current);
       }
-      
     } catch (error) {
       console.error('[ClientTokenManager] Error in session check:', error);
       
-      // Gérer les retries
+      // Sur route publique, permettre de continuer même après erreur
+      if (isPublicRoute()) {
+        console.log('[ClientTokenManager] Error on public route, proceeding without authentication');
+        setAuthStatus('unauthenticated');
+        setSessionLoaded(true);
+        return;
+      }
+      
       if (retryCount.current < MAX_RETRIES) {
         retryCount.current++;
-        console.error(`[ClientTokenManager] Retrying (${retryCount.current}/${MAX_RETRIES})...`);
-        setTimeout(checkSession, RETRY_DELAY);
+        console.log(`[ClientTokenManager] Retrying after error (${retryCount.current}/${MAX_RETRIES})...`);
+        setTimeout(checkSession, RETRY_DELAY * retryCount.current);
       } else {
-        console.error('[ClientTokenManager] Max retries reached - proceeding without authentication');
+        console.log('[ClientTokenManager] Max retries reached after error - proceeding without authentication');
         setAuthStatus('unauthenticated');
         setSessionLoaded(true);
         
-        // Forcer le nettoyage des tokens périmés après épuisement des tentatives
+        // Nettoyer les tokens après échec
         localStorage.removeItem('sb-access-token');
         localStorage.removeItem('supabase.auth.token');
         localStorage.removeItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+        document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     } finally {
       sessionCheckInProgress.current = false;
@@ -230,51 +376,59 @@ export default function ClientTokenManager() {
   
   // Effect principal pour l'initialisation
   useEffect(() => {
-    console.error('[ClientTokenManager] Component mounted');
+    console.log('[ClientTokenManager] Component mounted');
     mountedRef.current = true;
+    
+    // Définir un timeout de sécurité pour éviter les blocages infinis
+    safetyTimeoutRef.current = setTimeout(() => {
+      console.log('[ClientTokenManager] Safety timeout triggered - proceeding to load app');
+      if (!sessionLoaded) {
+        setSessionLoaded(true);
+        
+        // Si on est sur une route publique, ne pas rediriger
+        if (isPublicRoute()) {
+          console.log('[ClientTokenManager] On public route, continuing without authentication');
+          setAuthStatus('unauthenticated');
+        } else {
+          console.log('[ClientTokenManager] Safety redirect to login page');
+          setAuthStatus('unauthenticated');
+          
+          // Ajouter un petit délai pour permettre au composant de se rendre compte qu'il est sur une route protégée
+          setTimeout(() => {
+            redirectIfNeeded();
+          }, 100);
+        }
+      }
+    }, 5000); // 5 secondes (réduit de 6 à 5 pour charger plus rapidement)
     
     // Attendre que le DOM soit complètement chargé
     if (document.readyState === 'complete') {
       if (!initializationAttempted.current) {
-        console.error('[ClientTokenManager] Starting initial session check');
+        console.log('[ClientTokenManager] Starting initial session check');
         initializationAttempted.current = true;
         checkSession();
       }
     } else {
       const handleLoad = () => {
         if (!initializationAttempted.current) {
-          console.error('[ClientTokenManager] Starting initial session check after load');
+          console.log('[ClientTokenManager] Starting initial session check after load');
           initializationAttempted.current = true;
           checkSession();
         }
       };
       window.addEventListener('load', handleLoad);
       
-      // Définir un timeout de sécurité pour éviter les blocages infinis
-      const safetyTimeout = setTimeout(() => {
-        console.error('[ClientTokenManager] Safety timeout triggered - proceeding to load app');
-        if (!sessionLoaded) {
-          setSessionLoaded(true);
-          setAuthStatus('unauthenticated');
-          
-          if (isPublicRoute()) {
-            console.error('[ClientTokenManager] On public route, continuing without authentication');
-          } else {
-            console.error('[ClientTokenManager] Safety redirect to login page');
-            router.push('/login');
-          }
-        }
-      }, 8000); // 8 secondes
-      
       return () => {
         window.removeEventListener('load', handleLoad);
-        clearTimeout(safetyTimeout);
       };
     }
     
     return () => {
-      console.error('[ClientTokenManager] Component unmounting');
+      console.log('[ClientTokenManager] Component unmounting');
       mountedRef.current = false;
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+      }
     };
   }, []);
   
