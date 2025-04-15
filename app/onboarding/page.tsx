@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { PageContainer, PageHeader, PageSection } from '@/components/ui/page-container'
@@ -30,21 +30,11 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const redirectAttempted = useRef(false)
   
-  // Check if user is authenticated - avec protection contre les redirections en boucle
+  // Check if user is authenticated
   useEffect(() => {
-    if (!isLoading && !user && !redirectAttempted.current) {
-      console.log('Utilisateur non connecté, redirection vers login (page)')
-      redirectAttempted.current = true
+    if (!isLoading && !user) {
       router.push('/login')
-    }
-    
-    // Vérifier aussi si l'user a déjà complété l'onboarding
-    if (!isLoading && user?.user_metadata?.onboarded === true && !redirectAttempted.current) {
-      console.log('Utilisateur déjà onboardé, redirection vers dashboard (page)')
-      redirectAttempted.current = true
-      router.push('/dashboard')
     }
   }, [user, isLoading, router])
   
@@ -88,6 +78,18 @@ export default function OnboardingPage() {
         throw new Error("Utilisateur non authentifié")
       }
       
+      console.log('Envoi des données d\'onboarding:', {
+        userId: user.id,
+        email: user.email,
+        data: {
+          fullName: data.fullName,
+          hasCompanyName: Boolean(data.companyName),
+          hasSector: Boolean(data.sector),
+          hasNeeds: Boolean(data.needsBranding || data.needsWebsite || data.needsMarketing),
+          hasPreferences: Boolean(data.visualPreferences?.length)
+        }
+      })
+      
       // Sauvegarder les données d'onboarding
       await saveOnboardingData(user.id, data)
       
@@ -99,15 +101,32 @@ export default function OnboardingPage() {
       })
       
       // Rediriger vers le dashboard
-      redirectAttempted.current = true
       router.push('/dashboard')
     } catch (error) {
-      console.error('Error saving onboarding data:', error)
+      console.error('Erreur lors de la sauvegarde des données d\'onboarding:', error)
+      
+      // Afficher des informations plus détaillées sur l'erreur
+      let errorMessage = "Impossible d'enregistrer vos informations. Veuillez réessayer."
+      
+      if (error instanceof Error) {
+        // Pour les erreurs de Supabase, extraire le message
+        if ('code' in error && 'message' in error && 'details' in error) {
+          const supabaseError = error as any
+          errorMessage = `Erreur: ${supabaseError.message}. Code: ${supabaseError.code}`
+          
+          if (supabaseError.code === '42703') {
+            errorMessage = "Une colonne nécessaire est manquante dans la base de données. Veuillez contacter l'administrateur."
+          }
+        } else {
+          errorMessage = `Erreur: ${error.message}`
+        }
+      }
+      
       toast({
         title: "Une erreur est survenue",
-        description: "Impossible d'enregistrer vos informations. Veuillez réessayer.",
+        description: errorMessage,
         variant: "destructive",
-        duration: 5000,
+        duration: 8000,
       })
     } finally {
       setIsSubmitting(false)

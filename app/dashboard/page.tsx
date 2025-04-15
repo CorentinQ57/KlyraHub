@@ -19,7 +19,6 @@ import VideoWalkthrough from '@/components/VideoWalkthrough'
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { useSafeFetch } from '@/lib/hooks/useSafeFetch'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -392,9 +391,9 @@ const NotificationsPanel = ({ notifications }: { notifications: Notification[] }
 }
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
-  const { user, isAdmin, reloadAuthState } = useAuth()
+  const { user, isAdmin } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -445,65 +444,90 @@ export default function DashboardPage() {
   })
   const [notifications, setNotifications] = useState<Notification[]>([])
   
-  // Use our safe fetch hook for projects
-  const { 
-    data: fetchedProjects, 
-    isLoading: projectsLoading,
-    refetch: refetchProjects
-  } = useSafeFetch<ProjectWithRelations[]>(
-    async () => {
-      // Get user ID from user context
-      if (!user?.id) {
-        console.log("No user ID available, cannot fetch projects");
-        return [];
-      }
-      
-      // Choose the right fetch function based on admin status
-      console.log("Fetching projects for user:", user.id, "isAdmin:", isAdmin);
+  // Fonction pour charger les projets
+  const loadProjects = async () => {
+    if (user) {
       try {
-        if (isAdmin) {
-          const allProjects = await fetchAllProjects();
-          console.log(`Fetched ${allProjects.length} projects as admin`);
-          return allProjects;
-        } else {
-          const userProjects = await fetchProjects(user.id);
-          console.log(`Fetched ${userProjects.length} projects for user`);
-          return userProjects;
-        }
-      } catch (err) {
-        console.error("Error fetching projects:", err);
-        return [];
-      }
-    },
-    [isAdmin, user?.id] // Re-fetch when admin status or user ID changes
-  )
-  
-  // Update projects state when fetchedProjects changes
-  useEffect(() => {
-    if (fetchedProjects) {
-      setProjects(fetchedProjects)
-      
-      // Debugging logs
-      if (fetchedProjects.length > 0) {
-        console.log('First project loaded successfully');
-      }
-      
-      // Check for first login to show tutorial
-      if (typeof window !== 'undefined') {
-        const isFirstLogin = localStorage.getItem('hasCompletedOnboarding') === null;
+        const fetchedProjects = isAdmin 
+          ? await fetchAllProjects()
+          : await fetchProjects(user.id);
         
-        if (isFirstLogin) {
-          console.log("Première connexion détectée, affichage du tutoriel d'onboarding");
-          setShowTutorial(true);
+        // Débogage: afficher la structure d'un projet
+        if (fetchedProjects.length > 0) {
+          console.log('Structure du premier projet:', JSON.stringify(fetchedProjects[0], null, 2));
+          
+          // Vérifier spécifiquement la structure des services et de la catégorie
+          const firstProject = fetchedProjects[0];
+          console.log('Service du projet:', firstProject.services);
+          console.log('Category_id:', firstProject.services?.category_id);
+          console.log('Category:', firstProject.services?.category);
         }
+        
+        setProjects(fetchedProjects);
+        
+        // Vérifier si c'est la première connexion pour montrer le tutoriel
+        if (typeof window !== 'undefined') {
+          const isFirstLogin = localStorage.getItem('hasCompletedOnboarding') === null;
+          
+          // Si c'est la première connexion, afficher le tutoriel
+          if (isFirstLogin) {
+            console.log("Première connexion détectée, affichage du tutoriel d'onboarding");
+            setShowTutorial(true);
+            // Nous ne marquons pas encore le tutoriel comme terminé ici,
+            // cela sera fait lorsque l'utilisateur termine le tutoriel
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des projets:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger vos projets.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     }
-  }, [fetchedProjects])
+  };
   
-  // Synchronize loading states
+  // Fonction pour passer à l'étape suivante du tutoriel
+  const nextTutorialStep = () => {
+    if (tutorialStep < 5) {
+      setTutorialStep(tutorialStep + 1)
+    } else {
+      setShowTutorial(false)
+      // Marquer le tutoriel comme terminé dans localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hasCompletedOnboarding', 'true')
+      }
+      // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
+      if (showTutorialParam) {
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, document.title, newUrl)
+      }
+    }
+  }
+  
+  // Fonction pour fermer le tutoriel
+  const closeTutorial = () => {
+    setShowTutorial(false)
+    // Marquer le tutoriel comme terminé même si fermé prématurément
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hasCompletedOnboarding', 'true')
+    }
+    // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
+    if (showTutorialParam) {
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, document.title, newUrl)
+    }
+  }
+  
+  // Effet pour charger les projets
   useEffect(() => {
-    setIsLoading(projectsLoading)
-  }, [projectsLoading])
+    if (user) {
+      loadProjects()
+    }
+  }, [user])
   
   // Effet pour afficher le tutoriel si le paramètre est présent dans l'URL
   useEffect(() => {
@@ -534,7 +558,7 @@ export default function DashboardPage() {
             })
             
             // Recharger les projets
-            refetchProjects()
+            loadProjects()
             
             // Nettoyer l'URL pour éviter de recréer le projet en cas de refresh
             const newUrl = window.location.pathname
@@ -553,7 +577,7 @@ export default function DashboardPage() {
     }
     
     handlePaymentSuccess()
-  }, [paymentSuccess, sessionId, serviceId, title, price, user, isLoading, refetchProjects])
+  }, [paymentSuccess, sessionId, serviceId, title, price, user, isLoading])
 
   // Les étapes du tutoriel
   const tutorialSteps = [
@@ -614,7 +638,7 @@ export default function DashboardPage() {
     })
   }
 
-  // Safe fetch for notifications
+  // Charger les notifications
   const loadNotifications = async () => {
     // TODO: Implémenter la récupération des notifications depuis Supabase
     // Pour l'instant, on utilise des données de test
@@ -627,7 +651,7 @@ export default function DashboardPage() {
         createdAt: new Date(),
         read: false
       },
-      // Add other test notifications...
+      // Ajouter d'autres notifications de test...
     ])
   }
 
@@ -637,82 +661,6 @@ export default function DashboardPage() {
     }
     loadNotifications()
   }, [projects])
-
-  // Tutorial functions
-  const nextTutorialStep = () => {
-    if (tutorialStep < 5) {
-      setTutorialStep(tutorialStep + 1)
-    } else {
-      setShowTutorial(false)
-      // Marquer le tutoriel comme terminé dans localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('hasCompletedOnboarding', 'true')
-      }
-      // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
-      if (showTutorialParam) {
-        const newUrl = window.location.pathname
-        window.history.replaceState({}, document.title, newUrl)
-      }
-    }
-  }
-  
-  const closeTutorial = () => {
-    setShowTutorial(false)
-    // Marquer le tutoriel comme terminé même si fermé prématurément
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('hasCompletedOnboarding', 'true')
-    }
-    // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
-    if (showTutorialParam) {
-      const newUrl = window.location.pathname
-      window.history.replaceState({}, document.title, newUrl)
-    }
-  }
-
-  // Effet pour gérer les changements de statut utilisateur
-  useEffect(() => {
-    // Si l'utilisateur vient d'être connecté, forcer un rafraîchissement des projets
-    if (user && user.id && !projectsLoading) {
-      console.log("👤 User state changed, ensuring projects are loaded:", user.email);
-      
-      // On vérifie que les projets sont bien chargés
-      if (!fetchedProjects || fetchedProjects.length === 0) {
-        console.log("🔄 No projects loaded yet, triggering refresh");
-        refetchProjects();
-      }
-    }
-  }, [user, projectsLoading, fetchedProjects, refetchProjects]);
-
-  // Vérifier explicitement que la session est valide après un changement de route
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        // Vérifier que la session existe
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("❌ Error checking session:", error);
-          return;
-        }
-        
-        if (!data.session) {
-          console.log("⚠️ No valid session found, reloading auth state");
-          await reloadAuthState();
-        } else if (!fetchedProjects || fetchedProjects.length === 0) {
-          // Si on a une session mais pas de projets, recharger les projets
-          console.log("✅ Valid session found but no projects, reloading projects");
-          refetchProjects();
-        } else {
-          console.log("✅ Valid session with projects already loaded");
-        }
-      } catch (err) {
-        console.error("❌ Error in checkSession:", err);
-      }
-    };
-    
-    // Exécuter la vérification au montage du composant
-    checkSession();
-  }, [reloadAuthState, fetchedProjects, refetchProjects]);
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">

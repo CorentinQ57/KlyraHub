@@ -1,9 +1,9 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
+import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
-import { AuthProvider } from '@/lib/auth'
-import ClientTokenManager from '@/components/ClientTokenManager'
+import AuthProvider from '@/lib/auth'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -25,7 +25,6 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning className={poppins.variable}>
       <body className={poppins.className}>
         <AuthProvider>
-          <ClientTokenManager />
           {children}
           <Toaster />
         </AuthProvider>

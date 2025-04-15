@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getProfileData } from '@/lib/supabase'
 
 export default function OnboardingLayout({
   children,
@@ -14,39 +15,53 @@ export default function OnboardingLayout({
 }) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
-  const [redirectAttempted, setRedirectAttempted] = useState(false)
+  const [isChecking, setIsChecking] = useState(true)
   
-  // Check if user has completed onboarding - avec protection contre les redirections en boucle
+  // Check if user has completed onboarding
   useEffect(() => {
-    // Ne faire les redirections que si l'état de chargement est terminé et qu'aucune redirection n'a été tentée
-    if (!isLoading && !redirectAttempted) {
-      if (!user) {
-        // Rediriger vers la page de connexion si non connecté
-        console.log('Utilisateur non connecté, redirection vers login')
-        setRedirectAttempted(true)
-        router.push('/login')
-      } else if (user.user_metadata?.onboarded === true) {
-        // Rediriger vers le dashboard si l'onboarding est déjà complété
-        console.log('Utilisateur déjà onboardé, redirection vers le dashboard')
-        setRedirectAttempted(true)
-        router.push('/dashboard')
-      } else {
-        console.log('Onboarding en cours pour l\'utilisateur', user?.email, 'Metadata:', user.user_metadata)
+    async function checkOnboardingStatus() {
+      if (!isLoading) {
+        if (!user) {
+          // Rediriger vers la page de connexion si non connecté
+          router.push('/login')
+          return
+        }
+        
+        // Vérifie d'abord si l'onboarding est complété dans les métadonnées utilisateur
+        if (user?.user_metadata?.onboarded === true) {
+          console.log('Utilisateur déjà onboardé selon les métadonnées, redirection vers le dashboard')
+          router.push('/dashboard')
+          return
+        }
+        
+        // Si pas dans les métadonnées, vérifier dans la table profiles
+        try {
+          const profileData = await getProfileData(user.id)
+          if (profileData && profileData.onboarded === true) {
+            console.log('Utilisateur déjà onboardé selon la table profiles, redirection vers le dashboard')
+            router.push('/dashboard')
+            return
+          }
+        } catch (error) {
+          console.error('Erreur lors de la vérification du profil:', error)
+        }
+        
+        // Si on arrive ici, l'utilisateur n'a pas complété l'onboarding
+        console.log('Onboarding en cours pour l\'utilisateur', user?.email)
+        setIsChecking(false)
       }
     }
-  }, [user, isLoading, router, redirectAttempted])
+    
+    checkOnboardingStatus()
+  }, [user, isLoading, router])
   
-  // Si en cours de chargement, afficher un indicateur
-  if (isLoading) {
+  // Afficher un état de chargement pendant la vérification
+  if (isLoading || isChecking) {
     return (
       <AuroraBackground intensity="subtle" showRadialGradient={true}>
-        <div className="flex flex-col min-h-screen">
-          <main className="flex-grow flex items-center justify-center">
-            <div className="text-center">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary mx-auto"></div>
-              <p className="mt-4 text-sm">Chargement de votre profil...</p>
-            </div>
-          </main>
+        <div className="flex flex-col min-h-screen justify-center items-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7]"></div>
+          <p className="mt-4 text-[14px]">Chargement...</p>
         </div>
       </AuroraBackground>
     )

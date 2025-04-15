@@ -1,17 +1,15 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth'
-import { fetchAllProjects, invalidateProjectsCache } from '@/lib/supabase'
+import { fetchAllProjects } from '@/lib/supabase'
 import { Project } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { Settings, Users, ShoppingBag, FileText, RotateCw } from 'lucide-react'
-import { useSafeFetch } from '@/lib/hooks/useSafeFetch'
-import { supabase } from '@/lib/supabase'
+import { Settings, Users, ShoppingBag, FileText } from 'lucide-react'
 
 // Étendre le type Project pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -30,168 +28,49 @@ type ProjectWithRelations = Project & {
   } | null;
 }
 
-// Status labels and colors for UI
-const statusLabels: Record<string, { label: string, color: string }> = {
-  pending: {
-    label: "En attente",
-    color: "bg-yellow-100 text-yellow-800"
-  },
-  validated: {
-    label: "Validé",
-    color: "bg-blue-100 text-blue-800"
-  },
-  in_progress: {
-    label: "En cours",
-    color: "bg-purple-100 text-purple-800"
-  },
-  delivered: {
-    label: "Livré",
-    color: "bg-green-100 text-green-800"
-  },
-  completed: {
-    label: "Terminé",
-    color: "bg-gray-100 text-gray-800"
-  },
-}
-
 export default function AdminDashboardPage() {
   const [projects, setProjects] = useState<ProjectWithRelations[]>([])
   const [filteredProjects, setFilteredProjects] = useState<ProjectWithRelations[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const router = useRouter()
-  const { user, isAdmin, reloadAuthState } = useAuth()
-  const [authChecked, setAuthChecked] = useState(false)
-  const [retryingAuth, setRetryingAuth] = useState(false)
-  
-  // Stable reference for admin status
-  const isAdminRef = useRef(false)
-  
-  // Update stable ref when isAdmin changes
+  const { user, isAdmin } = useAuth()
+
+  // Status labels and colors for UI
+  const statusLabels: Record<string, { label: string, color: string }> = {
+    pending: {
+      label: "En attente",
+      color: "bg-yellow-100 text-yellow-800"
+    },
+    validated: {
+      label: "Validé",
+      color: "bg-blue-100 text-blue-800"
+    },
+    in_progress: {
+      label: "En cours",
+      color: "bg-purple-100 text-purple-800"
+    },
+    delivered: {
+      label: "Livré",
+      color: "bg-green-100 text-green-800"
+    },
+    completed: {
+      label: "Terminé",
+      color: "bg-gray-100 text-gray-800"
+    },
+  }
+
   useEffect(() => {
-    isAdminRef.current = isAdmin
-  }, [isAdmin])
-
-  // Define the fetch function outside of useSafeFetch to prevent recreation on each render
-  const fetchAdminProjects = useCallback(async () => {
-    // Only fetch if user exists, even if admin status is uncertain
-    if (!user?.id) {
-      console.log("No user ID available for projects fetch");
-      return [];
+    // Redirect if not admin
+    if (user && !isAdmin) {
+      router.push('/dashboard')
+      return
     }
-    
-    // Add an extra safety check for admin status before fetching
-    if (!isAdminRef.current && authChecked) {
-      console.log("⚠️ User is not admin, skipping admin projects fetch");
-      return [];
-    }
-    
-    console.log("Fetching all projects for admin...");
-    try {
-      const allProjects = await fetchAllProjects();
-      console.log(`✅ Successfully fetched ${allProjects.length} projects`);
-      return allProjects;
-    } catch (err) {
-      console.error("❌ Error fetching admin projects:", err);
-      // Throw the error to trigger retries in useSafeFetch
-      throw err;
-    }
-  }, [user?.id, authChecked]); // Only depend on user ID and auth checked status
 
-  // Check for admin access as early as possible
-  useEffect(() => {
-    if (user?.id) {
-      if (!isAdmin) {
-        // If we know for sure user is not admin, redirect immediately 
-        if (authChecked) {
-          router.push('/dashboard');
-        } else {
-          // If we're not sure yet, force an auth state reload to verify
-          if (!retryingAuth) {
-            setRetryingAuth(true);
-            console.log("⚠️ Admin status unclear, forcing auth reload...");
-            reloadAuthState().finally(() => {
-              setAuthChecked(true);
-              setRetryingAuth(false);
-            });
-          }
-        }
-      } else {
-        // User is confirmed admin
-        setAuthChecked(true);
-      }
+    if (user && isAdmin) {
+      loadProjects()
     }
-  }, [user?.id, isAdmin, router, authChecked, retryingAuth, reloadAuthState]);
-
-  // Use our safe fetch hook for admin projects
-  const { 
-    data: adminProjects, 
-    isLoading: projectsLoading,
-    error: projectsError,
-    refetch: refetchProjects
-  } = useSafeFetch<ProjectWithRelations[]>(
-    fetchAdminProjects, // Use the memoized function
-    // Simplified dependency array - only use primitive values
-    [authChecked ? 'admin-confirmed' : 'admin-pending']
-  );
-
-  // Update projects state when adminProjects changes
-  useEffect(() => {
-    if (adminProjects) {
-      setProjects(adminProjects)
-      
-      // Apply current filter
-      if (statusFilter === 'all') {
-        setFilteredProjects(adminProjects)
-      } else {
-        setFilteredProjects(adminProjects.filter(project => project.status === statusFilter))
-      }
-    }
-  }, [adminProjects, statusFilter])
-
-  // Synchronize loading states
-  useEffect(() => {
-    const isAuthLoading = user?.id && !authChecked;
-    setIsLoading(Boolean(projectsLoading || isAuthLoading));
-  }, [projectsLoading, user?.id, authChecked]);
-
-  // Define refresh handler
-  const handleRefresh = async () => {
-    console.log("🔄 Manual refresh requested");
-    setIsLoading(true);
-    
-    try {
-      // Invalidate projects cache first
-      invalidateProjectsCache();
-      
-      // Then reload auth state
-      await reloadAuthState();
-      
-      // Finally refetch projects
-      await refetchProjects();
-    } catch (err) {
-      console.error("Error during manual refresh:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Auto-refresh after a prolonged loading state
-  useEffect(() => {
-    let loadingTimer: NodeJS.Timeout | null = null;
-    
-    // If we're stuck in loading for more than 5 seconds, try to recover
-    if (isLoading && user?.id) {
-      loadingTimer = setTimeout(() => {
-        console.log("⏱️ Loading timeout, attempting recovery...");
-        handleRefresh();
-      }, 5000);
-    }
-    
-    return () => {
-      if (loadingTimer) clearTimeout(loadingTimer);
-    };
-  }, [isLoading, user?.id, handleRefresh]);
+  }, [user, isAdmin, router])
 
   // Filter projects when status filter changes
   useEffect(() => {
@@ -202,65 +81,17 @@ export default function AdminDashboardPage() {
     }
   }, [statusFilter, projects])
 
-  // Add explicit session check on page load
-  useEffect(() => {
-    const checkAdminSession = async () => {
-      console.log("🔍 Checking admin session validity");
-      try {
-        // First check if we have a session
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("❌ Admin session check error:", sessionError);
-          return;
-        }
-        
-        if (!sessionData.session) {
-          console.log("⚠️ No session found during admin check, reloading auth state");
-          await reloadAuthState();
-          return;
-        }
-        
-        // We have a session, check admin status
-        console.log("🔒 Checking admin status for:", sessionData.session?.user?.email);
-        
-        // If admin status is uncertain, force a reload of auth state
-        if (!authChecked) {
-          console.log("⚠️ Admin status uncertain, reloading auth state");
-          await reloadAuthState();
-          setAuthChecked(true);
-        }
-        
-        // If we know we're admin but have no projects, force a refresh
-        if (isAdmin && (!adminProjects || adminProjects.length === 0) && !projectsLoading) {
-          console.log("👑 Admin confirmed but no projects loaded, refreshing");
-          invalidateProjectsCache();
-          refetchProjects();
-        }
-      } catch (err) {
-        console.error("❌ Error in admin session check:", err);
-      }
-    };
-    
-    checkAdminSession();
-  }, [isAdmin, authChecked, adminProjects, projectsLoading, reloadAuthState, refetchProjects]);
-
-  if (projectsError) {
-    console.error('Error loading admin projects:', projectsError)
-    // Show error UI with option to retry
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold mb-3 text-red-600">Erreur de chargement</h2>
-            <p className="mb-6 text-[14px]">Impossible de charger les données d'administration</p>
-            <Button onClick={handleRefresh}>
-              <RotateCw className="mr-2 h-4 w-4" /> Réessayer
-            </Button>
-          </div>
-        </div>
-      </PageContainer>
-    )
+  const loadProjects = async () => {
+    try {
+      setIsLoading(true)
+      const projectData = await fetchAllProjects()
+      setProjects(projectData)
+      setFilteredProjects(projectData)
+    } catch (error) {
+      console.error('Error loading projects:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (isLoading) {
@@ -276,34 +107,12 @@ export default function AdminDashboardPage() {
     )
   }
 
-  // If auth check passed but no admin access
-  if (!isAdmin && authChecked) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold mb-3">Accès non autorisé</h2>
-            <p className="mb-6 text-[14px]">Vous n'avez pas les droits d'accès à cette page</p>
-            <Link href="/dashboard">
-              <Button>
-                Retour au tableau de bord
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </PageContainer>
-    )
-  }
-
   return (
     <PageContainer>
       <PageHeader
         title="Administration"
         description="Gestion des projets et utilisateurs"
       >
-        <Button variant="outline" onClick={handleRefresh} className="mr-2">
-          <RotateCw className="mr-2 h-4 w-4" /> Actualiser
-        </Button>
         <Link href="/dashboard">
           <Button variant="outline">
             <FileText className="mr-2 h-4 w-4" /> Dashboard client
@@ -415,8 +224,8 @@ export default function AdminDashboardPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-[14px] text-[#64748B]">
-                      Aucun projet trouvé
+                    <td colSpan={7} className="px-4 py-8 text-center text-[14px] text-[#64748B]">
+                      Aucun projet ne correspond à votre recherche
                     </td>
                   </tr>
                 )}

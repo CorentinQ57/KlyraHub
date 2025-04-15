@@ -1,8 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Create a global ready flag to ensure Supabase is fully initialized
-let isCoreSupabaseReady = false;
-
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
 }
@@ -10,296 +7,6 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
-// Enhanced logging of session debug info in localStorage, cookies and initial state
-export const debugAuthState = (source = 'default') => {
-  if (typeof window !== 'undefined') {
-    try {
-      // Check all possible localStorage token formats
-      const tokenKeys = [
-        'supabase.auth.token',
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
-        'sb-access-token',
-      ];
-      
-      const refreshTokenKeys = [
-        'supabase.auth.refreshToken',
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`,
-        'sb-refresh-token',
-      ];
-      
-      const expiryKeys = [
-        'supabase.auth.expires_at',
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`,
-        'sb-expires-at',
-      ];
-      
-      // Check for tokens in all possible formats
-      let foundToken = null;
-      let foundRefreshToken = null;
-      let foundExpiry = null;
-      
-      for (const key of tokenKeys) {
-        const value = localStorage.getItem(key);
-        if (value) {
-          foundToken = { key, value: value.substring(0, 12) + '...' };
-          break;
-        }
-      }
-      
-      for (const key of refreshTokenKeys) {
-        const value = localStorage.getItem(key);
-        if (value) {
-          foundRefreshToken = { key, value: value.substring(0, 12) + '...' };
-          break;
-        }
-      }
-      
-      for (const key of expiryKeys) {
-        const value = localStorage.getItem(key);
-        if (value) {
-          foundExpiry = { 
-            key, 
-            value, 
-            date: new Date(parseInt(value) * 1000).toLocaleString() 
-          };
-          break;
-        }
-      }
-      
-      // Check cookies
-      const cookieString = document.cookie;
-      const sbCookieRegex = /sb-(access|refresh)-token/;
-      const hasSbCookies = sbCookieRegex.test(cookieString);
-      
-      console.log(`🔑 Auth Debug [${source}]:`, {
-        supabaseReady: isCoreSupabaseReady,
-        localStorage: {
-          token: foundToken ? `Found in ${foundToken.key}` : 'Missing',
-          refreshToken: foundRefreshToken ? `Found in ${foundRefreshToken.key}` : 'Missing',
-          expiry: foundExpiry ? `Found in ${foundExpiry.key} (${foundExpiry.date})` : 'Missing',
-        },
-        cookies: {
-          hasSbCookies,
-          preview: cookieString.substring(0, 50) + (cookieString.length > 50 ? '...' : '')
-        }
-      });
-
-      // Return if we found authentication data
-      return !!(foundToken || foundRefreshToken || hasSbCookies);
-    } catch (error) {
-      console.error('Error reading auth state:', error);
-      return false;
-    }
-  }
-  return false;
-};
-
-// Enhanced cookie-aware storage implementation
-export const enhancedStorage = {
-  getItem: (key: string) => {
-    if (typeof window === 'undefined') return null;
-    
-    // Try standard format first
-    let value = localStorage.getItem(key);
-    
-    // If not found, try alternative formats
-    if (!value) {
-      // Token mappings
-      const mappings: Record<string, string[]> = {
-        // Main access token
-        'supabase.auth.token': [
-          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
-          'sb-access-token'
-        ],
-        [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`]: [
-          'supabase.auth.token',
-          'sb-access-token'
-        ],
-        'sb-access-token': [
-          'supabase.auth.token',
-          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`
-        ],
-        
-        // Refresh token
-        'supabase.auth.refreshToken': [
-          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`,
-          'sb-refresh-token'
-        ],
-        [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`]: [
-          'supabase.auth.refreshToken',
-          'sb-refresh-token'
-        ],
-        'sb-refresh-token': [
-          'supabase.auth.refreshToken',
-          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`
-        ],
-        
-        // Expiry
-        'supabase.auth.expires_at': [
-          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`,
-          'sb-expires-at'
-        ],
-        [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`]: [
-          'supabase.auth.expires_at',
-          'sb-expires-at'
-        ],
-        'sb-expires-at': [
-          'supabase.auth.expires_at',
-          `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`
-        ]
-      };
-      
-      // Try alternatives
-      if (mappings[key]) {
-        for (const altKey of mappings[key]) {
-          const altValue = localStorage.getItem(altKey);
-          if (altValue) {
-            console.log(`Retrieved auth value using alternative key: ${key} → ${altKey}`);
-            value = altValue;
-            break;
-          }
-        }
-      }
-      
-      // If still not found, check cookies (for access and refresh tokens)
-      if (!value && typeof document !== 'undefined') {
-        try {
-          // Handle cookie extraction for specific keys
-          if (key === 'supabase.auth.token' || key === `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token` || key === 'sb-access-token') {
-            const match = document.cookie.match(new RegExp('(^| )sb-access-token=([^;]+)'));
-            if (match) {
-              console.log('Retrieved access token from cookie');
-              value = match[2];
-            }
-          } else if (key === 'supabase.auth.refreshToken' || key === `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token` || key === 'sb-refresh-token') {
-            const match = document.cookie.match(new RegExp('(^| )sb-refresh-token=([^;]+)'));
-            if (match) {
-              console.log('Retrieved refresh token from cookie');
-              value = match[2];
-            }
-          }
-        } catch (e) {
-          console.error('Error accessing cookies:', e);
-        }
-      }
-    }
-    
-    return value;
-  },
-  
-  setItem: (key: string, value: string) => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(key, value);
-    
-    // Store in multiple formats for redundancy
-    const mappings: Record<string, string[]> = {
-      // Main access token
-      'supabase.auth.token': [
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
-        'sb-access-token'
-      ],
-      [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`]: [
-        'supabase.auth.token',
-        'sb-access-token'
-      ],
-      'sb-access-token': [
-        'supabase.auth.token',
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`
-      ],
-      
-      // Refresh token
-      'supabase.auth.refreshToken': [
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`,
-        'sb-refresh-token'
-      ],
-      [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`]: [
-        'supabase.auth.refreshToken',
-        'sb-refresh-token'
-      ],
-      'sb-refresh-token': [
-        'supabase.auth.refreshToken',
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`
-      ],
-      
-      // Expiry
-      'supabase.auth.expires_at': [
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`,
-        'sb-expires-at'
-      ],
-      [`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`]: [
-        'supabase.auth.expires_at',
-        'sb-expires-at'
-      ],
-      'sb-expires-at': [
-        'supabase.auth.expires_at',
-        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`
-      ]
-    };
-    
-    if (mappings[key]) {
-      for (const altKey of mappings[key]) {
-        localStorage.setItem(altKey, value);
-      }
-    }
-    
-    // Also store critical auth tokens as cookies for additional reliability
-    if (typeof document !== 'undefined') {
-      try {
-        const maxAgeSec = 60 * 60 * 24 * 7; // 7 days
-        
-        if (key === 'supabase.auth.token' || key === `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token` || key === 'sb-access-token') {
-          document.cookie = `sb-access-token=${value}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
-        } else if (key === 'supabase.auth.refreshToken' || key === `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token` || key === 'sb-refresh-token') {
-          document.cookie = `sb-refresh-token=${value}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
-        }
-      } catch (e) {
-        console.error('Error setting cookies:', e);
-      }
-    }
-  },
-  
-  removeItem: (key: string) => {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem(key);
-    
-    // Remove all possible formats
-    const allKeys = [
-      // Access token
-      'supabase.auth.token',
-      `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
-      'sb-access-token',
-      
-      // Refresh token
-      'supabase.auth.refreshToken',
-      `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`,
-      'sb-refresh-token',
-      
-      // Expiry
-      'supabase.auth.expires_at',
-      `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-expires-at`,
-      'sb-expires-at'
-    ];
-    
-    for (const k of allKeys) {
-      localStorage.removeItem(k);
-    }
-    
-    // Also remove cookies
-    if (typeof document !== 'undefined') {
-      try {
-        document.cookie = 'sb-access-token=; Max-Age=-99999999; path=/; SameSite=Lax';
-        document.cookie = 'sb-refresh-token=; Max-Age=-99999999; path=/; SameSite=Lax';
-      } catch (e) {
-        console.error('Error removing cookies:', e);
-      }
-    }
-  }
-};
-
-// Check for auth data before initializing Supabase
-const hasAuthData = debugAuthState('pre-init');
-
-// Create Supabase client with enhanced config
 export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -308,264 +15,14 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      flowType: 'pkce',
-      storage: enhancedStorage,
-      storageKey: 'supabase.auth.token',
-      // Enable debugging for better error visibility
-      debug: true
     },
     global: {
       headers: {
         'X-Client-Info': 'supabase-js@2.39.7',
       },
     },
-    // Reduced timeout for API calls to avoid long loading periods
-    realtime: {
-      timeout: 10000, // 10 seconds
-    },
-    db: {
-      schema: 'public',
-    }
   }
 );
-
-// Add interceptor for session expiry errors and auto-refresh
-const addSessionRefreshInterceptor = () => {
-  if (typeof window !== 'undefined') {
-    // Add a generic fetch interceptor to handle auth errors
-    const originalFetch = window.fetch;
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      try {
-        const response = await originalFetch(input, init);
-        
-        // Check if this could be an auth error
-        if (response.status === 401) {
-          const url = typeof input === 'string' 
-            ? input 
-            : input instanceof Request 
-              ? input.url
-              : input.toString();
-          
-          // Only try to refresh if this is a Supabase API call
-          if (url.includes(process.env.NEXT_PUBLIC_SUPABASE_URL || '')) {
-            console.log('🔑 Detected 401 response, attempting refresh...');
-            
-            try {
-              const { data, error: refreshError } = await supabase.auth.refreshSession();
-              
-              if (!refreshError && data?.session) {
-                console.log('✅ Token refreshed due to 401 response');
-                
-                // For important API calls, we could retry the request here
-                // This would require cloning the request and sending it again
-                // We're keeping it simple for now and just refreshing the token
-              }
-            } catch (refreshError) {
-              console.warn('⚠️ Background refresh failed:', refreshError);
-            }
-          }
-        }
-        
-        return response;
-      } catch (error) {
-        console.error('❌ Fetch error:', error);
-        throw error;
-      }
-    };
-    
-    console.log('✅ Session refresh interceptor installed');
-  }
-};
-
-// Wait for Supabase client to be fully initialized
-const waitForSupabaseReady = () => {
-  return new Promise<void>((resolve) => {
-    // If we detected auth data, give Supabase more time to load it
-    const waitTime = hasAuthData ? 300 : 100;
-    
-    setTimeout(() => {
-      isCoreSupabaseReady = true;
-      console.log(`✅ Supabase client ready after ${waitTime}ms wait`);
-      
-      // Add session refresh interceptor after initialization
-      addSessionRefreshInterceptor();
-      
-      resolve();
-    }, waitTime);
-  });
-};
-
-// Add a manual initialization function for authentication
-const initSupabaseAuth = async () => {
-  // Wait for basic initialization
-  await waitForSupabaseReady();
-  
-  // Check if we need to do a manual refresh
-  if (typeof window !== 'undefined') {
-    try {
-      // Vérifier si nous avons un utilisateur en cache
-      const cachedUserStr = localStorage.getItem('klyra_cached_user');
-      if (cachedUserStr) {
-        console.log("🧠 Found cached user data");
-        
-        try {
-          // Parse cached user
-          const cachedUser = JSON.parse(cachedUserStr);
-          
-          // Check if tokens exist in localStorage
-          const refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
-                            localStorage.getItem('sb-refresh-token') || 
-                            localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`);
-          
-          // If we have a valid cached user but no refresh token, we might be in a half-logged-in state
-          // Attempt a background session check to resolve this
-          if (cachedUser && typeof cachedUser === 'object' && cachedUser.id) {
-            console.log("🔄 Attempting early session validation for cached user...");
-            
-            // Try a low-impact call to verify session
-            const { data, error } = await Promise.race([
-              supabase.auth.getUser(),
-              new Promise(resolve => setTimeout(() => resolve({ 
-                data: null, 
-                error: new Error("Early session check timeout")
-              }), 2000))
-            ]) as any;
-            
-            if (error) {
-              console.warn("⚠️ Early session check failed:", error.message);
-              
-              if (refreshToken) {
-                // Try to refresh the token if we have one
-                console.log("🔄 Attempting early manual token refresh...");
-                const { error: refreshError } = await supabase.auth.refreshSession({ 
-                  refresh_token: refreshToken 
-                });
-                
-                if (refreshError) {
-                  console.warn("⚠️ Early manual refresh failed:", refreshError.message);
-                  
-                  // If refreshing fails and we have cached user data, warn about potential sync issues
-                  console.warn("⚠️ Session restoration will rely on cached data due to token refresh failure");
-                } else {
-                  console.log("✅ Early manual refresh successful!");
-                }
-              } else {
-                console.warn("⚠️ No refresh token available for cached user - session may be lost");
-              }
-            } else if (data?.user) {
-              console.log("✅ Early session check confirmed valid user:", data.user.email);
-              
-              // Update cache with current data
-              localStorage.setItem('klyra_cached_user', JSON.stringify(data.user));
-              console.log("💾 Updated cached user data after validation");
-            } else {
-              console.warn("⚠️ Session check returned empty user data but no error");
-            }
-          }
-        } catch (parseError) {
-          console.error("❌ Error parsing cached user:", parseError);
-          // If parsing fails, remove the invalid cache entry
-          localStorage.removeItem('klyra_cached_user');
-        }
-      } else {
-        // If no cached user but tokens exist, check if we can get user data
-        const hasAuthTokens = localStorage.getItem('supabase.auth.token') || 
-                            localStorage.getItem('sb-access-token') || 
-                            localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
-                            
-        const refreshToken = localStorage.getItem('supabase.auth.refreshToken') || 
-                          localStorage.getItem('sb-refresh-token') || 
-                          localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-refresh-token`);
-        
-        if (hasAuthTokens || refreshToken) {
-          console.log("🔍 Auth tokens found but no cached user - attempting to retrieve");
-          
-          // If we have tokens but no cached user, try to get the user data
-          const { data, error } = await Promise.race([
-            supabase.auth.getUser(),
-            new Promise(resolve => setTimeout(() => resolve({ 
-              data: null, 
-              error: new Error("User retrieval timeout")
-            }), 2000))
-          ]) as any;
-          
-          if (error) {
-            console.warn("⚠️ Failed to retrieve user with existing tokens:", error.message);
-            
-            if (refreshToken) {
-              // Attempt refresh as last resort
-              console.log("🔄 Attempting manual token refresh to restore session...");
-              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({ 
-                refresh_token: refreshToken 
-              });
-              
-              if (refreshError) {
-                console.warn("⚠️ Token refresh failed, session may be lost:", refreshError.message);
-              } else if (refreshData?.session?.user) {
-                console.log("✅ Session restored through refresh token!");
-                
-                // Cache the recovered user
-                localStorage.setItem('klyra_cached_user', JSON.stringify(refreshData.session.user));
-                console.log("💾 Cached user data from refresh");
-              }
-            }
-          } else if (data?.user) {
-            console.log("✅ Successfully retrieved user:", data.user.email);
-            
-            // Cache the user for future use
-            localStorage.setItem('klyra_cached_user', JSON.stringify(data.user));
-            console.log("💾 Cached retrieved user data");
-          }
-        }
-      }
-    } catch (error) {
-      console.warn("⚠️ Error in initSupabaseAuth:", error);
-    }
-  }
-  
-  // Run debug after initialization
-  debugAuthState('post-init');
-  
-  return true;
-};
-
-// Initialize Supabase
-waitForSupabaseReady().then(() => {
-  // Run debug after Supabase client is fully initialized
-  debugAuthState('post-init');
-  
-  // Trigger immediate auth check as a background task
-  initSupabaseAuth().catch(error => {
-    console.warn("⚠️ Background auth initialization failed:", error);
-  });
-});
-
-// Export a readiness check
-export const isSupabaseReady = () => isCoreSupabaseReady;
-
-// Export a function to check if Supabase is ready and wait if it's not
-export const waitForSupabase = async () => {
-  if (isCoreSupabaseReady) return;
-  await waitForSupabaseReady();
-};
-
-// Periodically check auth state every 30 seconds while page is open
-if (typeof window !== 'undefined') {
-  setInterval(() => {
-    debugAuthState('periodic');
-    
-    // Try to help keep session active by forcing a refresh
-    if (isCoreSupabaseReady) {
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) {
-          console.log('📡 Refreshing session periodically');
-        }
-      }).catch(err => {
-        console.error('Error in periodic session check:', err);
-      });
-    }
-  }, 30000);
-}
 
 // Database types
 export type User = {
@@ -669,73 +126,18 @@ export async function getCurrentUser() {
 }
 
 export async function getProfileData(userId: string) {
-  try {
-    // Vérifier que l'ID utilisateur est valide
-    if (!userId || typeof userId !== 'string') {
-      console.error('Invalid user ID provided to getProfileData:', userId);
-      return null;
-    }
-    
-    // Assurons-nous que l'ID est correctement formaté
-    const cleanUserId = userId.trim();
-    
-    // Ajouter plus de logging
-    console.log(`Fetching profile for user ID: ${cleanUserId}`);
-    
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', cleanUserId)
-      .single();
-    
-    if (error) {
-      // Vérifier si c'est une erreur de données manquantes
-      if (error.code === 'PGRST116') {
-        console.log(`Profile not found for user ID: ${cleanUserId}, will attempt to create one`);
-        
-        // Si le profil n'existe pas, tenter de le créer automatiquement
-        try {
-          // Récupérer les données utilisateur
-          const { data: userData } = await supabase.auth.getUser();
-          
-          if (userData && userData.user) {
-            const newProfile = {
-              id: cleanUserId,
-              full_name: userData.user.user_metadata?.full_name || '',
-              email: userData.user.email,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-            
-            const { data: insertedProfile, error: insertError } = await supabase
-              .from('profiles')
-              .insert(newProfile)
-              .select()
-              .single();
-              
-            if (insertError) {
-              console.error('Error creating profile:', insertError);
-              return null;
-            }
-            
-            console.log('Profile created successfully');
-            return insertedProfile;
-          }
-        } catch (createError) {
-          console.error('Error in automatic profile creation:', createError);
-        }
-      } else {
-        console.error('Error fetching profile data:', error);
-      }
-      return null;
-    }
-    
-    console.log('Profile data retrieved successfully');
-    return data;
-  } catch (err) {
-    console.error('Exception in getProfileData:', err);
-    return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+  
+  if (error) {
+    console.error('Error fetching profile data:', error)
+    return null
   }
+  
+  return data
 }
 
 export async function updateProfile(userId: string, updates: Partial<User>) {
@@ -757,50 +159,107 @@ export async function updateProfile(userId: string, updates: Partial<User>) {
  */
 export async function saveOnboardingData(userId: string, onboardingData: any) {
   try {
-    // Étape 1: Mettre à jour les données de profil
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        full_name: onboardingData.fullName,
-        company_name: onboardingData.companyName,
-        phone: onboardingData.phone,
-        business_goals: onboardingData.goals,
-        sector: onboardingData.sector, 
-        company_size: onboardingData.companySize,
-        needs: JSON.stringify({
-          branding: onboardingData.needsBranding || false,
-          website: onboardingData.needsWebsite || false, 
-          marketing: onboardingData.needsMarketing || false
-        }),
-        visual_preferences: onboardingData.visualPreferences || [],
-        communication_style: onboardingData.communicationStyle,
-        time_management: onboardingData.timeManagement,
-        onboarded: true,
-        onboarding_completed_at: new Date().toISOString()
-      })
-      .eq('id', userId)
+    console.log('Début de la sauvegarde des données d\'onboarding pour l\'utilisateur:', userId)
     
-    if (profileError) {
-      console.error('Error updating profile with onboarding data:', profileError)
-      throw profileError
+    // Étape 1: Vérifier que l'utilisateur existe dans la table profiles
+    const { data: profileData, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single()
+    
+    if (profileCheckError) {
+      console.error('Erreur lors de la vérification du profil:', profileCheckError)
+      
+      // Si le profil n'existe pas, le créer
+      if (profileCheckError.code === 'PGRST116') {
+        console.log('Profil non trouvé, création d\'un nouveau profil')
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: onboardingData.email || '',
+            full_name: onboardingData.fullName || '',
+            created_at: new Date().toISOString()
+          })
+        
+        if (insertError) {
+          console.error('Erreur lors de la création du profil:', insertError)
+          throw insertError
+        }
+      } else {
+        throw profileCheckError
+      }
     }
     
-    // Étape 2: Mettre à jour les métadonnées utilisateur
+    // Étape 2: Préparer les données à mettre à jour
+    const updateData: any = {
+      full_name: onboardingData.fullName,
+      onboarded: true,
+      onboarding_completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    
+    // Ajouter les données facultatives si elles existent
+    if (onboardingData.companyName) updateData.company_name = onboardingData.companyName
+    if (onboardingData.phone) updateData.phone = onboardingData.phone
+    if (onboardingData.goals) updateData.business_goals = onboardingData.goals
+    if (onboardingData.sector) updateData.sector = onboardingData.sector
+    if (onboardingData.companySize) updateData.company_size = onboardingData.companySize
+    
+    // Traiter les besoins si présents
+    if (onboardingData.needsBranding !== undefined || 
+        onboardingData.needsWebsite !== undefined || 
+        onboardingData.needsMarketing !== undefined) {
+      updateData.needs = JSON.stringify({
+        branding: onboardingData.needsBranding || false,
+        website: onboardingData.needsWebsite || false, 
+        marketing: onboardingData.needsMarketing || false
+      })
+    }
+    
+    // Traiter les préférences visuelles si présentes
+    if (onboardingData.visualPreferences) {
+      updateData.visual_preferences = onboardingData.visualPreferences
+    }
+    
+    // Traiter les styles de communication et gestion du temps
+    if (onboardingData.communicationStyle) updateData.communication_style = onboardingData.communicationStyle
+    if (onboardingData.timeManagement) updateData.time_management = onboardingData.timeManagement
+    
+    console.log('Données à mettre à jour dans la table profiles:', updateData)
+    
+    // Étape 3: Mettre à jour les données de profil
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('id', userId)
+    
+    if (updateError) {
+      console.error('Erreur lors de la mise à jour du profil:', updateError)
+      throw updateError
+    }
+    
+    console.log('Profil mis à jour avec succès')
+    
+    // Étape 4: Mettre à jour les métadonnées utilisateur
     const { error: metadataError } = await supabase.auth.updateUser({
       data: { 
         onboarded: true,
-        onboardingCompletedAt: new Date().toISOString()
+        onboardingCompletedAt: new Date().toISOString(),
+        fullName: onboardingData.fullName // Ajouter le nom complet aux métadonnées aussi
       }
     })
     
     if (metadataError) {
-      console.error('Error updating user metadata:', metadataError)
+      console.error('Erreur lors de la mise à jour des métadonnées:', metadataError)
       throw metadataError
     }
     
+    console.log('Métadonnées utilisateur mises à jour avec succès')
     return true
   } catch (error) {
-    console.error('Error in saveOnboardingData:', error)
+    console.error('Erreur globale dans saveOnboardingData:', error)
     throw error
   }
 }
@@ -849,21 +308,8 @@ export async function fetchProjects(userId: string) {
   }
 }
 
-// Add caching variables for fetchAllProjects
-let cachedProjects: any[] = [];
-let lastProjectsFetchTime = 0;
-const CACHE_DURATION = 5000; // 5 seconds cache
-
 export async function fetchAllProjects() {
   try {
-    // Check if we have a recent cache that we can return
-    const now = Date.now();
-    if (cachedProjects.length > 0 && now - lastProjectsFetchTime < CACHE_DURATION) {
-      console.log(`Using cached projects (${cachedProjects.length} items, cache age: ${(now - lastProjectsFetchTime)/1000}s)`);
-      return cachedProjects;
-    }
-    
-    console.log('Cache expired or empty, fetching fresh projects data...');
     const { data, error } = await supabase
       .from('projects')
       .select(`
@@ -898,23 +344,11 @@ export async function fetchAllProjects() {
     // Normaliser les données des projets
     const normalizedData = data ? normalizeProjectsData(data) : [];
     
-    // Update cache
-    cachedProjects = normalizedData;
-    lastProjectsFetchTime = now;
-    console.log(`Updated projects cache with ${normalizedData.length} items`);
-    
     return normalizedData
   } catch (error) {
     console.error('Exception in fetchAllProjects:', error)
     return []
   }
-}
-
-// Manual cache invalidation function
-export function invalidateProjectsCache() {
-  console.log('Manually invalidating projects cache');
-  cachedProjects = [];
-  lastProjectsFetchTime = 0;
 }
 
 /**
@@ -1950,137 +1384,4 @@ export async function createStripeSession(
     console.error('Exception dans createStripeSession:', error);
     throw error;
   }
-}
-
-// Helper function to refresh session token
-export async function refreshSession() {
-  try {
-    const { data, error } = await supabase.auth.refreshSession();
-    if (error) {
-      console.error('⚠️ Error refreshing session:', error);
-      return null;
-    }
-    
-    console.log('✅ Session refreshed successfully:', data.session ? 'Valid session' : 'No session');
-    return data.session;
-  } catch (error) {
-    console.error('Exception in refreshSession:', error);
-    return null;
-  }
-}
-
-// Helper function to check session status with enhanced debugging
-export async function checkSessionStatus() {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // Log detailed session state
-    console.log('🔐 Session check:', {
-      hasSession: !!session,
-      user: session?.user?.email || 'None',
-      expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toLocaleString() : 'N/A',
-      newAccessToken: session?.access_token?.substring(0, 10) + '...' || 'None',
-    });
-    
-    return !!session;
-  } catch (error) {
-    console.error('Error checking session status:', error);
-    return false;
-  }
-}
-
-// Function to check if auth tokens exist in any format
-export const checkAuthTokensExist = () => {
-  if (typeof window === 'undefined') return false;
-  
-  try {
-    // Check for tokens in localStorage
-    const tokenKeys = [
-      'supabase.auth.token',
-      `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
-      'sb-access-token',
-    ];
-    
-    for (const key of tokenKeys) {
-      if (localStorage.getItem(key)) {
-        return true;
-      }
-    }
-    
-    // Check for tokens in cookies
-    if (typeof document !== 'undefined') {
-      const cookieString = document.cookie;
-      const sbCookieRegex = /sb-(access|refresh)-token/;
-      if (sbCookieRegex.test(cookieString)) {
-        return true;
-      }
-    }
-    
-    return false;
-  } catch (error) {
-    console.error('Error checking auth tokens:', error);
-    return false;
-  }
-};
-
-// Renforcer la sauvegarde des jetons d'authentification
-export function enforceTokenStorage() {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    // Vérifier si nous avons une session valide
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        console.error('Error getting session in enforceTokenStorage:', error);
-        return;
-      }
-      
-      if (data?.session) {
-        console.log('✅ Enforcing token storage for valid session');
-        
-        // Explicitement stocker les tokens dans localStorage et cookies
-        const accessToken = data.session.access_token;
-        const refreshToken = data.session.refresh_token;
-        
-        // Stockage dans localStorage avec redondance
-        localStorage.setItem('supabase.auth.token', JSON.stringify({ 
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
-        }));
-        
-        localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, JSON.stringify({ 
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
-        }));
-        
-        // Stockage direct des tokens
-        localStorage.setItem('sb-access-token', accessToken);
-        localStorage.setItem('sb-refresh-token', refreshToken);
-        
-        // Set secure cookies
-        const maxAgeSec = 60 * 60 * 24 * 7; // 7 days
-        document.cookie = `sb-access-token=${accessToken}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
-        document.cookie = `sb-refresh-token=${refreshToken}; max-age=${maxAgeSec}; path=/; SameSite=Lax`;
-        
-        console.log('✅ Token storage enforced in multiple locations');
-      }
-    });
-  } catch (error) {
-    console.error('Error in enforceTokenStorage:', error);
-  }
-}
-
-// Exécuter après initialisation dans le navigateur
-if (typeof window !== 'undefined') {
-  // Wait 500ms to ensure Supabase client is ready
-  setTimeout(() => {
-    enforceTokenStorage();
-  }, 500);
-  
-  // Aussi exécuter périodiquement pour maintenir la session
-  setInterval(() => {
-    enforceTokenStorage();
-  }, 10 * 60 * 1000); // Toutes les 10 minutes
 } 
