@@ -5,42 +5,20 @@ import { enforceTokenStorage } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
 import { AuthResponse } from '@supabase/supabase-js'
 
-// Variable globale pour suivre si une tentative de récupération de session a été faite
-let hasAttemptedPreloadSession = false;
-
-// Fonction pour précharger la session avant même le démarrage de l'application
-if (typeof window !== 'undefined' && !hasAttemptedPreloadSession) {
-  hasAttemptedPreloadSession = true;
-  
-  // Ajouter une petite fonction pour précharger la session sans attendre
-  (async () => {
-    console.log("🔄 Preloading session from ClientTokenManager");
-    try {
-      // Vérifier si des tokens sont disponibles dans localStorage ou cookies
-      const accessToken = localStorage.getItem('sb-access-token') || 
-                       localStorage.getItem('supabase.auth.token') ||
-                       localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
-      
-      if (accessToken) {
-        console.log("🔑 Found access token, enforcing storage before auth provider init");
-        enforceTokenStorage();
-        
-        // Précharger la session
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("❌ Error preloading session:", error);
-        } else if (data?.session) {
-          console.log("✅ Successfully preloaded session for:", data.session.user?.email);
-        } else {
-          console.log("⚠️ No valid session found in preload");
-        }
-      } else {
-        console.log("⚠️ No access token found during preload");
-      }
-    } catch (error) {
-      console.error("❌ Error in session preload:", error);
+// Initialisation synchrone au chargement du module
+if (typeof window !== 'undefined') {
+  try {
+    const accessToken = localStorage.getItem('sb-access-token') || 
+                     localStorage.getItem('supabase.auth.token') ||
+                     localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`)
+    
+    if (accessToken) {
+      console.error('[ClientTokenManager] Found access token during init')
+      enforceTokenStorage()
     }
-  })();
+  } catch (error) {
+    console.error('[ClientTokenManager] Error during init:', error)
+  }
 }
 
 export default function ClientTokenManager() {
@@ -65,14 +43,6 @@ export default function ClientTokenManager() {
     
     try {
       console.error('[ClientTokenManager] Starting session check')
-      
-      // Attendre que le DOM soit complètement chargé
-      if (document.readyState !== 'complete') {
-        console.error('[ClientTokenManager] DOM not ready, waiting...')
-        await new Promise(resolve => {
-          window.addEventListener('load', resolve, { once: true })
-        })
-      }
       
       // Vérifier si des tokens sont disponibles
       const accessToken = localStorage.getItem('sb-access-token') || 
@@ -154,10 +124,23 @@ export default function ClientTokenManager() {
     console.error('[ClientTokenManager] Component mounted')
     mountedRef.current = true
     
-    if (!initializationAttempted.current) {
-      console.error('[ClientTokenManager] Starting initial session check')
-      initializationAttempted.current = true
-      checkSession()
+    // Attendre que le DOM soit complètement chargé
+    if (document.readyState === 'complete') {
+      if (!initializationAttempted.current) {
+        console.error('[ClientTokenManager] Starting initial session check')
+        initializationAttempted.current = true
+        checkSession()
+      }
+    } else {
+      const handleLoad = () => {
+        if (!initializationAttempted.current) {
+          console.error('[ClientTokenManager] Starting initial session check after load')
+          initializationAttempted.current = true
+          checkSession()
+        }
+      }
+      window.addEventListener('load', handleLoad)
+      return () => window.removeEventListener('load', handleLoad)
     }
     
     return () => {
