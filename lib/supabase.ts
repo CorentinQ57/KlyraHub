@@ -24,69 +24,6 @@ export const supabase = createClient(
   }
 );
 
-/**
- * Cette fonction s'assure que les tokens d'authentification sont correctement stockés
- * et accessibles entre les différentes pages de l'application.
- * Elle est utilisée pour garantir la persistance de la session.
- */
-export function enforceTokenStorage() {
-  if (typeof window === 'undefined') {
-    // Ne rien faire côté serveur
-    return;
-  }
-
-  try {
-    // Essayer de récupérer les tokens depuis localStorage
-    const accessToken = localStorage.getItem('sb-access-token') || 
-                      localStorage.getItem('supabase.auth.token') ||
-                      localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
-    
-    const refreshToken = localStorage.getItem('sb-refresh-token');
-    
-    if (accessToken) {
-      // S'assurer que les tokens sont disponibles dans tous les formats possibles
-      localStorage.setItem('sb-access-token', accessToken);
-      
-      // Stocker également dans le format spécifique à l'URL Supabase
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-        const key = `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`;
-        // S'assurer que nous ne supprimons pas d'informations existantes
-        const currentData = localStorage.getItem(key);
-        if (currentData) {
-          try {
-            // Si nous avons des données existantes, les préserver et mettre à jour le token
-            const parsed = JSON.parse(currentData);
-            parsed.access_token = accessToken;
-            if (refreshToken) {
-              parsed.refresh_token = refreshToken;
-            }
-            localStorage.setItem(key, JSON.stringify(parsed));
-          } catch (error) {
-            console.error("Error parsing existing token data:", error);
-            // En cas d'erreur de parsing, initialiser avec des données minimales
-            localStorage.setItem(key, JSON.stringify({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            }));
-          }
-        } else {
-          // Pas de données existantes, initialiser avec des données minimales
-          localStorage.setItem(key, JSON.stringify({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          }));
-        }
-      }
-      
-      console.log("✅ Token storage enforced");
-    } else {
-      console.log("⚠️ No access token found to enforce");
-    }
-  } catch (error) {
-    console.error("Error enforcing token storage:", error);
-  }
-}
-
 // Database types
 export type User = {
   id: string

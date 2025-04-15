@@ -114,9 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('Error getting session:', error)
-        setUser(null)
-        setSession(null)
-        setIsAdmin(false)
         setIsLoading(false)
         return
       }
@@ -138,7 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setSession(null)
               setUser(null)
               setIsAdmin(false)
-              setIsLoading(false)
               return
             }
             
@@ -149,11 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               safeSetUser(directUser)
               
               // Check if user is admin
-              const role = await Promise.race([
-                checkUserRole(directUser.id),
-                new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500))
-              ])
-              
+              const role = await checkUserRole(directUser.id)
               setIsAdmin(role === 'admin')
             } else {
               console.error("Direct getUser also failed, user is invalid:", directUser)
@@ -173,11 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           safeSetUser(session.user)
           
           // Check if user is admin
-          const role = await Promise.race([
-            checkUserRole(session.user.id),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500))
-          ])
-          
+          const role = await checkUserRole(session.user.id)
           setIsAdmin(role === 'admin')
         }
       } else {
@@ -187,9 +175,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('Error in getInitialSession:', error)
-      setSession(null) 
-      setUser(null)
-      setIsAdmin(false)
     } finally {
       console.log("Setting isLoading to false from getInitialSession")
       setIsLoading(false)
@@ -221,13 +206,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               
               console.log("Emergency role check result:", role)
               setIsAdmin(role === 'admin')
-            } else {
-              console.log("Emergency check failed to find valid user, treating as logged out")
-              setUser(null)
             }
           } catch (error) {
             console.error("Error in emergency user check:", error)
-            setUser(null)
           } finally {
             // Dans tous les cas, forcer la fin du chargement
             setIsLoading(false)
@@ -236,15 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         emergencyCheck()
       }
-    }, 1800) // Réduit à 1.8 secondes pour une réaction plus rapide
-    
-    // Double sécurité - forcer isLoading à false après 3 secondes quoi qu'il arrive
-    const absoluteTimeout = setTimeout(() => {
-      if (isLoading) {
-        console.log("🚨 CRITICAL: Forcing isLoading to false after absolute timeout")
-        setIsLoading(false)
-      }
-    }, 3000)
+    }, 3000) // 3 secondes maximum de loading (réduit de 5 à 3 secondes)
     
     getInitialSession()
 
@@ -340,7 +313,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Cleanup: unsubscribing from auth changes")
       subscription.unsubscribe()
       clearTimeout(safetyTimeout)
-      clearTimeout(absoluteTimeout)
     }
   }, [])
 
