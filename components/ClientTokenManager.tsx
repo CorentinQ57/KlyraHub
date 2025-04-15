@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { enforceTokenStorage } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
 
@@ -44,59 +44,76 @@ if (typeof window !== 'undefined' && !hasAttemptedPreloadSession) {
 
 export default function ClientTokenManager() {
   const [sessionLoaded, setSessionLoaded] = useState(false);
+  const sessionCheckInProgress = useRef(false);
+  const mountedRef = useRef(false);
+  
+  const checkSession = async () => {
+    if (sessionCheckInProgress.current) return;
+    sessionCheckInProgress.current = true;
+    
+    try {
+      // Vérifier si le token a besoin d'être rafraîchi
+      const lastRefresh = localStorage.getItem('sb-token-last-refresh');
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000; // 1 jour en millisecondes
+      
+      if (!lastRefresh || (now - parseInt(lastRefresh)) > oneDay) {
+        console.log("🔄 Token refresh needed");
+        const tokenUpdated = enforceTokenStorage();
+        if (!tokenUpdated) {
+          console.log("⚠️ No valid token found to refresh");
+          return;
+        }
+      }
+      
+      // Vérifier la session
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("❌ Error checking session:", error);
+        return;
+      }
+      
+      if (data?.session) {
+        console.log("✅ Valid session found:", data.session.user?.email);
+        // Rafraîchir la session si nécessaire
+        await supabase.auth.refreshSession();
+      } else {
+        console.log("⚠️ No valid session");
+      }
+    } catch (error) {
+      console.error("❌ Error in session check:", error);
+    } finally {
+      sessionCheckInProgress.current = false;
+    }
+  };
   
   useEffect(() => {
-    // Marquer que nous commençons le chargement
-    if (!sessionLoaded) {
-      console.log("🔄 ClientTokenManager initializing session check");
-    }
+    mountedRef.current = true;
     
-    // Premier chargement prioritaire au montage
-    const loadSession = async () => {
-      if (sessionLoaded) return;
-      
-      try {
-        // Appliquer le stockage renforcé
-        enforceTokenStorage();
-        
-        // Vérifier si nous avons une session valide
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("❌ Error checking session in ClientTokenManager:", error);
-        } else if (data?.session) {
-          console.log("✅ Valid session found in ClientTokenManager:", data.session.user?.email);
-        } else {
-          console.log("⚠️ No valid session in ClientTokenManager");
+    const initialize = async () => {
+      if (!sessionLoaded) {
+        await checkSession();
+        if (mountedRef.current) {
+          setSessionLoaded(true);
         }
-        
-        // Même en cas d'erreur, on marque le chargement comme terminé
-        setSessionLoaded(true);
-      } catch (error) {
-        console.error("❌ Error in ClientTokenManager session load:", error);
-        setSessionLoaded(true);
       }
     };
     
-    // Lancer le chargement immédiatement
-    loadSession();
-
+    initialize();
+    
     // Configurer le rafraîchissement périodique
     const tokenRefreshInterval = setInterval(() => {
-      if (typeof window !== 'undefined') {
-        try {
-          enforceTokenStorage();
-        } catch (error) {
-          console.error("Error in periodic token refresh:", error);
-        }
+      if (mountedRef.current) {
+        checkSession();
       }
-    }, 10 * 60 * 1000); // Every 10 minutes
-
+    }, 30 * 60 * 1000); // Toutes les 30 minutes
+    
     return () => {
+      mountedRef.current = false;
       clearInterval(tokenRefreshInterval);
     };
   }, [sessionLoaded]);
-
-  // This component doesn't render anything visible
+  
   return null;
 } 

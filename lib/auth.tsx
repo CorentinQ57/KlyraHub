@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Session, User } from '@supabase/supabase-js'
+import { enforceTokenStorage } from '@/lib/supabase'
 
 type AuthContextType = {
   user: User | null
@@ -430,66 +431,87 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Manually reloading auth state")
       setIsLoading(true)
       
-      // Timeout de sécurité pour éviter que reloadAuthState ne reste bloqué
-      const timeoutId = setTimeout(() => {
-        console.log("reloadAuthState safety timeout triggered")
-        setIsLoading(false)
-      }, 3000) // 3 secondes maximum
+      // Timeout de sécurité plus long avec annulation propre
+      const timeoutPromise = new Promise((_, reject) => {
+        const id = setTimeout(() => {
+          console.log("reloadAuthState safety timeout triggered")
+          reject(new Error('Auth state reload timeout'));
+        }, 10000); // 10 secondes
+        
+        // Stocker l'ID du timeout pour pouvoir l'annuler
+        return () => clearTimeout(id);
+      });
       
-      // Forcer la déconnexion/reconnexion du client Supabase
-      await supabase.auth.refreshSession()
+      // Forcer le rafraîchissement du token
+      const tokenUpdated = enforceTokenStorage();
+      if (!tokenUpdated) {
+        console.log("No valid token found, clearing auth state");
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        setIsLoading(false);
+        return;
+      }
       
-      // Get current user and session
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
-      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+      // Rafraîchir la session avec un timeout
+      try {
+        await Promise.race([
+          supabase.auth.refreshSession(),
+          timeoutPromise
+        ]);
+      } catch (error: any) {
+        if (error?.message === 'Auth state reload timeout') {
+          console.error("Session refresh timed out");
+          throw error;
+        }
+      }
+      
+      // Récupérer l'état actuel
+      const [
+        { data: { user: currentUser }, error: userError },
+        { data: { session: currentSession }, error: sessionError }
+      ] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.auth.getSession()
+      ]);
       
       if (userError || sessionError) {
-        console.error("Error reloading auth state:", userError || sessionError)
-        setUser(null)
-        setSession(null)
-        setIsAdmin(false)
-        clearTimeout(timeoutId)
-        setIsLoading(false)
-        return
+        console.error("Error reloading auth state:", userError || sessionError);
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        return;
       }
       
       if (currentUser && currentSession) {
-        console.log("Auth reloaded successfully:", currentUser.email)
-        // Utiliser la fonction sécurisée pour définir l'utilisateur
-        safeSetUser(currentUser)
-        setSession(currentSession)
+        console.log("Auth reloaded successfully:", currentUser.email);
+        safeSetUser(currentUser);
+        setSession(currentSession);
         
-        // Check if user is admin avec un timeout
+        // Vérifier le rôle avec timeout
         try {
-          const roleCheckPromise = checkUserRole(currentUser.id)
-          const roleTimeout = new Promise<null>((resolve) => 
-            setTimeout(() => resolve(null), 2000)
-          )
-          
-          const role = await Promise.race([roleCheckPromise, roleTimeout])
-          console.log("Role check in reloadAuthState:", role)
-          setIsAdmin(role === 'admin')
-        } catch (roleError) {
-          console.error("Error checking role in reloadAuthState:", roleError)
-          // Par défaut, ne pas modifier le statut admin en cas d'erreur
+          const rolePromise = checkUserRole(currentUser.id);
+          const role = await Promise.race([rolePromise, timeoutPromise]);
+          setIsAdmin(role === 'admin');
+        } catch (error) {
+          console.error("Role check timed out or failed:", error);
+          // Ne pas modifier le statut admin en cas d'erreur
         }
       } else {
-        console.log("No active user session found during reload")
-        setUser(null)
-        setSession(null)
-        setIsAdmin(false)
+        console.log("No active user session found during reload");
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
       }
-      
-      clearTimeout(timeoutId)
     } catch (error) {
-      console.error("Exception in reloadAuthState:", error)
-      setUser(null)
-      setSession(null)
-      setIsAdmin(false)
+      console.error("Exception in reloadAuthState:", error);
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Create context value
   const value = {

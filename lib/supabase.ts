@@ -1347,10 +1347,21 @@ export function enforceTokenStorage() {
       localStorage.setItem('supabase.auth.token', accessToken);
       localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, accessToken);
 
-      // Mettre à jour les cookies si nécessaire
-      document.cookie = `sb-access-token=${accessToken}; path=/; max-age=3600; SameSite=Lax`;
+      // Mettre à jour les cookies avec une durée de vie plus longue et des options de sécurité
+      const secure = window.location.protocol === 'https:';
+      const domain = window.location.hostname;
+      const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+      
+      document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+      
+      // Stocker le timestamp de la dernière mise à jour
+      localStorage.setItem('sb-token-last-refresh', Date.now().toString());
+      
+      return true;
     }
+    return false;
   } catch (error) {
     console.error('Error enforcing token storage:', error);
+    return false;
   }
 } 
