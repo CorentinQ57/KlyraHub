@@ -10,11 +10,6 @@ const nextConfig = {
       'ecfccsjjfrweqzhkveku.supabase.co'  // Ajout du domaine Supabase du projet
     ],
   },
-  // Optimisation du préchargement des ressources
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['@radix-ui', '@heroicons', 'lucide-react'],
-  },
   // Configuration du préchargement des pages
   onDemandEntries: {
     // Période pendant laquelle les pages compilées sont conservées en mémoire
