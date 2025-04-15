@@ -14,6 +14,7 @@ import StepWelcome from '@/components/onboarding/steps/StepWelcome'
 import StepProfile from '@/components/onboarding/steps/StepProfile'
 import StepStyle from '@/components/onboarding/steps/StepStyle'
 import StepSummary from '@/components/onboarding/steps/StepSummary'
+import { supabase } from '@/lib/supabase'
 
 const steps = [
   "Bienvenue",
@@ -33,6 +34,12 @@ export default function OnboardingPage() {
   
   // Check if user is authenticated
   useEffect(() => {
+    console.log("Onboarding page - User state:", { 
+      isLoading, 
+      isAuthenticated: !!user, 
+      metadata: user?.user_metadata 
+    });
+    
     if (!isLoading && !user) {
       router.push('/login')
     }
@@ -128,6 +135,42 @@ export default function OnboardingPage() {
     }
   }
   
+  // Fonction pour réinitialiser l'état d'onboarding (utile pour tester)
+  const resetOnboardingStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { 
+          onboarded: false
+        }
+      });
+      
+      if (error) {
+        console.error("Erreur lors de la réinitialisation du statut d'onboarding:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de réinitialiser le statut d'onboarding.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Rafraîchir l'état d'authentification
+      await reloadAuthState();
+      
+      toast({
+        title: "Statut réinitialisé",
+        description: "Le statut d'onboarding a été réinitialisé avec succès.",
+      });
+      
+      // Recharger la page pour refléter les changements
+      window.location.reload();
+    } catch (error) {
+      console.error("Exception lors de la réinitialisation du statut d'onboarding:", error);
+    }
+  };
+  
   if (isLoading) {
     return (
       <PageContainer>
@@ -147,6 +190,23 @@ export default function OnboardingPage() {
         title="Bienvenue sur Klyra Hub"
         description="Configurons votre profil en quelques étapes simples"
       />
+      
+      {/* Bouton de réinitialisation - visible uniquement si l'utilisateur a déjà complété l'onboarding */}
+      {user?.user_metadata?.onboarded && (
+        <div className="mb-4 p-4 bg-yellow-50 rounded-md border border-yellow-200">
+          <p className="text-sm text-yellow-700 mb-2">
+            Vous avez déjà complété l'onboarding, mais vous pouvez le refaire si nécessaire.
+          </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={resetOnboardingStatus}
+            className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300"
+          >
+            Réinitialiser mon statut d'onboarding
+          </Button>
+        </div>
+      )}
       
       <div className="max-w-4xl mx-auto">
         <ProgressBar steps={steps} currentStep={currentStep} />

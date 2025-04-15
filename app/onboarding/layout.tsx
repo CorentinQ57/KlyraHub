@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import Link from 'next/link'
@@ -15,6 +15,8 @@ export default function OnboardingLayout({
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [redirectionChecked, setRedirectionChecked] = useState(false)
+  const searchParams = useSearchParams()
+  const forceOnboarding = searchParams.get('force') === 'true'
   
   // Check if user has completed onboarding
   useEffect(() => {
@@ -27,7 +29,8 @@ export default function OnboardingLayout({
         user: user?.email,
         isLoading,
         userMetadata: user?.user_metadata,
-        hasOnboardedFlag: user?.user_metadata?.onboarded
+        hasOnboardedFlag: user?.user_metadata?.onboarded,
+        forceOnboarding
       });
       
       if (!user) {
@@ -35,8 +38,9 @@ export default function OnboardingLayout({
         console.log('User not authenticated, redirecting to login');
         router.push('/login');
         setRedirectionChecked(true);
-      } else if (user?.user_metadata?.onboarded === true) {
+      } else if (user?.user_metadata?.onboarded === true && !forceOnboarding) {
         // Rediriger vers le dashboard si l'onboarding est déjà complété
+        // et qu'on ne force pas l'onboarding
         console.log('User already onboarded, redirecting to dashboard');
         router.push('/dashboard');
         setRedirectionChecked(true);
@@ -51,7 +55,7 @@ export default function OnboardingLayout({
         }
       }
     }
-  }, [user, isLoading, router, redirectionChecked]);
+  }, [user, isLoading, router, redirectionChecked, forceOnboarding]);
   
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>
