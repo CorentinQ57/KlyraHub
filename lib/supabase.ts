@@ -24,41 +24,6 @@ export const supabase = createClient(
   }
 );
 
-/**
- * Ensure tokens are properly stored in localStorage
- * This function syncs the auth tokens across browser tabs
- */
-export function enforceTokenStorage() {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    // Try to get current session
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        console.error('Error getting session in enforceTokenStorage:', error);
-        return;
-      }
-      
-      // If we have a valid session with an access token, ensure it's properly stored
-      if (data?.session?.access_token) {
-        // Store primary tokens
-        localStorage.setItem('sb-access-token', data.session.access_token);
-        localStorage.setItem('sb-refresh-token', data.session.refresh_token);
-        
-        // Also make sure we have the full session data
-        const tokenName = `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`;
-        localStorage.setItem(tokenName, JSON.stringify({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-          expires_at: data.session.expires_at
-        }));
-      }
-    });
-  } catch (error) {
-    console.error('Error in enforceTokenStorage:', error);
-  }
-}
-
 // Database types
 export type User = {
   id: string
