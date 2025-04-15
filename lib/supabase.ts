@@ -24,6 +24,39 @@ export const supabase = createClient(
   }
 );
 
+/**
+ * Force la synchronisation des tokens d'authentification entre localStorage et cookies
+ * pour s'assurer que la session est préservée correctement
+ */
+export function enforceTokenStorage() {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    // Vérifier si nous avons un token existant
+    const accessToken = localStorage.getItem('sb-access-token') || 
+                        localStorage.getItem('supabase.auth.token') ||
+                        localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+    
+    if (accessToken) {
+      // S'assurer que le token est stocké dans le format le plus récent
+      // Utiliser getSession au lieu de session() qui n'existe pas
+      supabase.auth.getSession().then(({ data }) => {
+        if (data?.session) {
+          // Restaurer explicitement les tokens si nécessaire
+          localStorage.setItem('sb-access-token', data.session.access_token);
+          if (data.session.refresh_token) {
+            localStorage.setItem('sb-refresh-token', data.session.refresh_token);
+          }
+        }
+      }).catch(error => {
+        console.error('Error getting session in enforceTokenStorage:', error);
+      });
+    }
+  } catch (error) {
+    console.error('Error in enforceTokenStorage:', error);
+  }
+}
+
 // Database types
 export type User = {
   id: string
