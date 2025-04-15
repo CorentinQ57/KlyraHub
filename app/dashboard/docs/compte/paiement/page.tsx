@@ -8,13 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
 import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
-import {
-  FileText,
-  CreditCard,
+import { 
+  FileText, 
+  CreditCard, 
   BanknoteIcon,
   Wallet,
   CheckCircle,
-  AlertTriangle,
+  AlertTriangle, 
   Clock,
   Lock,
   Shield,
@@ -178,7 +178,7 @@ export default function PaymentMethodsPage() {
         level: 3,
       })),
       { id: "managing", title: "Gérer vos moyens de paiement", level: 2 },
-      { id: "security", title: "Sécurité des paiements", level: 2 },
+    { id: "security", title: "Sécurité des paiements", level: 2 },
       { id: "faq", title: "Questions fréquentes", level: 2 },
     ];
     setTocItems(items);
@@ -217,7 +217,7 @@ export default function PaymentMethodsPage() {
                 <Shield className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-medium mb-2">Sécurité garantie</h3>
-                  <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                     Tous les paiements sont traités via des plateformes sécurisées et cryptées. Vos informations financières ne sont jamais stockées directement sur nos serveurs.
                   </p>
                 </div>
@@ -243,11 +243,11 @@ export default function PaymentMethodsPage() {
                           {method.icon}
                         </div>
                         <CardTitle className="text-xl">{method.title}</CardTitle>
-                      </div>
+                  </div>
                       {method.recommended && (
                         <Badge className="bg-primary text-white">Recommandé</Badge>
                       )}
-                    </div>
+                  </div>
                     <CardDescription className="mt-2">
                       {method.description}
                     </CardDescription>
@@ -257,13 +257,13 @@ export default function PaymentMethodsPage() {
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Délai de traitement</h4>
                         <p className="font-medium">{method.processingTime}</p>
-                      </div>
+                  </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Limites</h4>
                         <p className="font-medium">{method.limits}</p>
-                      </div>
-                    </div>
-                    
+                </div>
+              </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <h4 className="text-sm font-medium text-primary mb-3">Avantages</h4>
@@ -275,7 +275,7 @@ export default function PaymentMethodsPage() {
                             </li>
                           ))}
                         </ul>
-                      </div>
+                </div>
                       <div>
                         <h4 className="text-sm font-medium text-primary mb-3">Limitations</h4>
                         <ul className="space-y-2">
@@ -285,9 +285,9 @@ export default function PaymentMethodsPage() {
                               <span className="text-sm">{disadvantage}</span>
                             </li>
                           ))}
-                        </ul>
-                      </div>
-                    </div>
+                      </ul>
+                </div>
+              </div>
                   </CardContent>
                 </Card>
               ))}
@@ -336,9 +336,9 @@ export default function PaymentMethodsPage() {
                   <p className="text-sm text-muted-foreground">
                     Sélectionnez le mode de paiement que vous souhaitez utiliser par défaut et cliquez sur "Définir par défaut".
                   </p>
-                </div>
               </div>
-              
+            </div>
+
               <div className="flex items-start space-x-4 p-4 border rounded-lg">
                 <div className="bg-primary/10 h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-primary font-medium">4</span>
@@ -378,8 +378,8 @@ export default function PaymentMethodsPage() {
                     <h3 className="font-medium mb-2">Cryptage SSL</h3>
                     <p className="text-sm text-muted-foreground">
                       Toutes les transactions sont protégées par un cryptage SSL 256 bits de bout en bout.
-                    </p>
-                  </div>
+                </p>
+              </div>
                 </CardContent>
               </Card>
 
@@ -390,8 +390,8 @@ export default function PaymentMethodsPage() {
                     <h3 className="font-medium mb-2">Conformité PCI DSS</h3>
                     <p className="text-sm text-muted-foreground">
                       Notre plateforme respecte les normes de sécurité les plus strictes de l'industrie bancaire.
-                    </p>
-                  </div>
+                </p>
+              </div>
                 </CardContent>
               </Card>
 
@@ -402,8 +402,8 @@ export default function PaymentMethodsPage() {
                     <h3 className="font-medium mb-2">Détection de fraude</h3>
                     <p className="text-sm text-muted-foreground">
                       Système automatisé de détection des activités suspectes pour protéger votre compte.
-                    </p>
-                  </div>
+                </p>
+              </div>
                 </CardContent>
               </Card>
             </div>
@@ -415,8 +415,8 @@ export default function PaymentMethodsPage() {
                   <h3 className="font-medium text-amber-800 mb-2">Restez vigilant</h3>
                   <p className="text-sm text-amber-700">
                     Klyra Design ne vous demandera jamais vos informations de paiement par email ou téléphone. Toutes les transactions doivent être effectuées uniquement via notre plateforme sécurisée.
-                  </p>
-                </div>
+              </p>
+            </div>
               </div>
             </div>
           </section>
@@ -445,7 +445,7 @@ export default function PaymentMethodsPage() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+                </div>
 
             <div className="border-t border-dashed pt-6 mt-8">
               <div className="flex items-center justify-between">
@@ -485,7 +485,7 @@ export default function PaymentMethodsPage() {
 
       {/* Barre latérale */}
       <div className="w-full lg:w-72 lg:flex-none space-y-10">
-        <TableOfContents items={tocItems} />
+          <TableOfContents items={tocItems} />
         <LinkCard links={relatedLinks} title="Ressources utiles" />
       </div>
     </div>
