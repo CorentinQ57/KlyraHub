@@ -10,6 +10,24 @@ const nextConfig = {
       'ecfccsjjfrweqzhkveku.supabase.co'  // Ajout du domaine Supabase du projet
     ],
   },
+  // Optimisation du préchargement des ressources
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['@radix-ui', '@heroicons', 'lucide-react'],
+  },
+  // Configuration du préchargement des pages
+  onDemandEntries: {
+    // Période pendant laquelle les pages compilées sont conservées en mémoire
+    maxInactiveAge: 60 * 1000, // 1 minute
+    // Nombre maximum de pages à conserver en mémoire
+    pagesBufferLength: 5,
+  },
+  // Configuration du comportement des ressources statiques
+  staticPageGenerationTimeout: 120,
+  compiler: {
+    // Suppression des console.log en production
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   async rewrites() {
     return [
       {

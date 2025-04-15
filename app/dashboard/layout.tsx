@@ -86,21 +86,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (isDocsRoute) return
     
     // Log détaillé pour déboguer le type de user
-    console.log("Dashboard layout - loading state:", isLoading, 
-                "user type:", typeof user, 
-                "user email:", user && typeof user === 'object' ? user.email : user,
-                "has id:", user && typeof user === 'object' ? 'id' in user : false)
+    console.log("Dashboard layout - loading state:", {
+      isLoading,
+      userType: typeof user,
+      userEmail: user && typeof user === 'object' ? user.email : null,
+      hasId: user && typeof user === 'object' ? 'id' in user : false,
+      pathname
+    })
     
     if (isLoading) {
-      // Après 5 secondes, montrer un bouton pour forcer l'affichage
+      // Après 8 secondes, montrer un bouton pour forcer l'affichage
       const timeoutId = setTimeout(() => {
         console.log("Safety timeout triggered in dashboard layout")
         setSafetyTimeout(true)
-      }, 5000)
+        
+        // Vérifier l'état des tokens
+        const accessToken = localStorage.getItem('sb-access-token')
+        const refreshToken = localStorage.getItem('sb-refresh-token')
+        console.log("Token state at timeout:", {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken
+        })
+        
+        // Si aucun token n'est présent, rediriger vers la page de connexion
+        if (!accessToken && !refreshToken) {
+          console.log("No tokens found, redirecting to login")
+          router.push('/login')
+        }
+      }, 8000) // Augmenté à 8 secondes
       
       return () => clearTimeout(timeoutId)
     }
-  }, [isLoading, user, isDocsRoute])
+  }, [isLoading, user, isDocsRoute, router, pathname])
   
   // Fonction pour forcer la déconnexion en cas d'erreur de type
   const handleForceSignOut = async () => {
