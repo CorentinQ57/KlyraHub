@@ -30,94 +30,60 @@ const BackgroundMesh = () => {
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { signIn, user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+  const [mounted, setMounted] = useState(false)
 
-  // Set mounted state to true on client-side
+  // Récupérer le paramètre returnTo pour redirection après login
+  const [returnTo, setReturnTo] = useState('/dashboard')
+
   useEffect(() => {
     setMounted(true)
-  }, [])
-
-  // Redirect if user is already logged in
-  useEffect(() => {
-    if (user) {
+    // Vérifier si l'utilisateur est déjà connecté
+    if (mounted && user) {
       router.push('/dashboard')
     }
-  }, [user, router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Form validation
-    if (!email || !password) {
-      toast({
-        title: "Erreur",
-        description: 'Veuillez remplir tous les champs',
-        variant: "destructive",
-        duration: 5000,
-      })
-      return
+    // Récupérer le paramètre returnTo de l'URL
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const returnPath = urlParams.get('returnTo')
+      if (returnPath) {
+        setReturnTo(decodeURIComponent(returnPath))
+      }
     }
+  }, [user, router, mounted])
+
+  // Fonction de connexion
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
     try {
-      setIsLoading(true)
-      console.log("Login attempt with email:", email)
-      
       const { data, error } = await signIn(email, password)
-      
-      if (error) {
-        console.error("Login error:", error)
-        
-        // Provide specific error messages based on error type
-        if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Erreur",
-            description: 'Email ou mot de passe incorrect',
-            variant: "destructive",
-            duration: 5000,
-          })
-        } else if (error.message.includes('Email not confirmed')) {
-          toast({
-            title: "Erreur",
-            description: 'Veuillez confirmer votre email avant de vous connecter',
-            variant: "destructive",
-            duration: 5000,
-          })
-        } else {
-          toast({
-            title: "Erreur",
-            description: `Erreur de connexion: ${error.message}`,
-            variant: "destructive",
-            duration: 5000,
-          })
-        }
-        setIsLoading(false)
-        return
-      }
-      
+      if (error) throw error
+
       toast({
-        title: "Succès",
-        description: 'Connexion réussie',
-        variant: "default",
-        duration: 5000,
+        title: "Connexion réussie",
+        description: "Vous êtes maintenant connecté.",
       })
-      
-      // Add a small delay before redirecting to ensure auth state is fully updated
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1000)
-    } catch (error) {
-      console.error("Unexpected login error:", error)
+
+      // Rediriger vers returnTo au lieu de /dashboard en dur
+      router.push(returnTo)
+    } catch (err: any) {
+      console.error('Login error:', err)
+      setError(err.message || 'Erreur de connexion')
       toast({
         title: "Erreur",
-        description: 'Une erreur inattendue est survenue',
+        description: err.message || "Une erreur est survenue lors de la connexion.",
         variant: "destructive",
-        duration: 5000,
       })
-      setIsLoading(false)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -154,7 +120,7 @@ export default function LoginPage() {
             <CardDescription>Entrez vos identifiants pour accéder à votre compte</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -184,9 +150,9 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading}
+                disabled={loading}
               >
-                {isLoading ? 'Connexion en cours...' : 'Se connecter'}
+                {loading ? 'Connexion en cours...' : 'Se connecter'}
               </Button>
             </form>
           </CardContent>
@@ -202,4 +168,5 @@ export default function LoginPage() {
       </main>
     </div>
   )
+} 
 } 
