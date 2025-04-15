@@ -62,7 +62,30 @@ export default function StepSummary({ data, onComplete }: StepSummaryProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onComplete(data)
+    
+    // Ensure that all necessary data is included and formatted properly
+    const finalData = {
+      ...data,
+      // Make sure required fields are set, even if empty
+      fullName: data.fullName || '',
+      companyName: data.companyName || '',
+      phone: data.phone || '',
+      sector: data.sector || 'other',
+      companySize: data.companySize || 'small',
+      // Set default values for checkboxes if they're undefined
+      needsBranding: !!data.needsBranding,
+      needsWebsite: !!data.needsWebsite,
+      needsMarketing: !!data.needsMarketing,
+      // Ensure visual preferences is an array
+      visualPreferences: data.visualPreferences || [],
+      // Additional fields with defaults
+      goals: data.goals || 'Développer ma présence en ligne',
+      communicationStyle: data.communicationStyle || 'email',
+      timeManagement: data.timeManagement || 'flexible'
+    }
+    
+    console.log("Submitting final onboarding data:", finalData);
+    onComplete(finalData)
   }
 
   return (

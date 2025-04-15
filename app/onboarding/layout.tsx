@@ -14,22 +14,44 @@ export default function OnboardingLayout({
 }) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const [redirectionChecked, setRedirectionChecked] = useState(false)
   
   // Check if user has completed onboarding
   useEffect(() => {
+    // Avoid multiple checks
+    if (redirectionChecked) return;
+    
     if (!isLoading) {
+      // Log user details for debugging
+      console.log('Onboarding Layout - User info:', {
+        user: user?.email,
+        isLoading,
+        userMetadata: user?.user_metadata,
+        hasOnboardedFlag: user?.user_metadata?.onboarded
+      });
+      
       if (!user) {
         // Rediriger vers la page de connexion si non connecté
-        router.push('/login')
+        console.log('User not authenticated, redirecting to login');
+        router.push('/login');
+        setRedirectionChecked(true);
       } else if (user?.user_metadata?.onboarded === true) {
         // Rediriger vers le dashboard si l'onboarding est déjà complété
-        console.log('Utilisateur déjà onboardé, redirection vers le dashboard')
-        router.push('/dashboard')
+        console.log('User already onboarded, redirecting to dashboard');
+        router.push('/dashboard');
+        setRedirectionChecked(true);
       } else {
-        console.log('Onboarding en cours pour l\'utilisateur', user?.email)
+        // Check if user_metadata exists, if not, the user is new and needs onboarding
+        if (!user.user_metadata) {
+          console.log('New user detected (no metadata), staying on onboarding');
+          setRedirectionChecked(true);
+        } else {
+          console.log('Onboarding in progress for user', user?.email);
+          setRedirectionChecked(true);
+        }
       }
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router, redirectionChecked]);
   
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>

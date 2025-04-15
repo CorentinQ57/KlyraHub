@@ -24,7 +24,7 @@ const steps = [
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, reloadAuthState } = useAuth()
   const { toast } = useToast()
   
   const [currentStep, setCurrentStep] = useState(0)
@@ -78,8 +78,15 @@ export default function OnboardingPage() {
         throw new Error("Utilisateur non authentifié")
       }
       
+      console.log("Saving onboarding data for user:", user.email, "with data:", data);
+      
       // Sauvegarder les données d'onboarding
       await saveOnboardingData(user.id, data)
+      
+      // Force a reload of the auth state to get the updated user metadata
+      await reloadAuthState();
+      
+      console.log("Onboarding data saved successfully, updated user:", user);
       
       // Afficher un toast de succès
       toast({
@@ -88,8 +95,11 @@ export default function OnboardingPage() {
         duration: 5000,
       })
       
-      // Rediriger vers le dashboard
-      router.push('/dashboard')
+      // Ajouter un délai avant la redirection pour s'assurer que les données sont bien synchronisées
+      setTimeout(() => {
+        // Rediriger vers le dashboard
+        router.push('/dashboard')
+      }, 500);
     } catch (error) {
       console.error('Error saving onboarding data:', error)
       toast({
