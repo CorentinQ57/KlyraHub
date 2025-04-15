@@ -50,17 +50,25 @@ export default function ClientTokenManager() {
   const initializationAttempted = useRef(false)
   const retryCount = useRef(0)
   const MAX_RETRIES = 3
-  const RETRY_DELAY = 1000 // 1 seconde entre les tentatives
+  const RETRY_DELAY = 1000
   
   const checkSession = async () => {
-    if (sessionCheckInProgress.current || !mountedRef.current) return
+    if (sessionCheckInProgress.current || !mountedRef.current) {
+      console.error('[ClientTokenManager] Session check skipped:', {
+        sessionCheckInProgress: sessionCheckInProgress.current,
+        mounted: mountedRef.current
+      })
+      return
+    }
+    
     sessionCheckInProgress.current = true
     
     try {
-      console.log("🔄 Checking session in ClientTokenManager")
+      console.error('[ClientTokenManager] Starting session check')
       
       // Attendre que le DOM soit complètement chargé
       if (document.readyState !== 'complete') {
+        console.error('[ClientTokenManager] DOM not ready, waiting...')
         await new Promise(resolve => {
           window.addEventListener('load', resolve, { once: true })
         })
@@ -72,31 +80,36 @@ export default function ClientTokenManager() {
                        localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`)
       
       if (!accessToken) {
-        console.log("⚠️ No access token found in ClientTokenManager")
+        console.error('[ClientTokenManager] No access token found')
         setSessionLoaded(true)
         return
       }
       
+      console.error('[ClientTokenManager] Access token found, checking refresh')
+      
       // Vérifier si le token a besoin d'être rafraîchi
       const lastRefresh = localStorage.getItem('sb-token-last-refresh')
       const now = Date.now()
-      const refreshInterval = 30 * 60 * 1000 // 30 minutes
+      const refreshInterval = 30 * 60 * 1000
       
       if (!lastRefresh || (now - parseInt(lastRefresh)) > refreshInterval) {
-        console.log("🔄 Token refresh needed in ClientTokenManager")
+        console.error('[ClientTokenManager] Token refresh needed')
         const tokenUpdated = enforceTokenStorage()
         if (!tokenUpdated) {
           throw new Error('Token refresh failed')
         }
+        console.error('[ClientTokenManager] Token refreshed successfully')
       }
       
-      // Vérifier la session avec un timeout plus long (10 secondes)
+      // Vérifier la session avec un timeout plus long
       const timeoutPromise = new Promise((_, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('Session check timeout'))
         }, 10000)
         return () => clearTimeout(timeout)
       })
+      
+      console.error('[ClientTokenManager] Checking session with Supabase')
       
       const sessionPromise = supabase.auth.getSession()
       
@@ -107,25 +120,29 @@ export default function ClientTokenManager() {
       
       const { data, error } = result
       
-      if (error) throw error
+      if (error) {
+        console.error('[ClientTokenManager] Session check error:', error)
+        throw error
+      }
       
       if (data?.session) {
-        console.log("✅ Session verified successfully")
+        console.error('[ClientTokenManager] Session verified successfully')
         setSessionLoaded(true)
       } else {
+        console.error('[ClientTokenManager] No session data received')
         throw new Error('No session data')
       }
       
     } catch (error) {
-      console.error("❌ Error in ClientTokenManager session check:", error)
+      console.error('[ClientTokenManager] Error in session check:', error)
       
       // Gérer les retries
       if (retryCount.current < MAX_RETRIES) {
         retryCount.current++
-        console.log(`Retrying session check (${retryCount.current}/${MAX_RETRIES})...`)
+        console.error(`[ClientTokenManager] Retrying (${retryCount.current}/${MAX_RETRIES})...`)
         setTimeout(checkSession, RETRY_DELAY)
       } else {
-        console.error("Max retries reached, marking session as loaded")
+        console.error('[ClientTokenManager] Max retries reached')
         setSessionLoaded(true)
       }
     } finally {
@@ -134,14 +151,17 @@ export default function ClientTokenManager() {
   }
   
   useEffect(() => {
+    console.error('[ClientTokenManager] Component mounted')
     mountedRef.current = true
     
     if (!initializationAttempted.current) {
+      console.error('[ClientTokenManager] Starting initial session check')
       initializationAttempted.current = true
       checkSession()
     }
     
     return () => {
+      console.error('[ClientTokenManager] Component unmounting')
       mountedRef.current = false
     }
   }, [])

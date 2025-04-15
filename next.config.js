@@ -20,8 +20,10 @@ const nextConfig = {
   // Configuration du comportement des ressources statiques
   staticPageGenerationTimeout: 120,
   compiler: {
-    // Suppression des console.log en production
-    removeConsole: process.env.NODE_ENV === 'production',
+    // Garder les logs d'erreur en production
+    removeConsole: process.env.NODE_ENV === 'production' 
+      ? { exclude: ['error', 'warn'] }
+      : false,
   },
   async rewrites() {
     return [
