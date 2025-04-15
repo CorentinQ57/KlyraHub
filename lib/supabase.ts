@@ -1327,4 +1327,30 @@ export async function createStripeSession(
     console.error('Exception dans createStripeSession:', error);
     throw error;
   }
+}
+
+/**
+ * Enforce token storage in localStorage and cookies
+ */
+export function enforceTokenStorage() {
+  if (typeof window === 'undefined') return;
+
+  try {
+    // Récupérer le token depuis localStorage
+    const accessToken = localStorage.getItem('sb-access-token') || 
+                       localStorage.getItem('supabase.auth.token') ||
+                       localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+
+    if (accessToken) {
+      // S'assurer que le token est stocké dans tous les emplacements possibles
+      localStorage.setItem('sb-access-token', accessToken);
+      localStorage.setItem('supabase.auth.token', accessToken);
+      localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, accessToken);
+
+      // Mettre à jour les cookies si nécessaire
+      document.cookie = `sb-access-token=${accessToken}; path=/; max-age=3600; SameSite=Lax`;
+    }
+  } catch (error) {
+    console.error('Error enforcing token storage:', error);
+  }
 } 
