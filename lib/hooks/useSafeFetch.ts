@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/lib/auth'
+import { verifyTokenExpiration, refreshSession } from '@/lib/supabase'
 
 // Global counter to track fetch attempts per session
 // This helps prevent infinite loops in development or due to race conditions
@@ -14,12 +15,20 @@ const globalFetchCounter = {
 // Reset counter on page load
 if (typeof window !== 'undefined') {
   globalFetchCounter.reset();
+  
+  // Écouter l'événement de rafraîchissement de token pour réinitialiser les compteurs
+  window.addEventListener('klyra:token-refreshed', () => {
+    console.log('🔄 Réinitialisation des compteurs après rafraîchissement de token');
+    globalFetchCounter.reset();
+  });
 }
 
 /**
  * A hook for safely fetching data even when Supabase session times out.
  * It attempts to fetch data as soon as user ID is available, with fallback mechanisms.
  *
+ * Version améliorée: Vérifie proactivement l'expiration du token et le rafraîchit si nécessaire
+ * 
  * @param fetchFunction The function to call to fetch data
  * @param dependencies Additional dependencies that should trigger a refetch
  * @returns An object containing the fetched data, loading state, error state, and a refetch function
@@ -40,6 +49,7 @@ export function useSafeFetch<T>(
   const lastFetchTimeRef = useRef(0)
   const userIdRef = useRef<string | null>(null)
   const fetchCountRef = useRef(0)
+  const tokenRefreshedRef = useRef(false)
   
   // Extract only the user ID to avoid re-renders with full user object changes
   const userId = user?.id || null
@@ -48,6 +58,31 @@ export function useSafeFetch<T>(
   useEffect(() => {
     userIdRef.current = userId
   }, [userId])
+  
+  // Écouter les événements de rafraîchissement de token
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleTokenRefreshed = () => {
+        console.log('🔄 Token rafraîchi, prêt à réessayer les requêtes');
+        tokenRefreshedRef.current = true;
+        // Réinitialiser les compteurs
+        fetchCountRef.current = 0;
+        setRetryCount(0);
+        // Si nous avons déjà essayé de récupérer des données mais échoué, réessayer automatiquement
+        if (error && userId) {
+          setTimeout(() => {
+            fetchData(true);
+          }, 500);
+        }
+      };
+      
+      window.addEventListener('klyra:token-refreshed', handleTokenRefreshed);
+      
+      return () => {
+        window.removeEventListener('klyra:token-refreshed', handleTokenRefreshed);
+      };
+    }
+  }, [error, userId]);
 
   const fetchData = useCallback(async (withFallback = false) => {
     // Session-wide fetch limit to prevent infinite loops
@@ -87,12 +122,32 @@ export function useSafeFetch<T>(
       
       console.log(`🔄 Fetch attempt ${fetchCountRef.current} (global: ${globalFetchCounter.count})`);
       
+      // AMÉLIORATION: Vérifier proactivement l'expiration du token avant de récupérer les données
+      if (typeof window !== 'undefined' && !tokenRefreshedRef.current) {
+        const isTokenValid = verifyTokenExpiration();
+        if (!isTokenValid) {
+          console.log('⚠️ Token expiré ou proche de l\'expiration, tentative de rafraîchissement préventif');
+          try {
+            const refreshed = await refreshSession();
+            if (refreshed) {
+              console.log('✅ Token rafraîchi avec succès avant la requête');
+              tokenRefreshedRef.current = true;
+            } else {
+              console.warn('⚠️ Échec du rafraîchissement préventif, tentative de requête quand même');
+            }
+          } catch (refreshError) {
+            console.error('❌ Erreur lors du rafraîchissement préventif:', refreshError);
+          }
+        }
+      }
+      
       setIsLoading(true);
       
       const result = await fetchFunction();
       setData(result);
       setError(null);
       hasFetchedRef.current = true;
+      tokenRefreshedRef.current = false;
       
       // Reset retry count on success
       setRetryCount(0);
@@ -103,8 +158,27 @@ export function useSafeFetch<T>(
       // Increment retry count to track failures
       setRetryCount(prev => prev + 1);
       
-      // If we have multiple fetch failures, try to reload auth state
-      if (retryCount >= 1) {
+      // AMÉLIORATION: En cas d'erreur, tenter un rafraîchissement du token avant de réessayer
+      if (typeof window !== 'undefined' && retryCount === 0 && !tokenRefreshedRef.current) {
+        console.log('🔄 Tentative de rafraîchissement de token après échec de requête');
+        try {
+          const refreshed = await refreshSession();
+          if (refreshed) {
+            console.log('✅ Token rafraîchi après échec, nouveau test dans 1s');
+            tokenRefreshedRef.current = true;
+            // Réessayer après un court délai
+            setTimeout(() => {
+              fetchData(true);
+            }, 1000);
+          } else {
+            // Si le rafraîchissement échoue, tenter de recharger complètement l'état d'auth
+            console.log('🔄 Rafraîchissement échoué, tentative de reloadAuthState');
+            reloadAuthState().catch(e => console.error('Failed to reload auth state:', e));
+          }
+        } catch (refreshError) {
+          console.error('❌ Erreur lors du rafraîchissement après échec:', refreshError);
+        }
+      } else if (retryCount >= 1) {
         console.log('🔄 Multiple fetch failures, attempting to reload auth state...');
         reloadAuthState().catch(e => console.error('Failed to reload auth state:', e));
       }
@@ -157,6 +231,7 @@ export function useSafeFetch<T>(
     // Reset counters on manual refetch
     fetchCountRef.current = 0;
     hasFetchedRef.current = false;
+    tokenRefreshedRef.current = false;
     // Allow a new set of fetches
     if (globalFetchCounter.count >= globalFetchCounter.maxPerSession) {
       console.log('🔄 Resetting global fetch counter after limit reached');

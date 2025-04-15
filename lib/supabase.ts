@@ -7,6 +7,7 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
+// Création du client Supabase avec une configuration améliorée
 export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -15,6 +16,8 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      // La propriété autoRefreshThreshold n'est pas supportée dans cette version
+      // Nous allons gérer le rafraîchissement manuellement
     },
     global: {
       headers: {
@@ -23,6 +26,73 @@ export const supabase = createClient(
     },
   }
 );
+
+// Intercepteur pour les requêtes Supabase - ajouter après initialisation
+if (typeof window !== 'undefined') {
+  // Intercepter les erreurs d'authentification et tenter un rafraîchissement
+  const originalFetch = window.fetch;
+  window.fetch = async function (url: RequestInfo | URL, init?: RequestInit) {
+    try {
+      // Vérifier si c'est une requête Supabase
+      const urlStr = url.toString();
+      if (urlStr.includes(process.env.NEXT_PUBLIC_SUPABASE_URL!)) {
+        // Vérifier si le token est près d'expirer avant la requête
+        const isTokenValid = verifyTokenExpiration();
+        
+        if (!isTokenValid) {
+          console.log("🔄 Le token est expiré ou près d'expirer, tentative de rafraîchissement...");
+          try {
+            // Tenter de rafraîchir la session
+            await refreshSession();
+            
+            // Mettre à jour l'en-tête d'autorisation avec le nouveau token
+            const accessToken = localStorage.getItem('sb-access-token');
+            if (accessToken && init && init.headers) {
+              const headers = new Headers(init.headers);
+              headers.set('Authorization', `Bearer ${accessToken}`);
+              init.headers = headers;
+            }
+          } catch (refreshError) {
+            console.error("❌ Échec du rafraîchissement du token:", refreshError);
+            // Continuer avec la requête originale même en cas d'échec
+          }
+        }
+      }
+      
+      // Procéder avec la requête originale
+      const response = await originalFetch(url, init);
+      
+      // Vérifier les erreurs d'authentification
+      if (response.status === 401 || response.status === 403) {
+        // En cas d'erreur d'authentification, tenter de rafraîchir et réessayer
+        try {
+          console.log(`🔄 Erreur d'authentification (${response.status}), tentative de rafraîchissement...`);
+          const refreshed = await refreshSession();
+          
+          if (refreshed) {
+            // Mettre à jour l'en-tête d'autorisation et réessayer
+            const accessToken = localStorage.getItem('sb-access-token');
+            if (accessToken && init && init.headers) {
+              const headers = new Headers(init.headers);
+              headers.set('Authorization', `Bearer ${accessToken}`);
+              init.headers = headers;
+              
+              // Réessayer la requête avec le nouveau token
+              return await originalFetch(url, init);
+            }
+          }
+        } catch (refreshError) {
+          console.error("❌ Échec du rafraîchissement après erreur d'auth:", refreshError);
+        }
+      }
+      
+      return response;
+    } catch (error) {
+      console.error("❌ Erreur lors de l'interception fetch:", error);
+      return originalFetch(url, init);
+    }
+  };
+}
 
 // Database types
 export type User = {
@@ -1330,9 +1400,115 @@ export async function createStripeSession(
 }
 
 /**
- * Fonction pour forcer la persistance des tokens d'authentification.
- * Récupère les tokens depuis différentes sources et les stocke de manière redondante.
- * Nécessaire pour résoudre les problèmes de perte de session.
+ * Nouvelle fonction pour vérifier si le token JWT est expiré ou près d'expirer
+ */
+function verifyTokenExpiration(): boolean {
+  try {
+    const accessToken = localStorage.getItem('sb-access-token');
+    if (!accessToken) return false;
+    
+    // Décoder le token JWT pour obtenir la date d'expiration
+    // Format JWT: header.payload.signature
+    const parts = accessToken.split('.');
+    if (parts.length !== 3) return false;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp) return false;
+    
+    // Vérifier si le token expire dans les 5 minutes
+    const now = Math.floor(Date.now() / 1000);
+    const timeUntilExpiry = payload.exp - now;
+    const isValid = timeUntilExpiry > 300; // 5 minutes
+    
+    if (!isValid) {
+      console.log(`⚠️ Token expiré ou proche d'expiration (expire dans ${timeUntilExpiry}s)`);
+    }
+    
+    return isValid;
+  } catch (error) {
+    console.error('❌ Erreur lors de la vérification de l\'expiration du token:', error);
+    return false;
+  }
+}
+
+/**
+ * Nouvelle fonction pour rafraîchir la session et mettre à jour les tokens
+ */
+async function refreshSession(): Promise<boolean> {
+  try {
+    console.log("🔄 Tentative de rafraîchissement de session...");
+    
+    // Récupérer le refreshToken actuel
+    const refreshToken = localStorage.getItem('sb-refresh-token');
+    if (!refreshToken) {
+      console.log("❌ Pas de refresh token disponible pour le rafraîchissement");
+      return false;
+    }
+    
+    // Appeler l'API de rafraîchissement avec timeout
+    const refreshPromise = supabase.auth.refreshSession({ refresh_token: refreshToken });
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Refresh timeout')), 5000);
+    });
+    
+    const { data, error } = await Promise.race([refreshPromise, timeoutPromise]) as any;
+    
+    if (error) {
+      console.error("❌ Erreur lors du rafraîchissement de la session:", error);
+      return false;
+    }
+    
+    if (data?.session) {
+      console.log("✅ Session rafraîchie avec succès");
+      
+      // Mettre à jour les tokens dans le stockage
+      if (data.session.access_token) {
+        localStorage.setItem('sb-access-token', data.session.access_token);
+        // Mettre à jour les autres emplacements de stockage
+        localStorage.setItem('supabase.auth.token', data.session.access_token);
+        localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, data.session.access_token);
+        
+        // Mettre à jour le cookie également
+        const secure = window.location.protocol === 'https:';
+        const domain = window.location.hostname;
+        const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+      }
+      
+      if (data.session.refresh_token) {
+        localStorage.setItem('sb-refresh-token', data.session.refresh_token);
+        
+        // Mettre à jour le cookie également
+        const secure = window.location.protocol === 'https:';
+        const domain = window.location.hostname;
+        const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+      }
+      
+      localStorage.setItem('sb-token-last-refresh', Date.now().toString());
+      
+      // Dispatcher un événement pour informer l'application du rafraîchissement
+      window.dispatchEvent(new CustomEvent('klyra:token-refreshed', {
+        detail: {
+          timestamp: Date.now()
+        }
+      }));
+      
+      return true;
+    } else {
+      console.log("❌ Aucune session retournée lors du rafraîchissement");
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Exception lors du rafraîchissement de la session:", error);
+    return false;
+  }
+}
+
+/**
+ * Améliorer la fonction enforceTokenStorage pour utiliser les nouvelles fonctionnalités
  */
 export function enforceTokenStorage(): boolean {
   if (typeof window === 'undefined') return false;
@@ -1395,6 +1571,13 @@ export function enforceTokenStorage(): boolean {
       return false;
     }
     
+    // Vérifier si le token est valide (non expiré)
+    if (!verifyTokenExpiration()) {
+      console.log('Token expiré, tentative de rafraîchissement...');
+      // Tentative de rafraîchissement asynchrone mais ne pas attendre
+      refreshSession().catch(err => console.error('Échec du rafraîchissement:', err));
+    }
+    
     console.log('Found tokens to enforce');
     
     // 3. Stocker les tokens dans localStorage avec plusieurs clés pour redondance
@@ -1455,10 +1638,9 @@ export function enforceTokenStorage(): boolean {
       }
     }, 100);
     
-    // 6. Tenter également de définir la session dans Supabase
+    // 6. Tenter également de définir la session dans Supabase de manière synchrone
+    // pour s'assurer que le client Supabase a les bonnes informations de session
     try {
-      // Cette opération est asynchrone, mais nous ne l'attendons pas 
-      // car nous voulons que enforceTokenStorage reste synchrone
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken || ''
@@ -1517,4 +1699,7 @@ export function debugAuthState(): boolean {
     console.error('Error in debugAuthState:', error);
     return false;
   }
-} 
+}
+
+// Export des nouvelles fonctions utilitaires pour l'authentification
+export { verifyTokenExpiration, refreshSession }; 

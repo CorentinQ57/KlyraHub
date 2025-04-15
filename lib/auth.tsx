@@ -527,10 +527,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => clearTimeout(id);
       });
       
-      // Forcer le rafraîchissement du token
-      const tokenUpdated = enforceTokenStorage();
-      if (!tokenUpdated) {
-        console.log("No valid token found, clearing auth state");
+      // Vérifier si nous avons des tokens valides
+      const accessToken = localStorage.getItem('sb-access-token');
+      const refreshToken = localStorage.getItem('sb-refresh-token');
+      
+      if (!accessToken && !refreshToken) {
+        console.log("No valid tokens found, clearing auth state");
         setUser(null);
         setSession(null);
         setIsAdmin(false);
@@ -538,7 +540,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Rafraîchir la session avec un timeout
+      // Utiliser la nouvelle fonction refreshSession pour rafraîchir le token
+      try {
+        // Importer la fonction depuis lib/supabase
+        const { refreshSession } = await import('@/lib/supabase');
+        const refreshed = await refreshSession();
+        
+        if (!refreshed) {
+          console.log("Token refresh failed, falling back to enforceTokenStorage");
+          // Fallback à l'ancienne méthode
+          const tokenUpdated = enforceTokenStorage();
+          if (!tokenUpdated) {
+            console.log("No valid token found, clearing auth state");
+            setUser(null);
+            setSession(null);
+            setIsAdmin(false);
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (refreshError) {
+        console.error("Error refreshing session:", refreshError);
+      }
+      
+      // Rafraîchir la session avec timeout
       try {
         await Promise.race([
           supabase.auth.refreshSession(),
