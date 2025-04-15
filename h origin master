@@ -1,3 +1,5 @@
-  branche_restauree[m
-  feature/add-sidebar-consistent-containers[m
-* [32mmaster[m
+[33mcommit 982b36a4c58cb068d4ad0c0811e35e3bdee10f29[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: CorentinQ57 <queuche.corentin@gmail.com>
+Date:   Tue Apr 15 20:03:38 2025 +0200
+
+    Fix: Correction du bug de timeout de session Supabase avec cache client, backoff exponentiel, et meilleur ordre de vérification

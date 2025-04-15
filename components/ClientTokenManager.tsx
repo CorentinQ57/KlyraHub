@@ -30,9 +30,15 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// Types pour le suivi d'authentification
+export type AuthVerificationState = 'not_started' | 'in_progress' | 'completed' | 'timed_out' | 'failed';
+
 export default function ClientTokenManager() {
-  const [sessionLoaded, setSessionLoaded] = useState(false);
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
+  // IMPORTANT: Ne pas bloquer le rendu de l'interface - toujours initialiser à true
+  const [sessionLoaded, setSessionLoaded] = useState(true);
+  const [authVerificationState, setAuthVerificationState] = useState<AuthVerificationState>('not_started');
+  
   const sessionCheckInProgress = useRef(false);
   const mountedRef = useRef(false);
   const initializationAttempted = useRef(false);
@@ -41,14 +47,18 @@ export default function ClientTokenManager() {
   const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastAuthCheckTime = useRef<number>(0);
   const isRedirecting = useRef(false);
-  const MAX_RETRIES = 3; // Augmenté à 3 pour plus de tentatives
+  const circuitBreakerTriggered = useRef(false);
+  const authStartTime = useRef<number>(0);
+  
+  const MAX_RETRIES = 3;
   const MAX_REDIRECTS = 2;
-  const RETRY_DELAY_BASE = 800; // Délai de base pour le backoff exponentiel
+  const RETRY_DELAY_BASE = 800;
   const MIN_AUTH_CHECK_INTERVAL = 1200;
-  const PRIMARY_TIMEOUT = 8000; // Augmenté à 8000ms
-  const FALLBACK_TIMEOUT = 6000; // Augmenté à 6000ms
-  const SAFETY_TIMEOUT = 10000; // Augmenté à 10000ms
-  const AUTH_CACHE_TTL = 30000; // 30 secondes de cache
+  const PRIMARY_TIMEOUT = 4000; // Réduit de 8000 à 4000ms
+  const FALLBACK_TIMEOUT = 3000; // Réduit de 6000 à 3000ms
+  const SAFETY_TIMEOUT = 5000;
+  const AUTH_CACHE_TTL = 30000;
+  const CIRCUIT_BREAKER_TIMEOUT = 5000;
   const router = useRouter();
   const pathname = usePathname();
   
@@ -124,6 +134,11 @@ export default function ClientTokenManager() {
   
   // Méthode de récupération d'urgence de session
   const emergencyRecovery = async (accessToken: string) => {
+    if (circuitBreakerTriggered.current) {
+      console.log('[ClientTokenManager] Circuit-breaker active - skipping emergency recovery');
+      return { success: false, method: 'circuit_breaker_active' };
+    }
+    
     console.log('[ClientTokenManager] Attempting emergency session recovery');
     
     // Tracking pour savoir quelle méthode a réussi
@@ -150,6 +165,9 @@ export default function ClientTokenManager() {
       console.warn('[ClientTokenManager] Emergency direct getUser failed:', error);
     }
     
+    // Vérifier à nouveau le circuit-breaker
+    if (circuitBreakerTriggered.current) return { success: false, method: 'circuit_breaker_active' };
+    
     // 2. Forcer le stockage des tokens
     try {
       const tokenUpdated = enforceTokenStorage();
@@ -175,6 +193,9 @@ export default function ClientTokenManager() {
       console.warn('[ClientTokenManager] Recovery with token enforce failed:', error);
     }
     
+    // Vérifier à nouveau le circuit-breaker
+    if (circuitBreakerTriggered.current) return { success: false, method: 'circuit_breaker_active' };
+    
     // 3. Essayer setSession comme dernier recours
     try {
       await Promise.race([
@@ -182,13 +203,13 @@ export default function ClientTokenManager() {
           access_token: accessToken,
           refresh_token: localStorage.getItem('sb-refresh-token') || ''
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Set session timeout')), 4000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Set session timeout')), 3000))
       ]);
       
       // Vérifier si la session a été établie
       const { data } = await Promise.race([
         supabase.auth.getSession(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Get session timeout')), 4000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Get session timeout')), 3000))
       ]) as AuthResponse;
       
       if (data?.session) {
@@ -200,6 +221,9 @@ export default function ClientTokenManager() {
       console.warn('[ClientTokenManager] Emergency recovery with setSession failed:', error);
     }
 
+    // Vérifier à nouveau le circuit-breaker
+    if (circuitBreakerTriggered.current) return { success: false, method: 'circuit_breaker_active' };
+    
     // 4. Dernière tentative - vérifier s'il y a des signes d'authentification
     const hasTokens = !!getAccessToken();
     const hasLocalUserData = localStorage.getItem('supabase.auth.user') || 
@@ -217,6 +241,12 @@ export default function ClientTokenManager() {
   };
   
   const checkSession = async () => {
+    // Vérifier immédiatement si le circuit-breaker a été déclenché
+    if (circuitBreakerTriggered.current) {
+      console.log('[ClientTokenManager] Circuit-breaker active - aborting check');
+      return;
+    }
+    
     // Vérifier si nous avons un cache d'authentification récent
     const now = Date.now();
     const cachedAuthStatus = localStorage.getItem('cached_auth_status');
@@ -226,7 +256,17 @@ export default function ClientTokenManager() {
     if (cachedAuthStatus && cachedAuthTime && (now - parseInt(cachedAuthTime)) < AUTH_CACHE_TTL) {
       console.log('[ClientTokenManager] Using cached auth status:', cachedAuthStatus);
       setAuthStatus(cachedAuthStatus as 'authenticated' | 'unauthenticated');
-      setSessionLoaded(true);
+      setAuthVerificationState('completed');
+      
+      // Notifier les autres composants
+      window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+        detail: { 
+          status: cachedAuthStatus,
+          source: 'cache',
+          timestamp: now
+        }
+      }));
+      
       sessionCheckInProgress.current = false;
       return;
     }
@@ -246,6 +286,12 @@ export default function ClientTokenManager() {
       return;
     }
     
+    // Vérifier à nouveau le circuit-breaker
+    if (circuitBreakerTriggered.current) {
+      console.log('[ClientTokenManager] Circuit-breaker active during preparation - aborting check');
+      return;
+    }
+    
     lastAuthCheckTime.current = now;
     sessionCheckInProgress.current = true;
     
@@ -260,20 +306,36 @@ export default function ClientTokenManager() {
       if (isOnPublicRoute && !accessToken) {
         console.log('[ClientTokenManager] Public route without token, proceeding as unauthenticated');
         setAuthStatus('unauthenticated');
-        setSessionLoaded(true);
-        sessionCheckInProgress.current = false;
+        setAuthVerificationState('completed');
         
         // Mettre à jour le cache
         localStorage.setItem('cached_auth_status', 'unauthenticated');
         localStorage.setItem('cached_auth_time', now.toString());
+        
+        // Notifier les autres composants
+        window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+          detail: { 
+            status: 'unauthenticated',
+            source: 'public_route',
+            timestamp: now
+          }
+        }));
+        
+        sessionCheckInProgress.current = false;
         return;
       }
+      
+      // Vérifier à nouveau le circuit-breaker
+      if (circuitBreakerTriggered.current) return;
       
       // Forcer le stockage des tokens pour garantir la cohérence
       if (accessToken) {
         const tokenUpdated = enforceTokenStorage();
         console.log('[ClientTokenManager] Enforced token storage result:', tokenUpdated);
       }
+      
+      // Vérifier à nouveau le circuit-breaker
+      if (circuitBreakerTriggered.current) return;
       
       // ORDRE INVERSÉ: Essayer getUser d'abord (généralement plus rapide)
       try {
@@ -287,7 +349,7 @@ export default function ClientTokenManager() {
         if (userResult.data?.user) {
           console.log('[ClientTokenManager] User found, proceeding as authenticated');
           setAuthStatus('authenticated');
-          setSessionLoaded(true);
+          setAuthVerificationState('completed');
           
           // Mettre à jour le cache
           localStorage.setItem('cached_auth_status', 'authenticated');
@@ -298,15 +360,31 @@ export default function ClientTokenManager() {
             detail: { status: 'authenticated', user: userResult.data.user } 
           }));
           
+          // Notification de fin de vérification
+          window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+            detail: { 
+              status: 'authenticated',
+              source: 'getUser',
+              timestamp: now,
+              user: userResult.data.user
+            }
+          }));
+          
           // Réinitialiser le compteur de tentatives
           retryCount.current = 0;
           sessionCheckInProgress.current = false;
           return;
         }
       } catch (userError) {
+        // Vérifier le circuit-breaker
+        if (circuitBreakerTriggered.current) return;
+        
         console.warn('[ClientTokenManager] Initial getUser check failed:', userError);
         // Continuer avec getSession
       }
+      
+      // Vérifier à nouveau le circuit-breaker
+      if (circuitBreakerTriggered.current) return;
       
       // Si getUser échoue, essayer getSession comme fallback
       let sessionData = null;
@@ -323,7 +401,7 @@ export default function ClientTokenManager() {
         if (sessionData?.session) {
           console.log('[ClientTokenManager] Session verified successfully');
           setAuthStatus('authenticated');
-          setSessionLoaded(true);
+          setAuthVerificationState('completed');
           
           // Mettre à jour le cache
           localStorage.setItem('cached_auth_status', 'authenticated');
@@ -334,27 +412,55 @@ export default function ClientTokenManager() {
             detail: { status: 'authenticated', session: sessionData.session } 
           }));
           
+          // Notification de fin de vérification
+          window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+            detail: { 
+              status: 'authenticated',
+              source: 'getSession',
+              timestamp: now
+            }
+          }));
+          
           // Réinitialiser le compteur de tentatives
           retryCount.current = 0;
           sessionCheckInProgress.current = false;
           return;
         }
       } catch (error) {
+        // Vérifier le circuit-breaker
+        if (circuitBreakerTriggered.current) return;
+        
         console.error('[ClientTokenManager] Session check failed:', error);
       }
+      
+      // Vérifier à nouveau le circuit-breaker
+      if (circuitBreakerTriggered.current) return;
       
       // Sur une route publique, on peut être moins strict sur l'authentification
       if (isOnPublicRoute) {
         console.log('[ClientTokenManager] On public route, proceeding without full authentication');
         setAuthStatus('unauthenticated');
-        setSessionLoaded(true);
-        sessionCheckInProgress.current = false;
+        setAuthVerificationState('completed');
         
         // Mettre à jour le cache
         localStorage.setItem('cached_auth_status', 'unauthenticated');
         localStorage.setItem('cached_auth_time', now.toString());
+        
+        // Notification de fin de vérification
+        window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+          detail: { 
+            status: 'unauthenticated',
+            source: 'public_route_fallback',
+            timestamp: now
+          }
+        }));
+        
+        sessionCheckInProgress.current = false;
         return;
       }
+      
+      // Vérifier à nouveau le circuit-breaker
+      if (circuitBreakerTriggered.current) return;
       
       // Si ni getUser ni getSession n'ont réussi, essayer la récupération d'urgence
       if (accessToken) {
@@ -362,10 +468,13 @@ export default function ClientTokenManager() {
         
         const recoveryResult = await emergencyRecovery(accessToken);
         
+        // Vérifier à nouveau le circuit-breaker
+        if (circuitBreakerTriggered.current) return;
+        
         if (recoveryResult.success) {
           console.log(`[ClientTokenManager] Emergency recovery successful with method: ${recoveryResult.method}`);
           setAuthStatus('authenticated');
-          setSessionLoaded(true);
+          setAuthVerificationState('completed');
           
           // Mettre à jour le cache
           localStorage.setItem('cached_auth_status', 'authenticated');
@@ -375,7 +484,18 @@ export default function ClientTokenManager() {
           window.dispatchEvent(new CustomEvent('klyra:auth-status-changed', {
             detail: { 
               status: 'authenticated',
-              partial: recoveryResult.partial || false
+              partial: recoveryResult.partial || false,
+              recoveryMethod: recoveryResult.method
+            }
+          }));
+          
+          // Notification de fin de vérification
+          window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+            detail: { 
+              status: 'authenticated',
+              source: 'emergency_recovery',
+              method: recoveryResult.method,
+              timestamp: now
             }
           }));
           
@@ -390,7 +510,7 @@ export default function ClientTokenManager() {
       console.log('[ClientTokenManager] All authentication attempts failed, retry count:', retryCount.current);
       
       // Traiter les erreurs différemment selon qu'elles sont des timeouts ou d'autres types d'erreurs
-      if (retryCount.current < MAX_RETRIES) {
+      if (retryCount.current < MAX_RETRIES && !circuitBreakerTriggered.current) {
         // Si on n'a pas atteint le nombre max de tentatives, réessayer avec backoff exponentiel
         retryCount.current++;
         const retryDelay = RETRY_DELAY_BASE * Math.pow(1.5, retryCount.current - 1);
@@ -410,11 +530,20 @@ export default function ClientTokenManager() {
       
       // Définir l'état final comme non authentifié
       setAuthStatus('unauthenticated');
-      setSessionLoaded(true);
+      setAuthVerificationState('failed');
       
       // Mettre à jour le cache
       localStorage.setItem('cached_auth_status', 'unauthenticated');
       localStorage.setItem('cached_auth_time', now.toString());
+      
+      // Notification d'échec de vérification
+      window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+        detail: { 
+          status: 'unauthenticated',
+          source: 'max_retries',
+          timestamp: now
+        }
+      }));
       
       window.dispatchEvent(new CustomEvent('klyra:auth-status-changed', {
         detail: { status: 'unauthenticated' }
@@ -429,12 +558,22 @@ export default function ClientTokenManager() {
       if (isPublicRoute()) {
         console.log('[ClientTokenManager] Error on public route, proceeding without authentication');
         setAuthStatus('unauthenticated');
-        setSessionLoaded(true);
+        setAuthVerificationState('completed');
+        
+        // Notification de fin de vérification
+        window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+          detail: { 
+            status: 'unauthenticated',
+            source: 'error_public_route',
+            timestamp: Date.now()
+          }
+        }));
+        
         sessionCheckInProgress.current = false;
         return;
       }
       
-      if (retryCount.current < MAX_RETRIES) {
+      if (retryCount.current < MAX_RETRIES && !circuitBreakerTriggered.current) {
         retryCount.current++;
         // Utiliser backoff exponentiel
         const retryDelay = RETRY_DELAY_BASE * Math.pow(1.5, retryCount.current - 1);
@@ -443,11 +582,20 @@ export default function ClientTokenManager() {
       } else {
         console.log('[ClientTokenManager] Max retries reached after error - proceeding without authentication');
         setAuthStatus('unauthenticated');
-        setSessionLoaded(true);
+        setAuthVerificationState('failed');
         
         // Mettre à jour le cache
         localStorage.setItem('cached_auth_status', 'unauthenticated');
-        localStorage.setItem('cached_auth_time', now.toString());
+        localStorage.setItem('cached_auth_time', Date.now().toString());
+        
+        // Notification d'échec de vérification
+        window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+          detail: { 
+            status: 'unauthenticated',
+            source: 'error_max_retries',
+            timestamp: Date.now()
+          }
+        }));
         
         // Ne nettoyer les tokens qu'en cas d'erreur non-timeout
         if (!isTimeoutError) {
@@ -465,108 +613,117 @@ export default function ClientTokenManager() {
   
   // Effect pour gérer la redirection si l'utilisateur n'est pas authentifié
   useEffect(() => {
-    if (authStatus === 'unauthenticated' && sessionLoaded) {
+    if (authStatus === 'unauthenticated' && authVerificationState !== 'not_started') {
       redirectIfNeeded();
     }
-  }, [authStatus, sessionLoaded, pathname]);
+  }, [authStatus, authVerificationState, pathname]);
   
   // Effect principal pour l'initialisation
   useEffect(() => {
-    console.log('[ClientTokenManager] Component mounted');
+    console.log('[ClientTokenManager] Component mounted - starting background auth verification');
     mountedRef.current = true;
+    authStartTime.current = Date.now();
     
-    // Définir un timeout de sécurité pour éviter les blocages infinis
-    safetyTimeoutRef.current = setTimeout(() => {
-      console.log('[ClientTokenManager] Safety timeout triggered - proceeding to load app');
-      if (!sessionLoaded) {
-        // Enregistrer cet événement pour l'analyse
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auth_safety_triggered', 'true');
-          localStorage.setItem('auth_safety_time', new Date().toISOString());
-          localStorage.setItem('auth_safety_path', pathname || '');
-        }
+    // Notification du début de la vérification
+    window.dispatchEvent(new CustomEvent('klyra:auth-verification-started', {
+      detail: { timestamp: authStartTime.current }
+    }));
+    
+    // Mettre à jour l'état pour indiquer que la vérification est en cours
+    setAuthVerificationState('in_progress');
+    
+    // Circuit-breaker strict à 5 secondes exactement
+    const circuitBreakerTimeoutId = setTimeout(() => {
+      if (authVerificationState !== 'completed' && authVerificationState !== 'failed') {
+        console.log('[ClientTokenManager] Circuit-breaker triggered after 5s - forcing auth completion');
+        circuitBreakerTriggered.current = true;
         
-        setSessionLoaded(true);
+        // Arrêter toute vérification en cours
+        setAuthVerificationState('timed_out');
         
-        // Si on est sur une route publique, ne pas rediriger
-        if (isPublicRoute()) {
-          console.log('[ClientTokenManager] On public route, continuing without authentication');
+        // Définir un état par défaut en cas de timeout
+        const hasToken = !!getAccessToken();
+        
+        // Sur une route publique ou sans token, par défaut non authentifié
+        if (isPublicRoute() || !hasToken) {
           setAuthStatus('unauthenticated');
         } else {
-          // Dernière tentative de récupération
+          // Sur une route protégée avec token, essayer d'utiliser le token par défaut
+          setAuthStatus('authenticated');
+        }
+        
+        // Notification du circuit-breaker
+        window.dispatchEvent(new CustomEvent('klyra:auth-circuit-breaker', {
+          detail: { 
+            route: pathname,
+            isPublic: isPublicRoute(),
+            hasToken: hasToken,
+            duration: Date.now() - authStartTime.current
+          }
+        }));
+        
+        // Mettre à jour le cache avec décision par défaut
+        localStorage.setItem('cached_auth_status', isPublicRoute() || !hasToken ? 'unauthenticated' : 'authenticated');
+        localStorage.setItem('cached_auth_time', Date.now().toString());
+        localStorage.setItem('auth_circuit_breaker_triggered', 'true');
+        
+        // Notification de fin forcée de la vérification
+        window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+          detail: { 
+            status: isPublicRoute() || !hasToken ? 'unauthenticated' : 'authenticated',
+            source: 'circuit_breaker',
+            timestamp: Date.now()
+          }
+        }));
+      }
+    }, CIRCUIT_BREAKER_TIMEOUT); // Exactement 5 secondes
+    
+    // Safety timeout existant (maintenant redondant avec le circuit-breaker)
+    safetyTimeoutRef.current = setTimeout(() => {
+      // Ce code n'est exécuté que si le safety timeout est atteint avant le circuit-breaker
+      if (!circuitBreakerTriggered.current && authVerificationState !== 'completed' && authVerificationState !== 'failed') {
+        console.log('[ClientTokenManager] Safety timeout triggered');
+        
+        // Logique existante du safety timeout (simplifiée)
+        if (isPublicRoute()) {
+          console.log('[ClientTokenManager] Safety: On public route, continuing without authentication');
+          setAuthStatus('unauthenticated');
+          setAuthVerificationState('timed_out');
+        } else {
           const accessToken = getAccessToken();
           if (accessToken) {
-            console.log('[ClientTokenManager] Safety timeout with token - attempting streamlined recovery');
-            
-            // Version simplifiée et plus rapide de la vérification
-            Promise.race([
-              supabase.auth.getUser(),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Safety user check timeout')), 2000))
-            ]).then((result: any) => {
-              if (result.data?.user) {
-                console.log('[ClientTokenManager] User found in safety check');
-                setAuthStatus('authenticated');
-                
-                // Mettre à jour le cache pour les futures vérifications
-                localStorage.setItem('cached_auth_status', 'authenticated');
-                localStorage.setItem('cached_auth_time', Date.now().toString());
-              } else {
-                handleSafetyFailure();
-              }
-            }).catch(() => {
-              handleSafetyFailure();
-            });
+            // Utiliser token existant par défaut
+            setAuthStatus('authenticated');
           } else {
-            handleSafetyFailure();
+            setAuthStatus('unauthenticated');
           }
+          setAuthVerificationState('timed_out');
         }
+        
+        // Notification de fin forcée par safety timeout
+        window.dispatchEvent(new CustomEvent('klyra:auth-verification-completed', {
+          detail: { 
+            status: authStatus,
+            source: 'safety_timeout',
+            timestamp: Date.now()
+          }
+        }));
       }
     }, SAFETY_TIMEOUT);
     
-    // Fonction pour gérer l'échec de la vérification de sécurité
-    const handleSafetyFailure = () => {
-      console.log('[ClientTokenManager] Safety recovery failed');
-      
-      // Tentative de détection d'un état d'authentification partiel
-      const hasTokens = !!getAccessToken();
-      const hasLocalUserData = localStorage.getItem('supabase.auth.user') || 
-                              localStorage.getItem('sb-user');
-      
-      if (hasTokens && hasLocalUserData) {
-        console.log('[ClientTokenManager] Partial auth detected, trying to continue');
-        setAuthStatus('authenticated');
-        // Marquer comme authentification partielle
-        window.dispatchEvent(new CustomEvent('klyra:auth-status-changed', {
-          detail: { status: 'authenticated', partial: true }
-        }));
-      } else {
-        console.log('[ClientTokenManager] Safety redirect to login page');
-        setAuthStatus('unauthenticated');
-        
-        // Ajouter un délai court avant la redirection
-        setTimeout(() => {
-          // Stocker l'URL actuelle pour y revenir après login
-          if (typeof window !== 'undefined' && pathname && !isPublicRoute()) {
-            localStorage.setItem('auth_redirect_url', pathname);
-          }
-          redirectIfNeeded();
-        }, 100);
-      }
-    };
-    
-    // Attendre que le DOM soit complètement chargé
+    // Démarrer la vérification d'authentification en arrière-plan
     if (document.readyState === 'complete') {
       if (!initializationAttempted.current) {
-        console.log('[ClientTokenManager] Starting initial session check');
+        console.log('[ClientTokenManager] Starting background auth verification');
         initializationAttempted.current = true;
-        checkSession();
+        checkSession(); // Exécuté en arrière-plan maintenant
       }
     } else {
       const handleLoad = () => {
         if (!initializationAttempted.current) {
-          console.log('[ClientTokenManager] Starting initial session check after load');
+          console.log('[ClientTokenManager] Starting background auth verification after load');
           initializationAttempted.current = true;
-          checkSession();
+          checkSession(); // Exécuté en arrière-plan
         }
       };
       window.addEventListener('load', handleLoad);
@@ -578,7 +735,7 @@ export default function ClientTokenManager() {
     
     return () => {
       mountedRef.current = false;
-      // Nettoyer le timeout de sécurité
+      clearTimeout(circuitBreakerTimeoutId);
       if (safetyTimeoutRef.current) {
         clearTimeout(safetyTimeoutRef.current);
         safetyTimeoutRef.current = null;
@@ -586,33 +743,12 @@ export default function ClientTokenManager() {
     };
   }, []);
   
-  if (!sessionLoaded) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white/90 z-50">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
-          <p className="mt-4 text-[16px] font-medium text-gray-700">Vérification de la session...</p>
-          <p className="mt-2 text-[14px] text-gray-500">Nous vérifions votre authentification</p>
-          
-          {/* Message pour les chargements prolongés */}
-          <div className="mt-8 opacity-0 animate-fadeIn text-[14px] text-gray-500 delayed-display">
-            Le chargement prend plus de temps que prévu. 
-            <button 
-              onClick={() => window.location.reload()}
-              className="text-blue-600 hover:underline ml-1 font-medium"
-            >
-              Recharger la page
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
+  // Ne pas afficher d'écran de chargement bloquant, permettre à l'interface de se charger immédiatement
   return null;
 }
 
 // Ajouter le style CSS pour l'animation de fondu et le délai d'affichage
+// (Non utilisé ici mais conservé pour d'autres composants qui pourraient l'utiliser)
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.innerHTML = `
