@@ -23,7 +23,8 @@ import {
   HelpCircle,
   ChevronRight,
   ChevronLeft,
-  LogIn
+  LogIn,
+  Timeline
 } from 'lucide-react'
 
 // Interface pour les liens de navigation
@@ -122,6 +123,11 @@ export function SidebarNav() {
       exact: true
     },
     {
+      href: '/dashboard/projects/timeline',
+      label: 'Timeline',
+      icon: <Timeline className="h-5 w-5" />
+    },
+    {
       href: '/dashboard/profile',
       label: 'Profil',
       icon: <User className="h-5 w-5" />
@@ -130,15 +136,6 @@ export function SidebarNav() {
       href: '/dashboard/purchases',
       label: 'Mes achats',
       icon: <ShoppingCart className="h-5 w-5" />
-    },
-    {
-      href: '/dashboard/projects/timeline',
-      label: 'Timeline',
-      icon: <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 3v18h18" />
-        <path d="M7 16h3V8H7" />
-        <path d="M14 16h3v-4h-3" />
-      </svg>
     },
     {
       href: '/dashboard/marketplace',
