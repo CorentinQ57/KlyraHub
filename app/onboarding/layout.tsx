@@ -19,12 +19,48 @@ export default function OnboardingLayout({
   const [profileChecked, setProfileChecked] = useState(false)
   const [isOnboarded, setIsOnboarded] = useState(false)
   
+  // Logs détaillés de l'état utilisateur
+  useEffect(() => {
+    console.log('Onboarding Layout - Detailed User info:', {
+      userExists: !!user,
+      userType: typeof user,
+      userId: user?.id,
+      userEmail: user?.email,
+      userMetadata: user?.user_metadata,
+      isLoadingAuth: isLoading,
+      redirectionState: redirectionChecked,
+      profileState: profileChecked,
+      onboardedState: isOnboarded
+    });
+  }, [user, isLoading, redirectionChecked, profileChecked, isOnboarded]);
+  
   // Vérifier le statut d'onboarding directement depuis la table profiles
   useEffect(() => {
-    if (!user || profileChecked) return;
+    if (isLoading) {
+      console.log('Auth is still loading, waiting...');
+      return;
+    }
+    
+    if (!user) {
+      console.log('No user detected, skipping profile check');
+      return;
+    }
+    
+    if (profileChecked) {
+      console.log('Profile already checked, skipping check');
+      return;
+    }
+    
+    if (!user.id) {
+      console.error('User exists but has no ID! User object:', user);
+      return;
+    }
+    
+    console.log('Starting profile check for user ID:', user.id);
     
     const checkProfileOnboardingStatus = async () => {
       try {
+        console.log('Querying profiles table for user ID:', user.id);
         const { data, error } = await supabase
           .from('profiles')
           .select('onboarded')
@@ -36,23 +72,49 @@ export default function OnboardingLayout({
           // En cas d'erreur, on reste prudent et on considère que l'utilisateur n'a pas fait l'onboarding
           setIsOnboarded(false);
         } else {
-          console.log('Profile onboarding status:', data?.onboarded);
-          setIsOnboarded(!!data?.onboarded);
+          console.log('Profile onboarding query result:', data);
+          // Conversion explicite à boolean
+          const onboardedStatus = data?.onboarded === true;
+          console.log('Profile onboarded status (converted):', onboardedStatus);
+          setIsOnboarded(onboardedStatus);
         }
       } catch (err) {
         console.error('Exception checking profile:', err);
         setIsOnboarded(false);
       } finally {
+        console.log('Profile check completed');
         setProfileChecked(true);
       }
     };
     
     checkProfileOnboardingStatus();
-  }, [user, profileChecked]);
+  }, [user, profileChecked, isLoading]);
   
   // Redirection basée sur le statut d'onboarding vérifié dans la table profiles
   useEffect(() => {
-    if (redirectionChecked || !profileChecked || isLoading) return;
+    console.log('Redirect check triggered with states:', {
+      redirectionChecked,
+      profileChecked,
+      isLoading,
+      isOnboarded
+    });
+    
+    if (redirectionChecked) {
+      console.log('Redirection already handled, skipping');
+      return;
+    }
+    
+    if (!profileChecked && user) {
+      console.log('Profile not checked yet but user exists, waiting for profile check');
+      return;
+    }
+    
+    if (isLoading) {
+      console.log('Auth still loading, skipping redirection');
+      return;
+    }
+    
+    console.log('Deciding redirection with user:', !!user, 'and onboarded:', isOnboarded);
     
     if (!user) {
       // Rediriger vers la page de connexion si non connecté

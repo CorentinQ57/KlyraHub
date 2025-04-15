@@ -282,7 +282,6 @@ function NewsCard({
           <div className="flex items-center justify-between pt-3 text-xs">
             <Link
               href={href || "/dashboard"}
-              target="_blank"
               className="font-medium text-muted-foreground hover:text-foreground transition-colors duration-75"
             >
               En savoir plus
