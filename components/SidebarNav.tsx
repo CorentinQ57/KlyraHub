@@ -24,7 +24,7 @@ import {
   ChevronRight,
   ChevronLeft,
   LogIn,
-  Timeline
+  BarChart2
 } from 'lucide-react'
 
 // Interface pour les liens de navigation
@@ -125,7 +125,7 @@ export function SidebarNav() {
     {
       href: '/dashboard/projects/timeline',
       label: 'Timeline',
-      icon: <Timeline className="h-5 w-5" />
+      icon: <BarChart2 className="h-5 w-5" />
     },
     {
       href: '/dashboard/profile',
