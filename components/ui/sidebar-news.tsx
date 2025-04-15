@@ -194,8 +194,10 @@ function NewsCard({
       drag.current.maxDelta < ref.current.clientWidth / 10 &&
       (!drag.current.startTime || Date.now() - drag.current.startTime < 250)
     ) {
-      // Touch user didn't drag far or for long, open the link
-      window.open(href, "_blank");
+      // Touch user didn't drag far or for long, navigate to the link in the same tab
+      if (href) {
+        window.location.href = href; // Navigation dans l'onglet actuel
+      }
     }
   };
 
@@ -224,26 +226,53 @@ function NewsCard({
       onClick={onClick}
     >
       <div className={cn(hideContent && "invisible")}>
-        <div className="flex flex-col gap-1">
-          <span className="line-clamp-1 font-medium text-foreground">
-            {title}
-          </span>
-          <p className="line-clamp-2 h-10 leading-5 text-muted-foreground">
-            {description}
-          </p>
-        </div>
-        <div className="relative mt-3 aspect-[16/9] w-full shrink-0 overflow-hidden rounded border bg-muted">
-          {image && (
-            <Image
-              src={image}
-              alt=""
-              fill
-              sizes="10vw"
-              className="rounded object-cover object-center"
-              draggable={false}
-            />
-          )}
-        </div>
+        {href ? (
+          <Link href={href} className="block">
+            <div className="flex flex-col gap-1">
+              <span className="line-clamp-1 font-medium text-foreground">
+                {title}
+              </span>
+              <p className="line-clamp-2 h-10 leading-5 text-muted-foreground">
+                {description}
+              </p>
+            </div>
+            <div className="relative mt-3 aspect-[16/9] w-full shrink-0 overflow-hidden rounded border bg-muted">
+              {image && (
+                <Image
+                  src={image}
+                  alt=""
+                  fill
+                  sizes="10vw"
+                  className="rounded object-cover object-center"
+                  draggable={false}
+                />
+              )}
+            </div>
+          </Link>
+        ) : (
+          <>
+            <div className="flex flex-col gap-1">
+              <span className="line-clamp-1 font-medium text-foreground">
+                {title}
+              </span>
+              <p className="line-clamp-2 h-10 leading-5 text-muted-foreground">
+                {description}
+              </p>
+            </div>
+            <div className="relative mt-3 aspect-[16/9] w-full shrink-0 overflow-hidden rounded border bg-muted">
+              {image && (
+                <Image
+                  src={image}
+                  alt=""
+                  fill
+                  sizes="10vw"
+                  className="rounded object-cover object-center"
+                  draggable={false}
+                />
+              )}
+            </div>
+          </>
+        )}
         <div
           className={cn(
             "h-0 overflow-hidden opacity-0 transition-[height,opacity] duration-200",
