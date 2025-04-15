@@ -72,6 +72,31 @@ export default function LoginPage() {
         description: "Vous êtes maintenant connecté.",
       })
 
+      // Forcer l'enregistrement explicite du token et attendre un délai
+      // pour s'assurer que le token est bien persisté avant la redirection
+      if (data?.session?.access_token) {
+        // Stockage explicite du token dans le localStorage
+        localStorage.setItem('sb-access-token', data.session.access_token);
+        
+        // Si refresh token disponible, le stocker aussi
+        if (data.session.refresh_token) {
+          localStorage.setItem('sb-refresh-token', data.session.refresh_token);
+        }
+        
+        // Mettre à jour le cookie avec les options appropriées
+        const secure = window.location.protocol === 'https:';
+        const domain = window.location.hostname;
+        const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+        
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+        
+        // Marquer le timestamp de la dernière mise à jour
+        localStorage.setItem('sb-token-last-refresh', Date.now().toString());
+        
+        // Attendre un court délai pour s'assurer que le token est persisté
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
       // Rediriger vers returnTo au lieu de /dashboard en dur
       router.push(returnTo)
     } catch (err: any) {

@@ -37,7 +37,9 @@ export default function ClientTokenManager() {
   const mountedRef = useRef(false);
   const initializationAttempted = useRef(false);
   const retryCount = useRef(0);
+  const redirectCount = useRef(0);
   const MAX_RETRIES = 3;
+  const MAX_REDIRECTS = 2; // Limite le nombre de redirections pour éviter les boucles
   const RETRY_DELAY = 1000;
   const router = useRouter();
   const pathname = usePathname();
@@ -51,7 +53,21 @@ export default function ClientTokenManager() {
   // Fonction pour rediriger vers la page de login si nécessaire
   const redirectIfNeeded = () => {
     if (authStatus === 'unauthenticated' && !isPublicRoute()) {
+      // Protection contre les boucles de redirection
+      if (redirectCount.current >= MAX_REDIRECTS) {
+        console.error(`[ClientTokenManager] Max redirections (${MAX_REDIRECTS}) reached - stopping redirect loop`);
+        // Stocker dans le localStorage pour déboguer
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_redirect_blocked', 'true');
+          localStorage.setItem('auth_redirect_time', new Date().toISOString());
+          localStorage.setItem('auth_redirect_path', pathname || '');
+        }
+        return;
+      }
+      
       console.error('[ClientTokenManager] User not authenticated, redirecting to login');
+      redirectCount.current++;
+      
       // Ajouter un paramètre de redirection pour revenir à la page après login
       const returnTo = encodeURIComponent(pathname || '/dashboard');
       router.push(`/login?returnTo=${returnTo}`);
@@ -72,12 +88,25 @@ export default function ClientTokenManager() {
     try {
       console.error('[ClientTokenManager] Starting session check');
       
-      // Vérifier si des tokens sont disponibles - essayer plusieurs sources
+      // Vérifier si des tokens sont disponibles - essayer plusieurs sources avec plus de robustesse
+      const getTokenFromCookie = () => {
+        try {
+          return document.cookie
+            .split(';')
+            .map(cookie => cookie.trim())
+            .find(cookie => cookie.startsWith('sb-access-token='))
+            ?.split('=')[1];
+        } catch (e) {
+          console.error('[ClientTokenManager] Error getting token from cookie:', e);
+          return null;
+        }
+      };
+      
       const accessToken = 
         localStorage.getItem('sb-access-token') || 
         localStorage.getItem('supabase.auth.token') ||
         localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`) ||
-        document.cookie.split(';').find(c => c.trim().startsWith('sb-access-token='))?.split('=')[1];
+        getTokenFromCookie();
       
       if (!accessToken) {
         console.error('[ClientTokenManager] No access token found - user unauthenticated');

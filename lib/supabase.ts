@@ -1333,33 +1333,88 @@ export async function createStripeSession(
  * Enforce token storage in localStorage and cookies
  */
 export function enforceTokenStorage() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return false;
 
   try {
-    // Récupérer le token depuis localStorage
-    const accessToken = localStorage.getItem('sb-access-token') || 
-                       localStorage.getItem('supabase.auth.token') ||
-                       localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
-
-    if (accessToken) {
-      // S'assurer que le token est stocké dans tous les emplacements possibles
-      localStorage.setItem('sb-access-token', accessToken);
-      localStorage.setItem('supabase.auth.token', accessToken);
-      localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, accessToken);
-
-      // Mettre à jour les cookies avec une durée de vie plus longue et des options de sécurité
-      const secure = window.location.protocol === 'https:';
-      const domain = window.location.hostname;
-      const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+    // Récupérer le token depuis localStorage avec des alternatives
+    const getAccessToken = () => {
+      // Options ordonnées par priorité
+      const options = [
+        // Format standard
+        'sb-access-token',
+        // Ancien format Supabase
+        'supabase.auth.token',
+        // Format avec URL
+        `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`,
+        // Extraction des cookies
+        () => {
+          try {
+            return document.cookie
+              .split(';')
+              .map(cookie => cookie.trim())
+              .find(cookie => cookie.startsWith('sb-access-token='))
+              ?.split('=')[1];
+          } catch (e) {
+            console.error('Error parsing cookie for token:', e);
+            return null;
+          }
+        }
+      ];
       
-      document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+      // Essayer chaque option
+      for (const option of options) {
+        if (typeof option === 'function') {
+          const result = option();
+          if (result) return result;
+        } else {
+          const result = localStorage.getItem(option);
+          if (result) return result;
+        }
+      }
       
-      // Stocker le timestamp de la dernière mise à jour
-      localStorage.setItem('sb-token-last-refresh', Date.now().toString());
-      
-      return true;
+      return null;
+    };
+    
+    const accessToken = getAccessToken();
+    
+    if (!accessToken) {
+      console.error('No access token found in enforceTokenStorage');
+      return false;
     }
-    return false;
+    
+    console.log('Enforcing token storage with token:', accessToken.substring(0, 10) + '...');
+
+    // S'assurer que le token est stocké dans tous les emplacements possibles
+    localStorage.setItem('sb-access-token', accessToken);
+    localStorage.setItem('supabase.auth.token', accessToken);
+    localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, accessToken);
+
+    // Mettre à jour les cookies avec une durée de vie plus longue et des options de sécurité
+    // Tester différentes variantes de cookies pour maximiser la compatibilité
+    const secure = window.location.protocol === 'https:';
+    const domain = window.location.hostname;
+    const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+    
+    // Cookie principal - avec domaine
+    document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+    
+    // Cookie sans domaine spécifique (pour localhost)
+    document.cookie = `sb-access-token=${accessToken}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+    
+    // Stocker le timestamp de la dernière mise à jour
+    localStorage.setItem('sb-token-last-refresh', Date.now().toString());
+    
+    // Essayer de réinitialiser le client Supabase si possible
+    try {
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: localStorage.getItem('sb-refresh-token') || ''
+      });
+    } catch (e) {
+      console.error('Error setting Supabase session:', e);
+    }
+    
+    return true;
   } catch (error) {
     console.error('Error enforcing token storage:', error);
     return false;

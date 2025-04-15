@@ -372,6 +372,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const role = await checkUserRole(data.user.id)
           setIsAdmin(role === 'admin')
           
+          // Forcer explicitement la persistance du token
+          if (data.session?.access_token) {
+            // Nettoyer d'abord les jetons existants
+            localStorage.removeItem('sb-access-token');
+            localStorage.removeItem('supabase.auth.token');
+            localStorage.removeItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
+            
+            // Stocker le nouveau jeton
+            localStorage.setItem('sb-access-token', data.session.access_token);
+            localStorage.setItem('supabase.auth.token', data.session.access_token);
+            localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, data.session.access_token);
+            
+            // Stocker aussi le refresh token si disponible
+            if (data.session.refresh_token) {
+              localStorage.setItem('sb-refresh-token', data.session.refresh_token);
+            }
+            
+            // Cookie avec diverses options pour maximiser la compatibilité
+            const secure = window.location.protocol === 'https:';
+            const domain = window.location.hostname;
+            const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
+            
+            document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
+            document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
+            
+            localStorage.setItem('sb-token-last-refresh', Date.now().toString());
+            
+            // Attendre un court délai pour s'assurer que tout est correctement enregistré
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+          
           // Update last_sign_in_at in profiles table
           try {
             await supabase
