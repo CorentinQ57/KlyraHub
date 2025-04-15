@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { PageContainer, PageHeader, PageSection } from '@/components/ui/page-container'
@@ -30,11 +30,21 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const redirectAttempted = useRef(false)
   
-  // Check if user is authenticated
+  // Check if user is authenticated - avec protection contre les redirections en boucle
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !user && !redirectAttempted.current) {
+      console.log('Utilisateur non connecté, redirection vers login (page)')
+      redirectAttempted.current = true
       router.push('/login')
+    }
+    
+    // Vérifier aussi si l'user a déjà complété l'onboarding
+    if (!isLoading && user?.user_metadata?.onboarded === true && !redirectAttempted.current) {
+      console.log('Utilisateur déjà onboardé, redirection vers dashboard (page)')
+      redirectAttempted.current = true
+      router.push('/dashboard')
     }
   }, [user, isLoading, router])
   
@@ -89,6 +99,7 @@ export default function OnboardingPage() {
       })
       
       // Rediriger vers le dashboard
+      redirectAttempted.current = true
       router.push('/dashboard')
     } catch (error) {
       console.error('Error saving onboarding data:', error)

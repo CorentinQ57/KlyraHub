@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { 
   addMonths, 
@@ -65,10 +65,11 @@ export default function ProjectTimeline() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Month);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const redirectAttempted = useRef(false);
 
   // Hooks
   const router = useRouter();
-  const { user, isAdmin = false } = useAuth();
+  const { user, isAdmin = false, isLoading } = useAuth();
 
   // Couleurs des statuts pour le Gantt
   const statusColors: Record<string, { bg: string; progressColor: string }> = {
@@ -94,12 +95,22 @@ export default function ProjectTimeline() {
     },
   };
 
-  // Initialisation
+  // Protection contre la redirection en boucle
   useEffect(() => {
-    if (user) {
+    if (!isLoading && !user && !redirectAttempted.current) {
+      console.log('Utilisateur non connecté, redirection vers login depuis timeline')
+      redirectAttempted.current = true;
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
+
+  // Initialisation avec protection améliorée
+  useEffect(() => {
+    // Ne charger les projets que si l'utilisateur est connecté et que le chargement est terminé
+    if (!isLoading && user) {
       loadProjects();
     }
-  }, [user]);
+  }, [user, isLoading]);
 
   // Effet pour filtrer et grouper les projets
   useEffect(() => {
