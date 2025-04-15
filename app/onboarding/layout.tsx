@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import Link from 'next/link'
 import Image from 'next/image'
+import { supabase } from '@/lib/supabase'
 
 export default function OnboardingLayout({
   children,
@@ -15,47 +16,60 @@ export default function OnboardingLayout({
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [redirectionChecked, setRedirectionChecked] = useState(false)
-  const searchParams = useSearchParams()
-  const forceOnboarding = searchParams.get('force') === 'true'
+  const [profileChecked, setProfileChecked] = useState(false)
+  const [isOnboarded, setIsOnboarded] = useState(false)
   
-  // Check if user has completed onboarding
+  // Vérifier le statut d'onboarding directement depuis la table profiles
   useEffect(() => {
-    // Avoid multiple checks
-    if (redirectionChecked) return;
+    if (!user || profileChecked) return;
     
-    if (!isLoading) {
-      // Log user details for debugging
-      console.log('Onboarding Layout - User info:', {
-        user: user?.email,
-        isLoading,
-        userMetadata: user?.user_metadata,
-        hasOnboardedFlag: user?.user_metadata?.onboarded,
-        forceOnboarding
-      });
-      
-      if (!user) {
-        // Rediriger vers la page de connexion si non connecté
-        console.log('User not authenticated, redirecting to login');
-        router.push('/login');
-        setRedirectionChecked(true);
-      } else if (user?.user_metadata?.onboarded === true && !forceOnboarding) {
-        // Rediriger vers le dashboard si l'onboarding est déjà complété
-        // et qu'on ne force pas l'onboarding
-        console.log('User already onboarded, redirecting to dashboard');
-        router.push('/dashboard');
-        setRedirectionChecked(true);
-      } else {
-        // Check if user_metadata exists, if not, the user is new and needs onboarding
-        if (!user.user_metadata) {
-          console.log('New user detected (no metadata), staying on onboarding');
-          setRedirectionChecked(true);
+    const checkProfileOnboardingStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('onboarded')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error checking profile onboarding status:', error);
+          // En cas d'erreur, on reste prudent et on considère que l'utilisateur n'a pas fait l'onboarding
+          setIsOnboarded(false);
         } else {
-          console.log('Onboarding in progress for user', user?.email);
-          setRedirectionChecked(true);
+          console.log('Profile onboarding status:', data?.onboarded);
+          setIsOnboarded(!!data?.onboarded);
         }
+      } catch (err) {
+        console.error('Exception checking profile:', err);
+        setIsOnboarded(false);
+      } finally {
+        setProfileChecked(true);
       }
+    };
+    
+    checkProfileOnboardingStatus();
+  }, [user, profileChecked]);
+  
+  // Redirection basée sur le statut d'onboarding vérifié dans la table profiles
+  useEffect(() => {
+    if (redirectionChecked || !profileChecked || isLoading) return;
+    
+    if (!user) {
+      // Rediriger vers la page de connexion si non connecté
+      console.log('User not authenticated, redirecting to login');
+      router.push('/login');
+      setRedirectionChecked(true);
+    } else if (isOnboarded) {
+      // Rediriger vers le dashboard si l'onboarding est déjà complété selon la table profiles
+      console.log('User already onboarded (from profiles table), redirecting to dashboard');
+      router.push('/dashboard');
+      setRedirectionChecked(true);
+    } else {
+      // L'utilisateur n'a pas complété l'onboarding, le laisser accéder
+      console.log('User not onboarded, allowing access to onboarding page');
+      setRedirectionChecked(true);
     }
-  }, [user, isLoading, router, redirectionChecked, forceOnboarding]);
+  }, [user, isLoading, router, redirectionChecked, profileChecked, isOnboarded]);
   
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>
