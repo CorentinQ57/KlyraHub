@@ -132,6 +132,15 @@ export function SidebarNav() {
       icon: <ShoppingCart className="h-5 w-5" />
     },
     {
+      href: '/dashboard/projects/timeline',
+      label: 'Timeline',
+      icon: <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 3v18h18" />
+        <path d="M7 16h3V8H7" />
+        <path d="M14 16h3v-4h-3" />
+      </svg>
+    },
+    {
       href: '/dashboard/marketplace',
       label: 'Marketplace',
       icon: <Store className="h-5 w-5" />
