@@ -15,36 +15,48 @@ import { User, KeyRound, ArrowLeft, Save, LogOut } from 'lucide-react'
 export default function ProfilePage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const router = useRouter()
-  const { user, signOut } = useAuth()
+  const { user, isLoading: authLoading, signOut } = useAuth()
   const { toast } = useToast()
 
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       loadProfile()
-    } else if (!user && !isLoading) {
+    } else if (!authLoading && !user) {
+      console.log('No authenticated user found, redirecting to login')
       router.push('/login')
     }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   async function loadProfile() {
+    setLoadError(false)
     setIsLoading(true)
+    
     try {
-      if (!user) return;
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
       
       setEmail(user.email || '')
 
       const profileData = await getProfileData(user.id)
+      
       if (profileData) {
         setFullName(profileData.full_name || '')
+        setAvatarUrl(profileData.avatar_url || '')
+      } else {
+        console.warn('Profile data not found for user')
       }
     } catch (error) {
       console.error('Error loading profile:', error)
+      setLoadError(true)
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les données du profil",
+        title: "Erreur de chargement",
+        description: "Impossible de charger les données du profil. Veuillez réessayer.",
         variant: "destructive",
       })
     } finally {
@@ -55,7 +67,14 @@ export default function ProfilePage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour mettre à jour votre profil",
+        variant: "destructive",
+      })
+      return
+    }
     
     setIsUpdating(true)
     
@@ -73,12 +92,14 @@ export default function ProfilePage() {
           title: "Profil mis à jour",
           description: "Vos informations ont été mises à jour avec succès",
         })
+      } else {
+        throw new Error('Failed to update profile')
       }
     } catch (error) {
       console.error('Error updating profile:', error)
       toast({
         title: "Erreur",
-        description: "Impossible de mettre à jour le profil",
+        description: "Impossible de mettre à jour le profil. Veuillez réessayer.",
         variant: "destructive",
       })
     } finally {
@@ -92,7 +113,25 @@ export default function ProfilePage() {
       router.push('/')
     } catch (error) {
       console.error('Error logging out:', error)
+      toast({
+        title: "Erreur",
+        description: "Problème lors de la déconnexion. Veuillez réessayer.",
+        variant: "destructive",
+      })
     }
+  }
+
+  if (authLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
+            <p className="mt-4 text-[14px]">Vérification de l'authentification...</p>
+          </div>
+        </div>
+      </PageContainer>
+    )
   }
 
   if (isLoading) {
@@ -102,6 +141,29 @@ export default function ProfilePage() {
           <div className="text-center">
             <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
             <p className="mt-4 text-[14px]">Chargement des données de profil...</p>
+          </div>
+        </div>
+      </PageContainer>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-center">
+            <h3 className="text-xl font-medium mb-2">Erreur de chargement</h3>
+            <p className="text-[14px] text-[#64748B] mb-4">
+              Impossible de charger les données de profil
+            </p>
+            <Button onClick={() => loadProfile()}>
+              Réessayer
+            </Button>
+            <div className="mt-4">
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" /> Déconnexion
+              </Button>
+            </div>
           </div>
         </div>
       </PageContainer>
