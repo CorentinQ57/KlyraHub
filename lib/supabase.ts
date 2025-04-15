@@ -24,37 +24,6 @@ export const supabase = createClient(
   }
 );
 
-/**
- * Fonction pour s'assurer que les tokens d'authentification sont correctement stockés
- * Utiliser pour résoudre les problèmes de persistance de session
- */
-export function enforceTokenStorage() {
-  if (typeof window === 'undefined') return; // N'exécuter que côté client
-  
-  try {
-    // Vérifier s'il y a un token dans le localStorage sous les différents formats possibles
-    const accessToken = localStorage.getItem('sb-access-token') || 
-                         localStorage.getItem('supabase.auth.token') ||
-                         localStorage.getItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
-    
-    if (accessToken) {
-      console.log('Token trouvé, persistance assurée');
-      
-      // S'assurer que goTrueClient a la bonne configuration
-      if (!localStorage.getItem('supabase.auth.refreshSession')) {
-        console.log('Mise à jour du refreshSession');
-        localStorage.setItem('supabase.auth.refreshSession', 'true');
-      }
-    } else {
-      console.log('Aucun token trouvé dans le stockage local');
-    }
-  } catch (error) {
-    console.error('Erreur lors de l\'application du stockage des tokens:', error);
-  }
-  
-  return;
-}
-
 // Database types
 export type User = {
   id: string
@@ -190,107 +159,50 @@ export async function updateProfile(userId: string, updates: Partial<User>) {
  */
 export async function saveOnboardingData(userId: string, onboardingData: any) {
   try {
-    console.log('Début de la sauvegarde des données d\'onboarding pour l\'utilisateur:', userId)
-    
-    // Étape 1: Vérifier que l'utilisateur existe dans la table profiles
-    const { data: profileData, error: profileCheckError } = await supabase
+    // Étape 1: Mettre à jour les données de profil
+    const { error: profileError } = await supabase
       .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single()
-    
-    if (profileCheckError) {
-      console.error('Erreur lors de la vérification du profil:', profileCheckError)
-      
-      // Si le profil n'existe pas, le créer
-      if (profileCheckError.code === 'PGRST116') {
-        console.log('Profil non trouvé, création d\'un nouveau profil')
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            email: onboardingData.email || '',
-            full_name: onboardingData.fullName || '',
-            created_at: new Date().toISOString()
-          })
-        
-        if (insertError) {
-          console.error('Erreur lors de la création du profil:', insertError)
-          throw insertError
-        }
-      } else {
-        throw profileCheckError
-      }
-    }
-    
-    // Étape 2: Préparer les données à mettre à jour
-    const updateData: any = {
-      full_name: onboardingData.fullName,
-      onboarded: true,
-      onboarding_completed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-    
-    // Ajouter les données facultatives si elles existent
-    if (onboardingData.companyName) updateData.company_name = onboardingData.companyName
-    if (onboardingData.phone) updateData.phone = onboardingData.phone
-    if (onboardingData.goals) updateData.business_goals = onboardingData.goals
-    if (onboardingData.sector) updateData.sector = onboardingData.sector
-    if (onboardingData.companySize) updateData.company_size = onboardingData.companySize
-    
-    // Traiter les besoins si présents
-    if (onboardingData.needsBranding !== undefined || 
-        onboardingData.needsWebsite !== undefined || 
-        onboardingData.needsMarketing !== undefined) {
-      updateData.needs = JSON.stringify({
-        branding: onboardingData.needsBranding || false,
-        website: onboardingData.needsWebsite || false, 
-        marketing: onboardingData.needsMarketing || false
+      .update({
+        full_name: onboardingData.fullName,
+        company_name: onboardingData.companyName,
+        phone: onboardingData.phone,
+        business_goals: onboardingData.goals,
+        sector: onboardingData.sector, 
+        company_size: onboardingData.companySize,
+        needs: JSON.stringify({
+          branding: onboardingData.needsBranding || false,
+          website: onboardingData.needsWebsite || false, 
+          marketing: onboardingData.needsMarketing || false
+        }),
+        visual_preferences: onboardingData.visualPreferences || [],
+        communication_style: onboardingData.communicationStyle,
+        time_management: onboardingData.timeManagement,
+        onboarded: true,
+        onboarding_completed_at: new Date().toISOString()
       })
-    }
-    
-    // Traiter les préférences visuelles si présentes
-    if (onboardingData.visualPreferences) {
-      updateData.visual_preferences = onboardingData.visualPreferences
-    }
-    
-    // Traiter les styles de communication et gestion du temps
-    if (onboardingData.communicationStyle) updateData.communication_style = onboardingData.communicationStyle
-    if (onboardingData.timeManagement) updateData.time_management = onboardingData.timeManagement
-    
-    console.log('Données à mettre à jour dans la table profiles:', updateData)
-    
-    // Étape 3: Mettre à jour les données de profil
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update(updateData)
       .eq('id', userId)
     
-    if (updateError) {
-      console.error('Erreur lors de la mise à jour du profil:', updateError)
-      throw updateError
+    if (profileError) {
+      console.error('Error updating profile with onboarding data:', profileError)
+      throw profileError
     }
     
-    console.log('Profil mis à jour avec succès')
-    
-    // Étape 4: Mettre à jour les métadonnées utilisateur
+    // Étape 2: Mettre à jour les métadonnées utilisateur
     const { error: metadataError } = await supabase.auth.updateUser({
       data: { 
         onboarded: true,
-        onboardingCompletedAt: new Date().toISOString(),
-        fullName: onboardingData.fullName // Ajouter le nom complet aux métadonnées aussi
+        onboardingCompletedAt: new Date().toISOString()
       }
     })
     
     if (metadataError) {
-      console.error('Erreur lors de la mise à jour des métadonnées:', metadataError)
+      console.error('Error updating user metadata:', metadataError)
       throw metadataError
     }
     
-    console.log('Métadonnées utilisateur mises à jour avec succès')
     return true
   } catch (error) {
-    console.error('Erreur globale dans saveOnboardingData:', error)
+    console.error('Error in saveOnboardingData:', error)
     throw error
   }
 }

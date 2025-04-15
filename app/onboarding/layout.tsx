@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/auth'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getProfileData } from '@/lib/supabase'
 
 export default function OnboardingLayout({
   children,
@@ -15,83 +14,85 @@ export default function OnboardingLayout({
 }) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
-  const [isChecking, setIsChecking] = useState(true)
   
-  // Check if user has completed onboarding
+  // Log de débogage pour suivre l'état de l'authentification
   useEffect(() => {
-    async function checkOnboardingStatus() {
-      if (!isLoading) {
-        if (!user) {
-          // Rediriger vers la page de connexion si non connecté
-          router.push('/login')
-          return
-        }
-        
-        // Vérifie d'abord si l'onboarding est complété dans les métadonnées utilisateur
-        if (user?.user_metadata?.onboarded === true) {
-          console.log('Utilisateur déjà onboardé selon les métadonnées, redirection vers le dashboard')
-          router.push('/dashboard')
-          return
-        }
-        
-        // Si pas dans les métadonnées, vérifier dans la table profiles
-        try {
-          const profileData = await getProfileData(user.id)
-          if (profileData && profileData.onboarded === true) {
-            console.log('Utilisateur déjà onboardé selon la table profiles, redirection vers le dashboard')
-            router.push('/dashboard')
-            return
-          }
-        } catch (error) {
-          console.error('Erreur lors de la vérification du profil:', error)
-        }
-        
-        // Si on arrive ici, l'utilisateur n'a pas complété l'onboarding
-        console.log('Onboarding en cours pour l\'utilisateur', user?.email)
-        setIsChecking(false)
-      }
+    console.log("OnboardingLayout - Auth State:", { 
+      isLoading, 
+      userExists: !!user, 
+      userEmail: user?.email,
+      userMetadata: user?.user_metadata
+    })
+  }, [user, isLoading])
+  
+  // Check if user has completed onboarding - Simplifié pour éviter les redirections
+  useEffect(() => {
+    // Ne rien faire si les données sont en cours de chargement
+    if (isLoading) {
+      console.log("OnboardingLayout - Chargement en cours...")
+      return
     }
     
-    checkOnboardingStatus()
+    // Si l'utilisateur n'est pas connecté, rediriger vers login
+    if (!user) {
+      console.log("OnboardingLayout - Redirection vers login (pas d'utilisateur)")
+      router.push('/login')
+      return
+    }
+    
+    // Vérifier si l'utilisateur a déjà complété l'onboarding
+    const isOnboarded = user.user_metadata?.onboarded === true
+    
+    if (isOnboarded) {
+      console.log("OnboardingLayout - Redirection vers dashboard (déjà onboardé)")
+      router.push('/dashboard')
+    } else {
+      console.log("OnboardingLayout - Affichage de l'onboarding pour", user.email)
+    }
   }, [user, isLoading, router])
   
-  // Afficher un état de chargement pendant la vérification
-  if (isLoading || isChecking) {
+  // Si en cours de chargement, ne rien afficher encore
+  // Cela évite les flashs de contenu avant redirection
+  if (isLoading) {
     return (
       <AuroraBackground intensity="subtle" showRadialGradient={true}>
-        <div className="flex flex-col min-h-screen justify-center items-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7]"></div>
-          <p className="mt-4 text-[14px]">Chargement...</p>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
+            <p className="mt-4 text-[14px]">Chargement...</p>
+          </div>
         </div>
       </AuroraBackground>
     )
   }
   
   return (
-    <AuroraBackground intensity="subtle" showRadialGradient={true}>
-      <div className="flex flex-col min-h-screen">
-        <header className="py-6 border-b border-[#E2E8F0] bg-white/60 backdrop-blur-sm sticky top-0 z-10 flex justify-center">
-          <Link href="/" className="flex items-center justify-center">
-            <Image 
-              src="/images/logo.png" 
-              alt="Klyra" 
-              width={120} 
-              height={36} 
-              className="h-9 object-contain"
-            />
-          </Link>
-        </header>
-        
-        <main className="flex-grow container mx-auto px-4 py-8 overflow-x-hidden">
-          {children}
-        </main>
-        
-        <footer className="py-6 border-t border-[#E2E8F0] bg-white/60 backdrop-blur-sm">
-          <div className="container mx-auto px-4 text-center text-sm text-[#64748B]">
-            &copy; {new Date().getFullYear()} Klyra Design. Tous droits réservés.
-          </div>
-        </footer>
-      </div>
-    </AuroraBackground>
+    <div className="min-h-screen bg-background">
+      <AuroraBackground intensity="subtle" showRadialGradient={true}>
+        <div className="flex flex-col min-h-screen">
+          <header className="py-6 border-b border-[#E2E8F0] bg-white/60 backdrop-blur-sm sticky top-0 z-10 flex justify-center">
+            <Link href="/" className="flex items-center justify-center">
+              <Image 
+                src="/images/logo.png" 
+                alt="Klyra" 
+                width={120} 
+                height={36} 
+                className="h-9 object-contain"
+              />
+            </Link>
+          </header>
+          
+          <main className="flex-grow container mx-auto px-4 py-8 overflow-x-hidden">
+            {children}
+          </main>
+          
+          <footer className="py-6 border-t border-[#E2E8F0] bg-white/60 backdrop-blur-sm">
+            <div className="container mx-auto px-4 text-center text-sm text-[#64748B]">
+              &copy; {new Date().getFullYear()} Klyra Design. Tous droits réservés.
+            </div>
+          </footer>
+        </div>
+      </AuroraBackground>
+    </div>
   )
 } 

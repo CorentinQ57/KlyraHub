@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { PageContainer, PageHeader, PageSection } from '@/components/ui/page-container'
@@ -14,6 +14,13 @@ import StepWelcome from '@/components/onboarding/steps/StepWelcome'
 import StepProfile from '@/components/onboarding/steps/StepProfile'
 import StepStyle from '@/components/onboarding/steps/StepStyle'
 import StepSummary from '@/components/onboarding/steps/StepSummary'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+// Composant Spinner simple pour le chargement
+const Spinner = ({ className = "" }: { className?: string }) => (
+  <div className={`h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary ${className}`}></div>
+);
 
 const steps = [
   "Bienvenue",
@@ -30,105 +37,141 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [pageLoaded, setPageLoaded] = useState(false)
+  const [pageLoadingTimedOut, setPageLoadingTimedOut] = useState(false)
   
-  // Check if user is authenticated
+  // Ajouter un timeout de sécurité pour l'onboarding
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login')
-    }
-  }, [user, isLoading, router])
+    console.log("Setting up page loading safety timeout")
+    const timeoutId = setTimeout(() => {
+      if (!pageLoaded && isLoading) {
+        console.log("⚠️ Onboarding page loading safety timeout triggered")
+        setPageLoadingTimedOut(true)
+      }
+    }, 5000) // 5 secondes d'attente maximum
+    
+    return () => clearTimeout(timeoutId)
+  }, [pageLoaded, isLoading])
   
-  const goToNextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
-  
-  const goToPreviousStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
-  
-  const handleStepComplete = (stepData: any) => {
-    // Update formData with the new data from the current step
-    setFormData({
-      ...formData,
-      ...stepData
+  // Effet pour gérer les redirections
+  useEffect(() => {
+    console.log("Onboarding Page - Auth state:", { 
+      isLoading, 
+      userExists: !!user, 
+      userEmail: user?.email,
+      timedOut: pageLoadingTimedOut
     })
     
-    // If it's the last step, submit the onboarding data
+    // Si le timeout de chargement est atteint, on force l'affichage de la page
+    if (pageLoadingTimedOut) {
+      console.log("Forcing page to load despite auth issues")
+      setPageLoaded(true)
+      return
+    }
+    
+    // Attendre la fin du chargement de l'auth
+    if (isLoading) {
+      console.log("Waiting for auth to finish loading...")
+      return
+    }
+
+    // Si l'utilisateur n'est pas connecté, rediriger vers login
+    if (!user) {
+      console.log("Onboarding: No user detected, redirecting to login")
+      router.push('/login')
+      return
+    }
+    
+    // Si l'utilisateur a déjà complété l'onboarding, rediriger vers dashboard
+    if (user.user_metadata?.onboarded) {
+      console.log("Onboarding: User already onboarded, redirecting to dashboard")
+      router.push('/dashboard')
+      return
+    }
+    
+    // Tout est OK, afficher la page
+    console.log("Onboarding: Page ready to display for", user.email)
+    setPageLoaded(true)
+  }, [isLoading, user, router, pageLoadingTimedOut])
+  
+  const goToNextStep = useCallback(() => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(prev => prev + 1)
+    }
+  }, [currentStep])
+  
+  const goToPreviousStep = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1)
+    }
+  }, [currentStep])
+  
+  const handleStepComplete = useCallback((stepData: any) => {
+    setFormData(prevData => ({
+      ...prevData,
+      ...stepData
+    }))
+    
     if (currentStep === steps.length - 1) {
       handleSubmitOnboarding({
         ...formData,
         ...stepData
       })
     } else {
-      // Otherwise, go to the next step
       goToNextStep()
     }
-  }
+  }, [currentStep, formData, goToNextStep])
   
   const handleSubmitOnboarding = async (data: any) => {
-    setIsSubmitting(true)
+    if (!user) {
+      console.error("Cannot submit onboarding - no user")
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour continuer. Veuillez vous reconnecter.",
+        variant: "destructive",
+      })
+      router.push('/login')
+      return
+    }
     
     try {
-      // Vérifier si l'utilisateur est authentifié
-      if (!user) {
-        throw new Error("Utilisateur non authentifié")
-      }
+      setIsSubmitting(true)
+      console.log("Saving onboarding data for user:", user.email)
       
-      console.log('Envoi des données d\'onboarding:', {
-        userId: user.id,
-        email: user.email,
-        data: {
-          fullName: data.fullName,
-          hasCompanyName: Boolean(data.companyName),
-          hasSector: Boolean(data.sector),
-          hasNeeds: Boolean(data.needsBranding || data.needsWebsite || data.needsMarketing),
-          hasPreferences: Boolean(data.visualPreferences?.length)
-        }
+      await saveOnboardingData(user.id, {
+        fullName: data.fullName,
+        onboarded: true,
+        // Autres champs du profile issus du data
+        companyName: data.companyName,
+        phone: data.phone,
+        goals: data.goals,
+        sector: data.sector,
+        companySize: data.companySize,
+        needsBranding: data.needsBranding,
+        needsWebsite: data.needsWebsite,
+        needsMarketing: data.needsMarketing,
+        visualPreferences: data.visualPreferences,
+        communicationStyle: data.communicationStyle,
+        timeManagement: data.timeManagement
       })
       
-      // Sauvegarder les données d'onboarding
-      await saveOnboardingData(user.id, data)
+      console.log("Onboarding data saved successfully")
       
-      // Afficher un toast de succès
       toast({
-        title: "Profil complété !",
-        description: "Bienvenue sur Klyra Hub. Vos préférences ont été enregistrées.",
-        duration: 5000,
+        title: "Profil mis à jour",
+        description: "Bienvenue sur Klyra Design!",
       })
       
-      // Rediriger vers le dashboard
-      router.push('/dashboard')
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde des données d\'onboarding:', error)
-      
-      // Afficher des informations plus détaillées sur l'erreur
-      let errorMessage = "Impossible d'enregistrer vos informations. Veuillez réessayer."
-      
-      if (error instanceof Error) {
-        // Pour les erreurs de Supabase, extraire le message
-        if ('code' in error && 'message' in error && 'details' in error) {
-          const supabaseError = error as any
-          errorMessage = `Erreur: ${supabaseError.message}. Code: ${supabaseError.code}`
-          
-          if (supabaseError.code === '42703') {
-            errorMessage = "Une colonne nécessaire est manquante dans la base de données. Veuillez contacter l'administrateur."
-          }
-        } else {
-          errorMessage = `Erreur: ${error.message}`
-        }
-      }
-      
+      console.error("Error saving onboarding data:", error)
       toast({
-        title: "Une erreur est survenue",
-        description: errorMessage,
+        title: "Erreur",
+        description: "Impossible de sauvegarder vos informations. Veuillez réessayer.",
         variant: "destructive",
-        duration: 8000,
       })
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -148,16 +191,12 @@ export default function OnboardingPage() {
     }
   }
   
-  if (isLoading) {
+  if (isLoading && !pageLoadingTimedOut) {
     return (
-      <PageContainer>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7] mx-auto"></div>
-            <p className="mt-4 text-[14px]">Chargement...</p>
-          </div>
-        </div>
-      </PageContainer>
+      <div className="flex h-[calc(100vh-120px)] flex-col items-center justify-center">
+        <Spinner className="mb-4" />
+        <p>Préparation de votre profil...</p>
+      </div>
     )
   }
   
