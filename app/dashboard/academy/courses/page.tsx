@@ -85,68 +85,70 @@ export default function CoursesPage() {
 
   // Composant pour la carte de cours
   const CourseCard = ({ course }: { course: Course }) => (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="relative aspect-video w-full overflow-hidden">
-        {course.image_url ? (
-          <div className="relative h-full w-full">
-            <Image
-              src={course.image_url}
-              alt={course.title}
-              width={500}
-              height={300}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <BookOpen className="h-12 w-12 text-gray-400" />
-          </div>
-        )}
-        <div className="absolute top-2 left-2 flex gap-2">
-          {course.is_popular && (
-            <Badge variant="secondary" className="bg-amber-500 text-white">
-              Populaire
-            </Badge>
+    <Link href={`/dashboard/academy/courses/${course.id}`} className="block transition-transform hover:scale-[1.02]">
+      <Card className="overflow-hidden transition-all hover:shadow-md">
+        <div className="relative aspect-video w-full overflow-hidden">
+          {course.image_url ? (
+            <div className="relative h-full w-full">
+              <Image
+                src={course.image_url}
+                alt={course.title}
+                width={500}
+                height={300}
+                fill
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <BookOpen className="h-12 w-12 text-gray-400" />
+            </div>
           )}
-          {course.is_new && (
-            <Badge variant="secondary" className="bg-green-500 text-white">
-              Nouveau
+          <div className="absolute top-2 left-2 flex gap-2">
+            {course.is_popular && (
+              <Badge variant="secondary" className="bg-amber-500 text-white">
+                Populaire
+              </Badge>
+            )}
+            {course.is_new && (
+              <Badge variant="secondary" className="bg-green-500 text-white">
+                Nouveau
+              </Badge>
+            )}
+          </div>
+          <div className="absolute top-2 right-2">
+            <Badge className={
+              course.level === 'Débutant' ? 'bg-green-500' :
+              course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
+            }>
+              {course.level}
             </Badge>
-          )}
-        </div>
-        <div className="absolute top-2 right-2">
-          <Badge className={
-            course.level === 'Débutant' ? 'bg-green-500' :
-            course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
-          }>
-            {course.level}
-          </Badge>
-        </div>
-      </div>
-      <CardHeader>
-        <CardTitle className="text-lg">{course.title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-gray-500 mb-4">{course.description}</p>
-        <div className="flex justify-between text-sm">
-          <div className="flex items-center">
-            <Clock className="mr-1 h-4 w-4 text-gray-400" />
-            <span>{course.duration}</span>
-          </div>
-          <div className="flex items-center">
-            <BookOpen className="mr-1 h-4 w-4 text-gray-400" />
-            <span>{course.lessons} leçons</span>
           </div>
         </div>
-      </CardContent>
-      <CardFooter>
-        <Button className="w-full">
-          <PlayCircle className="mr-2 h-4 w-4" />
-          Commencer le cours
-        </Button>
-      </CardFooter>
-    </Card>
+        <CardHeader>
+          <CardTitle className="text-lg">{course.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500 mb-4">{course.description}</p>
+          <div className="flex justify-between text-sm">
+            <div className="flex items-center">
+              <Clock className="mr-1 h-4 w-4 text-gray-400" />
+              <span>{course.duration}</span>
+            </div>
+            <div className="flex items-center">
+              <BookOpen className="mr-1 h-4 w-4 text-gray-400" />
+              <span>{course.lessons} leçons</span>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button className="w-full">
+            <PlayCircle className="mr-2 h-4 w-4" />
+            Commencer le cours
+          </Button>
+        </CardFooter>
+      </Card>
+    </Link>
   )
 
   // Composant pour le squelette de chargement

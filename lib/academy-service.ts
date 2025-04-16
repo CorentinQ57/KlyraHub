@@ -23,6 +23,31 @@ export type Course = {
   tags: string[];
   created_at: string;
   updated_at: string;
+  content?: string; // Contenu détaillé du cours
+  objectives?: string[]; // Objectifs d'apprentissage
+  modules?: CourseModule[]; // Modules du cours
+};
+
+export type CourseModule = {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  course_id: string;
+  lessons: CourseLesson[];
+};
+
+export type CourseLesson = {
+  id: string;
+  title: string;
+  description?: string;
+  duration: string;
+  type: 'video' | 'text' | 'quiz';
+  content?: string;
+  video_url?: string;
+  order: number;
+  module_id: string;
+  is_free: boolean;
 };
 
 export type Resource = {
@@ -254,4 +279,57 @@ export async function getResourceById(resourceId: string): Promise<Resource | nu
     ...data,
     category: data.categories ? data.categories.name : null,
   };
+}
+
+/**
+ * Récupère les modules et leçons d'un cours
+ */
+export async function getCourseModules(courseId: string): Promise<CourseModule[]> {
+  const { data, error } = await supabase
+    .from('course_modules')
+    .select(`
+      *,
+      course_lessons(*)
+    `)
+    .eq('course_id', courseId)
+    .order('order');
+
+  if (error) {
+    console.error(`Erreur lors de la récupération des modules du cours ${courseId}:`, error);
+    return [];
+  }
+
+  if (!data || data.length === 0) {
+    // Si aucun module n'est trouvé, créer un module factice avec des leçons basées sur le nombre total
+    const course = await getCourseById(courseId);
+    if (!course) return [];
+
+    // Créer des leçons factices basées sur le nombre total
+    const fakeLessons: CourseLesson[] = Array.from({ length: course.lessons || 3 }).map((_, index) => ({
+      id: `fake-lesson-${index + 1}`,
+      title: `Leçon ${index + 1}`,
+      description: 'Description de la leçon',
+      duration: '15-20 min',
+      type: 'video',
+      order: index + 1,
+      module_id: 'fake-module',
+      is_free: index === 0, // La première leçon est gratuite
+    }));
+
+    // Créer un module factice contenant les leçons
+    return [{
+      id: 'fake-module',
+      title: 'Module principal',
+      description: 'Ce module contient toutes les leçons du cours',
+      order: 1,
+      course_id: courseId,
+      lessons: fakeLessons,
+    }];
+  }
+
+  // Formater les données pour inclure les leçons triées par ordre
+  return data.map(module => ({
+    ...module,
+    lessons: (module.course_lessons || []).sort((a: CourseLesson, b: CourseLesson) => a.order - b.order),
+  }));
 } 

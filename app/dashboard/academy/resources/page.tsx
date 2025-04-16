@@ -88,71 +88,73 @@ export default function ResourcesPage() {
 
   // Composant pour la carte de ressource
   const ResourceCard = ({ resource }: { resource: Resource }) => (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="relative aspect-video w-full overflow-hidden">
-        {resource.image_url ? (
-          <div className="relative h-full w-full">
-            <Image
-              src={resource.image_url}
-              alt={resource.title}
-              width={500}
-              height={300}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <FileText className="h-12 w-12 text-gray-400" />
-          </div>
-        )}
-        <div className="absolute top-2 left-2 flex gap-2">
-          {resource.is_popular && (
-            <Badge variant="secondary" className="bg-amber-500 text-white">
-              Populaire
-            </Badge>
-          )}
-          {resource.is_new && (
-            <Badge variant="secondary" className="bg-green-500 text-white">
-              Nouveau
-            </Badge>
-          )}
-        </div>
-        <div className="absolute top-2 right-2">
-          <Badge className={
-            resource.type === 'eBook' ? 'bg-purple-500' :
-            resource.type === 'Vidéo' ? 'bg-red-500' :
-            resource.type === 'Template' ? 'bg-green-500' : 'bg-blue-500'
-          }>
-            {resource.type}
-          </Badge>
-        </div>
-      </div>
-      <CardHeader>
-        <CardTitle className="text-lg">{resource.title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-gray-500">{resource.description}</p>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          variant={resource.download_link ? "default" : "outline"}
-          className="w-full"
-        >
-          {resource.download_link ? (
-            <>
-              <Download className="mr-2 h-4 w-4" />
-              Télécharger
-            </>
+    <Link href={`/dashboard/academy/resources/${resource.id}`} className="block transition-transform hover:scale-[1.02]">
+      <Card className="overflow-hidden transition-all hover:shadow-md">
+        <div className="relative aspect-video w-full overflow-hidden">
+          {resource.image_url ? (
+            <div className="relative h-full w-full">
+              <Image
+                src={resource.image_url}
+                alt={resource.title}
+                width={500}
+                height={300}
+                fill
+                className="object-cover"
+              />
+            </div>
           ) : (
-            <>
-              <PlayCircle className="mr-2 h-4 w-4" />
-              Voir le contenu
-            </>
+            <div className="flex h-full items-center justify-center">
+              <FileText className="h-12 w-12 text-gray-400" />
+            </div>
           )}
-        </Button>
-      </CardFooter>
-    </Card>
+          <div className="absolute top-2 left-2 flex gap-2">
+            {resource.is_popular && (
+              <Badge variant="secondary" className="bg-amber-500 text-white">
+                Populaire
+              </Badge>
+            )}
+            {resource.is_new && (
+              <Badge variant="secondary" className="bg-green-500 text-white">
+                Nouveau
+              </Badge>
+            )}
+          </div>
+          <div className="absolute top-2 right-2">
+            <Badge className={
+              resource.type === 'eBook' ? 'bg-purple-500' :
+              resource.type === 'Vidéo' ? 'bg-red-500' :
+              resource.type === 'Template' ? 'bg-green-500' : 'bg-blue-500'
+            }>
+              {resource.type}
+            </Badge>
+          </div>
+        </div>
+        <CardHeader>
+          <CardTitle className="text-lg">{resource.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500">{resource.description}</p>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            variant={resource.download_link ? "default" : "outline"}
+            className="w-full"
+          >
+            {resource.download_link ? (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Télécharger
+              </>
+            ) : (
+              <>
+                <PlayCircle className="mr-2 h-4 w-4" />
+                Voir le contenu
+              </>
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+    </Link>
   )
 
   // Composant pour le squelette de chargement
