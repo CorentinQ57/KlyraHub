@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Video, FileText, Award, Clock, Users, Layers, ArrowRight, PlayCircle, Download } from 'lucide-react'
+import { BookOpen, Video, FileText, Award, Clock, Users, Layers, ArrowRight, PlayCircle, Download, MessageSquare } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
@@ -322,10 +322,12 @@ export default function AcademyPage() {
                 ))}
               </div>
               <div className="mt-8 text-center">
-                <Button variant="outline">
-                  Voir tous les cours
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <Link href="/dashboard/academy/courses">
+                  <Button variant="outline">
+                    Voir tous les cours
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
             </TabsContent>
             
@@ -338,6 +340,14 @@ export default function AcademyPage() {
                   ))
                 }
               </div>
+              <div className="mt-8 text-center">
+                <Link href="/dashboard/academy/courses?category=design">
+                  <Button variant="outline">
+                    Voir tous les cours de design
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </TabsContent>
             
             <TabsContent value="development" className="mt-0">
@@ -349,6 +359,14 @@ export default function AcademyPage() {
                   ))
                 }
               </div>
+              <div className="mt-8 text-center">
+                <Link href="/dashboard/academy/courses?category=développement">
+                  <Button variant="outline">
+                    Voir tous les cours de développement
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </TabsContent>
             
             <TabsContent value="branding" className="mt-0">
@@ -359,6 +377,14 @@ export default function AcademyPage() {
                     <CourseCard key={course.id} course={course} />
                   ))
                 }
+              </div>
+              <div className="mt-8 text-center">
+                <Link href="/dashboard/academy/courses?category=branding">
+                  <Button variant="outline">
+                    Voir tous les cours de branding
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
             </TabsContent>
           </Tabs>
@@ -372,10 +398,12 @@ export default function AcademyPage() {
             ))}
           </div>
           <div className="mt-8 text-center">
-            <Button variant="outline">
-              Voir toutes les ressources
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <Link href="/dashboard/academy/resources">
+              <Button variant="outline">
+                Voir toutes les ressources
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </PageSection>
 
@@ -402,6 +430,90 @@ export default function AcademyPage() {
               </div>
             </div>
           </ContentCard>
+        </PageSection>
+
+        {/* Nouvelle section pour la communauté */}
+        <PageSection title="Communauté" description="Rejoignez d'autres professionnels et partagez vos connaissances">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <ContentCard className="flex flex-col justify-center items-center text-center p-8 md:col-span-1">
+              <Users className="h-12 w-12 text-blue-500 mb-4" />
+              <h3 className="text-xl font-bold mb-2">Rejoignez la communauté</h3>
+              <p className="text-gray-600 mb-6">Connectez-vous avec d'autres professionnels et partagez vos connaissances</p>
+              <Link href="/dashboard/academy/community">
+                <Button>Découvrir la communauté</Button>
+              </Link>
+            </ContentCard>
+            
+            <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-0">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Prochains événements</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-full bg-white p-2 shadow-sm text-center min-w-[40px]">
+                          <div className="text-sm font-semibold text-blue-600">15</div>
+                          <div className="text-xs text-gray-500">Juin</div>
+                        </div>
+                        <div>
+                          <p className="font-medium">Workshop Design System</p>
+                          <p className="text-sm text-gray-500">14:00 - 16:00</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-full bg-white p-2 shadow-sm text-center min-w-[40px]">
+                          <div className="text-sm font-semibold text-blue-600">22</div>
+                          <div className="text-xs text-gray-500">Juin</div>
+                        </div>
+                        <div>
+                          <p className="font-medium">Webinaire Tendances UI/UX</p>
+                          <p className="text-sm text-gray-500">11:00 - 12:30</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Link href="/dashboard/academy/community?tab=events" className="text-blue-600 text-sm font-medium flex items-center">
+                      Voir tous les événements
+                      <ArrowRight className="ml-1 h-3 w-3" />
+                    </Link>
+                  </CardFooter>
+                </Card>
+                
+                <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-0">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Discussions populaires</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="font-medium">Comment j'ai optimisé mon processus de design UI</p>
+                        <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+                          <MessageSquare className="h-3 w-3" />
+                          <span>12 commentaires</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-medium">Étude de cas : Refonte de marque pour une startup</p>
+                        <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+                          <MessageSquare className="h-3 w-3" />
+                          <span>23 commentaires</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Link href="/dashboard/academy/community?tab=posts" className="text-amber-600 text-sm font-medium flex items-center">
+                      Voir toutes les discussions
+                      <ArrowRight className="ml-1 h-3 w-3" />
+                    </Link>
+                  </CardFooter>
+                </Card>
+              </div>
+            </div>
+          </div>
         </PageSection>
       </PageContainer>
 
