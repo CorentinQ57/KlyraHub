@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Clock, Play, CheckCircle, Lock, Award, Users, Download, Video, FileText, MessageSquare } from 'lucide-react'
+import { ArrowLeft, BookOpen, Clock, Play, CheckCircle, Lock, Award, Users, Download, Video, FileText, MessageSquare, ExternalLink } from 'lucide-react'
 
 // Components
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
@@ -96,7 +96,20 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const LessonItem = ({ lesson, moduleId }: { lesson: CourseLesson, moduleId: string }) => {
     const isActive = selectedLesson?.id === lesson.id
     const canAccess = lesson.is_free || user !== null
-
+    
+    const handleLessonClick = () => {
+      if (!canAccess) return;
+      
+      // Sélectionner la leçon pour l'affichage dans l'onglet
+      setSelectedLesson(lesson);
+      
+      // Activer l'onglet leçon
+      setActiveTab('lesson');
+      
+      // Option pour naviguer directement vers la page de leçon individuelle
+      // router.push(`/dashboard/academy/lessons/${lesson.id}`);
+    }
+    
     return (
       <div 
         className={`
@@ -104,7 +117,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           ${isActive ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'}
           ${!canAccess ? 'opacity-70' : ''}
         `}
-        onClick={() => canAccess && setSelectedLesson(lesson)}
+        onClick={handleLessonClick}
       >
         <div className="flex items-center space-x-3">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isActive ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}>
@@ -128,11 +141,21 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           </div>
         </div>
         
-        {canAccess ? (
-          <CheckCircle className={`h-5 w-5 ${isActive ? 'text-blue-500' : 'text-gray-300'}`} />
-        ) : (
-          <Lock className="h-5 w-5 text-gray-400" />
-        )}
+        <div className="flex items-center gap-2">
+          {canAccess && (
+            <Link href={`/dashboard/academy/lessons/${lesson.id}`}>
+              <Button variant="ghost" size="sm" className="px-2 py-1 h-auto">
+                Voir
+              </Button>
+            </Link>
+          )}
+          
+          {canAccess ? (
+            <CheckCircle className={`h-5 w-5 ${isActive ? 'text-blue-500' : 'text-gray-300'}`} />
+          ) : (
+            <Lock className="h-5 w-5 text-gray-400" />
+          )}
+        </div>
       </div>
     )
   }
@@ -275,7 +298,15 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   </ul>
                   
                   {user ? (
-                    <Button className="w-full">Commencer le cours</Button>
+                    <Button className="w-full" onClick={() => {
+                      if (modules.length > 0 && modules[0].lessons.length > 0) {
+                        // Rediriger vers la première leçon
+                        window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
+                      } else {
+                        // Activer l'onglet contenu si pas de leçon disponible
+                        setActiveTab('content');
+                      }
+                    }}>Commencer le cours</Button>
                   ) : (
                     <div className="space-y-3">
                       <Button className="w-full">S'inscrire pour commencer</Button>
@@ -505,9 +536,18 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="text-2xl font-bold">{selectedLesson.title}</h2>
                       
-                      <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <Clock className="h-4 w-4" />
-                        <span>{selectedLesson.duration}</span>
+                      <div className="flex items-center gap-4">
+                        <Link href={`/dashboard/academy/lessons/${selectedLesson.id}`}>
+                          <Button variant="outline" size="sm">
+                            Voir en plein écran
+                            <ExternalLink className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                        
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <Clock className="h-4 w-4" />
+                          <span>{selectedLesson.duration}</span>
+                        </div>
                       </div>
                     </div>
                     
