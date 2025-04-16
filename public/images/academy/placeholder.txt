@@ -1,0 +1,8 @@
+Ce dossier contient les images pour l'Academy.
+
+Structure recommandée :
+- courses/ : Images des cours
+- resources/ : Images des ressources
+- community/ : Images de la communauté
+
+Pour une meilleure organisation, uploader les images sur Supabase dans des buckets dédiés. 
