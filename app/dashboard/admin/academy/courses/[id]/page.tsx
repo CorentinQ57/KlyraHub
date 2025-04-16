@@ -56,21 +56,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
-import { 
-  Course,
-  CourseModule, 
-  CourseLesson, 
-  getCourseById, 
-  getCourseModules,
-  createCourseModule,
-  updateCourseModule,
-  deleteCourseModule,
-  createCourseLesson,
-  updateCourseLesson,
-  deleteCourseLesson,
-  reorderCourseModule,
-  reorderCourseLesson
-} from '@/lib/academy-service'
+import { Course, CourseModule, CourseLesson, getCourseById, getCourseModules } from '@/lib/academy-service'
 import { supabase } from '@/lib/supabase'
 
 export default function CourseModulesManagementPage({ params }: { params: { id: string } }) {
@@ -176,30 +162,37 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
   const handleModuleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      if (editingModule) {
-        // Mettre à jour un module existant en utilisant la fonction du service
-        const success = await updateCourseModule(editingModule.id, {
-          title: moduleForm.title,
-          description: moduleForm.description,
-          order: moduleForm.order
-        })
+      const moduleData = {
+        title: moduleForm.title,
+        description: moduleForm.description,
+        order: moduleForm.order,
+        course_id: courseId,
+        updated_at: new Date().toISOString()
+      }
 
-        if (!success) throw new Error("Échec de la mise à jour du module")
+      if (editingModule) {
+        // Mettre à jour un module existant
+        const { error } = await supabase
+          .from('course_modules')
+          .update(moduleData)
+          .eq('id', editingModule.id)
+
+        if (error) throw error
         
         toast({
           title: "Succès",
           description: "Module mis à jour avec succès",
         })
       } else {
-        // Créer un nouveau module en utilisant la fonction du service
-        const newModule = await createCourseModule({
-          title: moduleForm.title,
-          description: moduleForm.description,
-          order: moduleForm.order,
-          course_id: courseId
-        })
+        // Créer un nouveau module
+        const { error } = await supabase
+          .from('course_modules')
+          .insert({
+            ...moduleData,
+            created_at: new Date().toISOString(),
+          })
 
-        if (!newModule) throw new Error("Échec de la création du module")
+        if (error) throw error
         
         toast({
           title: "Succès",
@@ -225,10 +218,12 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
     }
 
     try {
-      // Utiliser la fonction du service pour supprimer le module
-      const success = await deleteCourseModule(moduleId)
-      
-      if (!success) throw new Error("Échec de la suppression du module")
+      const { error } = await supabase
+        .from('course_modules')
+        .delete()
+        .eq('id', moduleId)
+
+      if (error) throw error
       
       toast({
         title: "Succès",
@@ -290,40 +285,42 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
     if (!currentModuleId) return
     
     try {
-      if (editingLesson) {
-        // Mettre à jour une leçon existante en utilisant la fonction du service
-        const success = await updateCourseLesson(editingLesson.id, {
-          title: lessonForm.title,
-          description: lessonForm.description,
-          duration: lessonForm.duration,
-          type: lessonForm.type,
-          content: lessonForm.content,
-          video_url: lessonForm.video_url,
-          is_free: lessonForm.is_free,
-          order: lessonForm.order
-        })
+      const lessonData = {
+        title: lessonForm.title,
+        description: lessonForm.description,
+        duration: lessonForm.duration,
+        type: lessonForm.type,
+        content: lessonForm.content,
+        video_url: lessonForm.video_url,
+        is_free: lessonForm.is_free,
+        order: lessonForm.order,
+        module_id: currentModuleId,
+        updated_at: new Date().toISOString()
+      }
 
-        if (!success) throw new Error("Échec de la mise à jour de la leçon")
+      if (editingLesson) {
+        // Mettre à jour une leçon existante
+        const { error } = await supabase
+          .from('course_lessons')
+          .update(lessonData)
+          .eq('id', editingLesson.id)
+
+        if (error) throw error
         
         toast({
           title: "Succès",
           description: "Leçon mise à jour avec succès",
         })
       } else {
-        // Créer une nouvelle leçon en utilisant la fonction du service
-        const newLesson = await createCourseLesson({
-          title: lessonForm.title,
-          description: lessonForm.description,
-          duration: lessonForm.duration,
-          type: lessonForm.type,
-          content: lessonForm.content,
-          video_url: lessonForm.video_url,
-          is_free: lessonForm.is_free,
-          order: lessonForm.order,
-          module_id: currentModuleId
-        })
+        // Créer une nouvelle leçon
+        const { error } = await supabase
+          .from('course_lessons')
+          .insert({
+            ...lessonData,
+            created_at: new Date().toISOString(),
+          })
 
-        if (!newLesson) throw new Error("Échec de la création de la leçon")
+        if (error) throw error
         
         toast({
           title: "Succès",
@@ -349,10 +346,12 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
     }
 
     try {
-      // Utiliser la fonction du service pour supprimer la leçon
-      const success = await deleteCourseLesson(lessonId)
-      
-      if (!success) throw new Error("Échec de la suppression de la leçon")
+      const { error } = await supabase
+        .from('course_lessons')
+        .delete()
+        .eq('id', lessonId)
+
+      if (error) throw error
       
       toast({
         title: "Succès",
@@ -403,15 +402,24 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
     const otherModule = modules[otherModuleIndex]
     
     try {
-      // Utiliser la fonction du service pour réorganiser les modules
-      const success = await reorderCourseModule(
-        currentModule.id,
-        newOrder,
-        otherModule.id,
-        currentModule.order
-      )
+      // Mettre à jour les deux modules concernés
+      const promises = [
+        supabase
+          .from('course_modules')
+          .update({ order: newOrder })
+          .eq('id', currentModule.id),
+        supabase
+          .from('course_modules')
+          .update({ order: currentModule.order })
+          .eq('id', otherModule.id)
+      ]
       
-      if (!success) throw new Error("Échec de la réorganisation des modules")
+      const results = await Promise.all(promises)
+      const errors = results.flatMap(r => r.error ? [r.error] : [])
+      
+      if (errors.length > 0) {
+        throw errors[0]
+      }
       
       await loadData()
     } catch (error) {
@@ -446,15 +454,24 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
     const otherLesson = module.lessons[otherLessonIndex]
     
     try {
-      // Utiliser la fonction du service pour réorganiser les leçons
-      const success = await reorderCourseLesson(
-        currentLesson.id,
-        newOrder,
-        otherLesson.id,
-        currentLesson.order
-      )
+      // Mettre à jour les deux leçons concernées
+      const promises = [
+        supabase
+          .from('course_lessons')
+          .update({ order: newOrder })
+          .eq('id', currentLesson.id),
+        supabase
+          .from('course_lessons')
+          .update({ order: currentLesson.order })
+          .eq('id', otherLesson.id)
+      ]
       
-      if (!success) throw new Error("Échec de la réorganisation des leçons")
+      const results = await Promise.all(promises)
+      const errors = results.flatMap(r => r.error ? [r.error] : [])
+      
+      if (errors.length > 0) {
+        throw errors[0]
+      }
       
       await loadData()
     } catch (error) {

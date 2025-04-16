@@ -1,4 +1,50 @@
-* [32mfix-toc-sticky[m
-  main[m
-  master[m
-  temp-recovery-branch[m
+[33md3b9c64[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Feat: Ajout de l'interface d'administration pour les modules et leçons de cours
+[33m170e0bd[m fix: Ajout du composant Alert manquant pour la page leçons
+[33mcbe8959[m feat: Ajout de la page de leçon individuelle pour l'académie
+[33md1d907d[m style: Ajout des espacements de lettres pour les titres selon la hiérarchie
+[33ma6b3692[m feat: Ajout de l'interface d'administration pour l'academy (cours et ressources)
+[33m3dc4787[m feat: Ajout de gradients doux pour les placeholders d'images dans l'académie
+[33mb6d071e[m fix: Correction des erreurs de type dans l'académie - remplacement des éléments React par des chaînes de caractères dans les titres
+[33md2cf8a6[m creation pages academy cours
+[33m104b460[m feat: Ajout des pages de détail pour les cours et ressources de l'Academy
+[33m563e750[m feat: Configuration du module Academy avec scripts SQL et documentation
+[33m95f55b8[m Fix: Ajout du domaine Supabase dans next.config.js pour les images
+[33m13fe4ba[m Ajout des pages enfants pour l'Academy (cours, ressources, communauté)
+[33m57d75b6[m Description de vos modifications
+[33m7978721[m Fix: Correction des problèmes d'accès à la page onboarding (logs et liens)
+[33m96ab5f9[m Fix: Vérification du statut d'onboarding directement dans la table profiles
+[33maa31ed0[m Fix: Modification des liens d'actualités pour qu'ils s'ouvrent dans l'onglet actuel
+[33m5d0ac2e[m Fix: Amélioration de l'expérience d'onboarding avec option force et réinitialisation
+[33me578e14[m Fix: Correction du problème de redirection en boucle sur la page onboarding
+[33m24eaaaf[m Fix: Correction du problème de chargement infini en permettant le rendu immédiat pendant l'auth
+[33m33181ac[m Fix: Correction du système d'authentification pour rendre le chargement plus robuste
+[33mbedd9e4[m Fix: Correction du problème de chargement infini en permettant le rendu immédiat pendant l'auth
+[33m4b6be8f[m Fix: Amélioration de l'authentification et de la gestion des tokens JWT pour résoudre les problèmes d'accès aux données du dashboard
+[33m94a98f4[m Fix: Correction du problème de chargement infini en permettant le rendu immédiat pendant l'auth2
+[33mf5d067f[m Fix: Correction du problème de chargement infini en permettant le rendu immédiat pendant l'auth
+[33m982b36a[m Fix: Correction du bug de timeout de session Supabase avec cache client, backoff exponentiel, et meilleur ordre de vérification
+[33mbbe92d6[m Fix: Améliore la gestion des sessions et simplifie la page de profil
+[33ma91cf27[m Fix: amélioration de la gestion des sessions et de l'authentification pour prévenir les écrans de chargement infini
+[33m1cb8102[m changement bug inf
+[33m5f94b5d[m fix: Correction de la syntaxe dans la page de login
+[33m4221081[m fix: Résolution du problème 'No access token found'
+[33m84287ae[m fix: Correction du chargement infini
+[33md60777e[m fix: Amélioration des logs en production
+[33md062eaf[m fix: Correction des erreurs de build
+[33m5e173d6[m fix: Amélioration de la gestion des sessions et optimisation du chargement
+[33md2980b8[m fix: Correction du typage dans ClientTokenManager pour résoudre l'infinite loading
+[33meb68bcf[m fix: Amélioration de la gestion des sessions et tokens Supabase
+[33m1657bde[m fix: Ajout de la fonction enforceTokenStorage pour la gestion des tokens Supabase
+[33me840e16[m fix: Ajout de la colonne image_url et configuration du stockage Supabase
+[33m8cc6b3c[m fix: Remplacement de l'icône Timeline par BarChart2 dans la barre latérale
+[33me4dda30[m feat: Ajout du lien Timeline dans la barre latérale
+[33m3b0ef68[m Fix: Ajout de la fonction enforceTokenStorage manquante dans lib/supabase.ts
+[33m8b86310[m Description des modifications
+[33m37318ef[m fix: ajouter la fonction enforceTokenStorage manquante
+[33m5399238[m changement onboarding sql
+[33m13a9fe6[m fix: ajouter la fonction enforceTokenStorage manquante
+[33m6f57bb7[m fix: amélioration de la gestion de l'authentification et de l'onboarding
+[33me497d26[m feat: Ajout du lien vers la timeline dans le menu latéral
+[33mbafc4a9[m fix: Ajout de la fonction enforceTokenStorage manquante
+[33maba79d3[m fix: Amélioration de l'onboarding et correction des redirections
+[33m3b698b4[m Description des modifications
