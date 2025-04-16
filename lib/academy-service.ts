@@ -301,12 +301,12 @@ export async function getCourseModules(courseId: string): Promise<CourseModule[]
   }
 
   if (!data || data.length === 0) {
-    // Si aucun module n'est trouvé, créer un vrai module dans la base de données
+    // Si aucun module n'est trouvé, on crée un vrai module dans la base de données
     const course = await getCourseById(courseId);
     if (!course) return [];
-
+    
     try {
-      // Créer un nouveau module pour ce cours
+      // Créer un vrai module dans la base de données
       const { data: moduleData, error: moduleError } = await supabase
         .from('course_modules')
         .insert({
@@ -325,50 +325,44 @@ export async function getCourseModules(courseId: string): Promise<CourseModule[]
         return [];
       }
 
+      // On récupère l'id du module créé
       const moduleId = moduleData.id;
-      const lessonCount = course.lessons || 3;
-
-      // Créer des leçons réelles dans la base de données
-      const lessonPromises = Array.from({ length: lessonCount }).map((_, index) => {
-        return supabase
+      
+      // On crée les leçons factices avec de vrais UUIDs
+      const fakeLessons: CourseLesson[] = [];
+      for (let i = 0; i < (course.lessons || 3); i++) {
+        const lessonData = {
+          title: `Leçon ${i + 1}`,
+          description: 'Description de la leçon',
+          duration: '15-20 min',
+          type: 'video' as 'video' | 'text' | 'quiz',
+          order: i + 1,
+          is_free: i === 0, // La première leçon est gratuite
+          module_id: moduleId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        const { data: lessonResult, error: lessonError } = await supabase
           .from('course_lessons')
-          .insert({
-            title: `Leçon ${index + 1}`,
-            description: 'Description de la leçon',
-            duration: '15-20 min',
-            type: 'video',
-            order: index + 1,
-            module_id: moduleId,
-            is_free: index === 0, // La première leçon est gratuite
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-      });
-
-      await Promise.all(lessonPromises);
-
-      // Récupérer le module avec ses leçons
-      const { data: updatedModuleData, error: updatedError } = await supabase
-        .from('course_modules')
-        .select(`
-          *,
-          course_lessons(*)
-        `)
-        .eq('id', moduleId)
-        .single();
-
-      if (updatedError || !updatedModuleData) {
-        console.error(`Erreur lors de la récupération du module créé ${moduleId}:`, updatedError);
-        return [];
+          .insert(lessonData)
+          .select()
+          .single();
+          
+        if (!lessonError && lessonResult) {
+          fakeLessons.push(lessonResult);
+        } else {
+          console.error('Erreur lors de la création d\'une leçon factice:', lessonError);
+        }
       }
-
+      
       // Retourner le nouveau module avec ses leçons
       return [{
-        ...updatedModuleData,
-        lessons: (updatedModuleData.course_lessons || []).sort((a: CourseLesson, b: CourseLesson) => a.order - b.order)
+        ...moduleData,
+        lessons: fakeLessons,
       }];
     } catch (err) {
-      console.error(`Erreur lors de la création automatique de modules/leçons:`, err);
+      console.error('Erreur lors de la création du module et des leçons:', err);
       return [];
     }
   }
@@ -644,78 +638,4 @@ export async function deleteCourseLesson(lessonId: string): Promise<boolean> {
   }
 
   return true;
-}
-
-/**
- * Réorganise un module en modifiant son ordre
- */
-export async function reorderCourseModule(
-  moduleId: string,
-  newOrder: number,
-  otherModuleId: string,
-  otherModuleOrder: number
-): Promise<boolean> {
-  try {
-    // Mettre à jour les deux modules concernés
-    const promises = [
-      supabase
-        .from('course_modules')
-        .update({ order: newOrder, updated_at: new Date().toISOString() })
-        .eq('id', moduleId),
-      supabase
-        .from('course_modules')
-        .update({ order: otherModuleOrder, updated_at: new Date().toISOString() })
-        .eq('id', otherModuleId)
-    ]
-    
-    const results = await Promise.all(promises)
-    const errors = results.flatMap(r => r.error ? [r.error] : [])
-    
-    if (errors.length > 0) {
-      console.error('Erreur lors de la réorganisation des modules:', errors[0])
-      return false
-    }
-    
-    return true
-  } catch (error) {
-    console.error('Erreur lors de la réorganisation des modules:', error)
-    return false
-  }
-}
-
-/**
- * Réorganise une leçon en modifiant son ordre
- */
-export async function reorderCourseLesson(
-  lessonId: string,
-  newOrder: number,
-  otherLessonId: string,
-  otherLessonOrder: number
-): Promise<boolean> {
-  try {
-    // Mettre à jour les deux leçons concernées
-    const promises = [
-      supabase
-        .from('course_lessons')
-        .update({ order: newOrder, updated_at: new Date().toISOString() })
-        .eq('id', lessonId),
-      supabase
-        .from('course_lessons')
-        .update({ order: otherLessonOrder, updated_at: new Date().toISOString() })
-        .eq('id', otherLessonId)
-    ]
-    
-    const results = await Promise.all(promises)
-    const errors = results.flatMap(r => r.error ? [r.error] : [])
-    
-    if (errors.length > 0) {
-      console.error('Erreur lors de la réorganisation des leçons:', errors[0])
-      return false
-    }
-    
-    return true
-  } catch (error) {
-    console.error('Erreur lors de la réorganisation des leçons:', error)
-    return false
-  }
 } 
