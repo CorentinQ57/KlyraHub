@@ -141,9 +141,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     return (
       <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
         <PageContainer>
-          <PageHeader title={
-            <Skeleton className="h-10 w-2/3" />
-          }>
+          <PageHeader title="Chargement du cours...">
             <Skeleton className="h-10 w-28" />
           </PageHeader>
           
