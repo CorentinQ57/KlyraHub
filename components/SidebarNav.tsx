@@ -24,7 +24,8 @@ import {
   ChevronRight,
   ChevronLeft,
   LogIn,
-  BarChart2
+  BarChart2,
+  GraduationCap
 } from 'lucide-react'
 
 // Interface pour les liens de navigation
@@ -141,6 +142,11 @@ export function SidebarNav() {
       href: '/dashboard/marketplace',
       label: 'Marketplace',
       icon: <Store className="h-5 w-5" />
+    },
+    {
+      href: '/dashboard/academy',
+      label: 'Academy',
+      icon: <GraduationCap className="h-5 w-5" />
     },
     {
       href: '/dashboard/docs',
