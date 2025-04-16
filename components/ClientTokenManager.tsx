@@ -20,17 +20,17 @@ const PUBLIC_ROUTES = ['/login', '/signup', '/reset-password', '/success', '/doc
 export type AuthVerificationState = 'not_started' | 'in_progress' | 'completed' | 'timed_out' | 'failed';
 
 // TIMEOUTS & RETRY CONSTANTS
-const RETRY_COUNT = 3;
-const RETRY_DELAY_BASE = 1500; // 1,5 secondes (augmenté pour plus de fiabilité)
-const RETRY_DELAY_FACTOR = 1.5; // Facteur de backoff exponentiel
-const RETRY_DELAY_JITTER = 300; // Jitter pour éviter les requêtes simultanées
-const PRIMARY_TIMEOUT = 8000; // Augmenté de 4000 à 8000ms
-const FALLBACK_TIMEOUT = 5000; // Augmenté de 3000 à 5000ms
-const SAFETY_TIMEOUT = 12000; // Timeout de sécurité
-const CIRCUIT_BREAKER_TIMEOUT = 20000; // 20 secondes (augmenté pour plus de fiabilité)
-const DEGRADED_MODE_ENABLED = true; // Activer le mode dégradé en cas d'échec
-const MAX_RETRIES = 3; // Nombre maximum de tentatives
-const INITIAL_BACKOFF = 1000; // Délai initial pour le backoff exponentiel
+const RETRY_COUNT = 5;
+const RETRY_DELAY_BASE = 2000;
+const RETRY_DELAY_FACTOR = 1.5;
+const RETRY_DELAY_JITTER = 500;
+const PRIMARY_TIMEOUT = 12000;
+const FALLBACK_TIMEOUT = 8000;
+const SAFETY_TIMEOUT = 15000;
+const CIRCUIT_BREAKER_TIMEOUT = 30000;
+const DEGRADED_MODE_ENABLED = true;
+const MAX_RETRIES = 5;
+const INITIAL_BACKOFF = 1500;
 
 // Liste des routes publiques
 const publicRoutes = [
@@ -85,7 +85,7 @@ function getBackoffDelay(attempt: number) {
   // Ajout d'un jitter aléatoire pour éviter les tempêtes de requêtes
   const jitter = Math.random() * RETRY_DELAY_JITTER;
   
-  return Math.min(exponentialDelay + jitter, 15000); // Maximum 15 secondes
+  return Math.min(exponentialDelay + jitter, 20000); // Maximum 20 secondes (augmenté de 15s)
 }
 
 // État du gestionnaire de token
@@ -267,6 +267,17 @@ export default function ClientTokenManager() {
     // Respecter le circuit breaker
     if (circuitBreakerRef.current) {
       console.warn('[ClientTokenManager] Circuit breaker active, skipping session check');
+      if (!inDegradedMode.current) {
+        inDegradedMode.current = true;
+        setState('degraded');
+        
+        // Notification du mode dégradé
+        toast({
+          title: "Mode dégradé activé",
+          description: "L'application fonctionne en mode limité suite à un problème d'authentification.",
+          variant: "destructive"
+        });
+      }
       return;
     }
     
@@ -301,7 +312,7 @@ export default function ClientTokenManager() {
           console.error(`[ClientTokenManager] Maximum retries (${MAX_RETRIES}) reached, activating circuit breaker`);
           circuitBreakerRef.current = true;
           
-          // Active le circuit breaker pour 30 secondes
+          // Active le circuit breaker pour 60 secondes (augmenté de 30s)
           if (circuitBreakerTimerRef.current) {
             clearTimeout(circuitBreakerTimerRef.current);
           }
@@ -310,7 +321,7 @@ export default function ClientTokenManager() {
             console.log('[ClientTokenManager] Resetting circuit breaker');
             circuitBreakerRef.current = false;
             retryCountRef.current = 0;
-          }, 30000);
+          }, 60000); // Augmenté à 60s
           
           // En mode dégradé après échec complet
           inDegradedMode.current = true;
@@ -322,6 +333,12 @@ export default function ClientTokenManager() {
             description: "L'application fonctionne en mode limité suite à un problème d'authentification.",
             variant: "destructive"
           });
+          
+          // Déclencher un événement pour le mode dégradé
+          const degradedEvent = new CustomEvent('auth_degraded_mode', { 
+            detail: { timestamp: Date.now() } 
+          });
+          window.dispatchEvent(degradedEvent);
           
           return;
         }
@@ -352,14 +369,54 @@ export default function ClientTokenManager() {
 
       console.log('[ClientTokenManager] Getting user with auth state:', debugAuthState());
       
-      // Récupérer l'utilisateur
-      const { data: { user }, error } = await supabase.auth.getUser();
+      // Récupérer l'utilisateur avec plusieurs tentatives internes
+      let userResponse;
+      let userError = null;
+      let retryAttempt = 0;
+
+      while (retryAttempt < 3 && !userResponse) {
+        try {
+          userResponse = await Promise.race([
+            supabase.auth.getUser(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error("User check timeout")), PRIMARY_TIMEOUT * 0.8)
+            )
+          ]);
+        } catch (err) {
+          userError = err;
+          retryAttempt++;
+          
+          if (retryAttempt < 3) {
+            const innerRetryDelay = getBackoffDelay(retryAttempt);
+            console.log(`[ClientTokenManager] Inner getUser retry ${retryAttempt}/3 after ${innerRetryDelay}ms`);
+            await new Promise(resolve => setTimeout(resolve, innerRetryDelay));
+          }
+        }
+      }
+
+      // Gestion types sécurisée
+      let user = null;
+      let error = userError;
+      
+      if (userResponse && typeof userResponse === 'object') {
+        // Si nous avons une réponse, on l'utilise
+        if ('data' in userResponse && userResponse.data && typeof userResponse.data === 'object') {
+          user = 'user' in userResponse.data ? userResponse.data.user : null;
+        }
+        if ('error' in userResponse) {
+          error = userResponse.error;
+        }
+      }
       
       // Annuler le timeout car la réponse est arrivée
       clearTimeout(timeoutId);
         
-        if (error) {
-        console.error('[ClientTokenManager] Error getting user:', error.message);
+      if (error) {
+        console.error('[ClientTokenManager] Error getting user:', 
+          error && typeof error === 'object' && 'message' in error 
+            ? error.message 
+            : 'Unknown error'
+        );
         
         // Réessayer avec backoff si ce n'est pas déjà une tentative
         if (!options.isRetry && retryCountRef.current < MAX_RETRIES) {
@@ -495,56 +552,66 @@ export default function ClientTokenManager() {
         console.error('[ClientTokenManager] Emergency recovery timed out');
         inDegradedMode.current = true;
         setState('degraded');
+        
+        // Notification de la récupération en cours
+        toast({
+          title: "Mode dégradé activé",
+          description: "Tentative de récupération échouée. L'application fonctionne en mode limité.",
+          variant: "destructive"
+        });
       }, FALLBACK_TIMEOUT);
       
-      // Dernier essai pour récupérer l'utilisateur
-      const { data: { user }, error } = await supabase.auth.getUser();
+      // Essayer plusieurs stratégies de récupération en parallèle
+      const [userResult, tokensValid, sessionResult] = await Promise.allSettled([
+        // 1. Essayer de récupérer l'utilisateur directement
+        supabase.auth.getUser(),
+        
+        // 2. Tenter de forcer le stockage de token
+        enforceTokenStorage(),
+        
+        // 3. Récupérer la session en dernier recours
+        supabase.auth.getSession()
+      ]);
       
       clearTimeout(emergencyTimeoutId);
       
-      if (error || !user) {
-        console.error('[ClientTokenManager] Emergency getUser failed:', error?.message);
-        
-        // Tenter de forcer le stockage des tokens
-        const tokensValid = await enforceTokenStorage();
-        
-        if (tokensValid) {
-          console.log('[ClientTokenManager] Tokens enforced successfully during emergency');
-          
-          // Retry la récupération de l'utilisateur une dernière fois
-          const { data: { user: recoveredUser }, error: retryError } = await supabase.auth.getUser();
-          
-          if (recoveredUser && !retryError) {
-            console.log('[ClientTokenManager] Successfully recovered user session');
-            setState('authenticated');
-            dispatchAuthEvent('authenticated', recoveredUser);
-            return;
-          }
-        }
-        
-        // Si tout échoue, passer en mode dégradé
-        console.error('[ClientTokenManager] Complete authentication failure, switching to degraded mode');
-        inDegradedMode.current = true;
-        setState('degraded');
-        
-        // Notification du mode dégradé
-        toast({
-          title: "Mode dégradé activé",
-          description: "L'application fonctionne en mode limité suite à un problème d'authentification.",
-          variant: "destructive"
-        });
-      } else {
-        // L'utilisateur a été récupéré avec succès
-        console.log('[ClientTokenManager] Emergency recovery successful');
+      // Vérifier les résultats et choisir la meilleure stratégie
+      if (userResult.status === 'fulfilled' && userResult.value.data?.user) {
+        console.log('[ClientTokenManager] Emergency recovery: User retrieved successfully');
         setState('authenticated');
-        dispatchAuthEvent('authenticated', user);
+        dispatchAuthEvent('authenticated', userResult.value.data.user);
+        return;
       }
+      
+      if (sessionResult.status === 'fulfilled' && sessionResult.value.data?.session) {
+        console.log('[ClientTokenManager] Emergency recovery: Session retrieved successfully');
+        setState('authenticated');
+        dispatchAuthEvent('authenticated', sessionResult.value.data.session.user);
+        return;
+      }
+      
+      // Si aucune stratégie ne fonctionne, passer en mode dégradé
+      inDegradedMode.current = true;
+      setState('degraded');
+      
+      // Notification du mode dégradé
+      toast({
+        title: "Mode dégradé activé",
+        description: "L'application fonctionne en mode limité suite à un problème d'authentification.",
+        variant: "destructive"
+      });
+      
+      // Déclencher un événement pour le mode dégradé
+      const degradedEvent = new CustomEvent('auth_degraded_mode', { 
+        detail: { timestamp: Date.now() } 
+      });
+      window.dispatchEvent(degradedEvent);
     } catch (error) {
       console.error('[ClientTokenManager] Error during emergency recovery:', error);
       inDegradedMode.current = true;
       setState('degraded');
     }
-  }, [supabase, toast]);
+  }, [supabase, setState, toast]);
   
   // Déclencher un événement d'authentification
   const dispatchAuthEvent = useCallback((status: 'authenticated' | 'unauthenticated', user: any) => {
