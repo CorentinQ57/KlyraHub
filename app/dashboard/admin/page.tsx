@@ -9,7 +9,7 @@ import { fetchAllProjects } from '@/lib/supabase'
 import { Project } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { Settings, Users, ShoppingBag, FileText } from 'lucide-react'
+import { Settings, Users, ShoppingBag, FileText, BookOpen } from 'lucide-react'
 
 // Étendre le type Project pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -122,7 +122,7 @@ export default function AdminDashboardPage() {
 
       {/* Quick actions */}
       <PageSection title="Accès rapides">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <ContentCard>
             <h2 className="text-[18px] font-semibold mb-3">Services</h2>
             <p className="text-[14px] text-[#64748B] mb-4">
@@ -146,6 +146,19 @@ export default function AdminDashboardPage() {
               onClick={() => router.push('/dashboard/admin/categories')}
             >
               <Settings className="mr-2 h-4 w-4" /> Gérer les catégories
+            </Button>
+          </ContentCard>
+
+          <ContentCard>
+            <h2 className="text-[18px] font-semibold mb-3">Academy</h2>
+            <p className="text-[14px] text-[#64748B] mb-4">
+              Gérez le contenu pédagogique de l'academy
+            </p>
+            <Button 
+              className="w-full" 
+              onClick={() => router.push('/dashboard/admin/academy')}
+            >
+              <BookOpen className="mr-2 h-4 w-4" /> Gérer l'academy
             </Button>
           </ContentCard>
         </div>
