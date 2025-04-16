@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, ArrowRight, BookOpen, Clock, Filter, FileText, PlayCircle, Search, Trophy, Users } from 'lucide-react'
 
 // Components
@@ -32,101 +33,52 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
 
-// Types
-type Course = {
-  id: string
-  title: string
-  description: string
-  category: string
-  level: 'Débutant' | 'Intermédiaire' | 'Avancé'
-  duration: string
-  lessons: number
-  image: string
-  isPopular?: boolean
-  isNew?: boolean
-}
-
-// Mock Data
-const courses: Course[] = [
-  {
-    id: '1',
-    title: 'Fondamentaux du Branding Digital',
-    description: 'Apprenez à construire une identité de marque cohérente et impactante pour le digital.',
-    category: 'Branding',
-    level: 'Débutant',
-    duration: '4h 30min',
-    lessons: 12,
-    image: '/images/academy/branding-course.jpg',
-    isPopular: true
-  },
-  {
-    id: '2',
-    title: "Design d'Interface Utilisateur Avancé",
-    description: 'Maîtrisez les techniques avancées de design UI pour créer des interfaces exceptionnelles.',
-    category: 'Design',
-    level: 'Avancé',
-    duration: '8h 15min',
-    lessons: 24,
-    image: '/images/academy/ui-design-course.jpg',
-    isNew: true
-  },
-  {
-    id: '3',
-    title: 'Développement Frontend avec React',
-    description: 'Construisez des interfaces modernes et réactives avec React et les dernières technologies web.',
-    category: 'Développement',
-    level: 'Intermédiaire',
-    duration: '12h 45min',
-    lessons: 36,
-    image: '/images/academy/react-course.jpg'
-  },
-  {
-    id: '4',
-    title: 'Stratégie de Design pour Startups',
-    description: 'Apprenez à développer une stratégie de design efficace pour votre startup avec des ressources limitées.',
-    category: 'Design',
-    level: 'Intermédiaire',
-    duration: '5h 20min',
-    lessons: 15,
-    image: '/images/academy/startup-design-course.jpg'
-  },
-  {
-    id: '5',
-    title: "Principes de l'UX Design",
-    description: "Découvrez les fondamentaux de l'expérience utilisateur et comment créer des produits centrés sur l'utilisateur.",
-    category: 'Design',
-    level: 'Débutant',
-    duration: '6h 10min',
-    lessons: 18,
-    image: '/images/academy/ux-design-course.jpg',
-    isPopular: true
-  },
-  {
-    id: '6',
-    title: 'Marketing Digital pour Designers',
-    description: 'Comment utiliser les compétences en design pour améliorer les stratégies de marketing digital.',
-    category: 'Branding',
-    level: 'Intermédiaire',
-    duration: '7h 30min',
-    lessons: 22,
-    image: '/images/academy/marketing-course.jpg'
-  }
-]
+// Services
+import { Course, getCourses, getCoursesByCategory } from '@/lib/academy-service'
 
 export default function CoursesPage() {
-  const [activeTab, setActiveTab] = useState('all')
+  const searchParams = useSearchParams()
+  const categoryParam = searchParams.get('category')
+  
+  const [activeTab, setActiveTab] = useState(categoryParam?.toLowerCase() || 'all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLevel, setSelectedLevel] = useState<string>('all')
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      setLoading(true)
+      try {
+        let coursesData;
+        
+        if (categoryParam) {
+          coursesData = await getCoursesByCategory(categoryParam)
+        } else {
+          coursesData = await getCourses()
+        }
+        
+        setCourses(coursesData)
+      } catch (error) {
+        console.error('Erreur lors du chargement des cours:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCourses()
+  }, [categoryParam])
 
   // Filtrer les cours en fonction des critères
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         course.description.toLowerCase().includes(searchQuery.toLowerCase())
+                         (course.description && course.description.toLowerCase().includes(searchQuery.toLowerCase()))
     
     const matchesLevel = selectedLevel === 'all' || course.level.toLowerCase() === selectedLevel.toLowerCase()
     
-    const matchesCategory = activeTab === 'all' || course.category.toLowerCase() === activeTab.toLowerCase()
+    const matchesCategory = activeTab === 'all' || (course.category && course.category.toLowerCase() === activeTab.toLowerCase())
     
     return matchesSearch && matchesLevel && matchesCategory
   })
@@ -135,10 +87,10 @@ export default function CoursesPage() {
   const CourseCard = ({ course }: { course: Course }) => (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video w-full overflow-hidden">
-        {course.image ? (
+        {course.image_url ? (
           <div className="relative h-full w-full">
             <Image
-              src={course.image}
+              src={course.image_url}
               alt={course.title}
               width={500}
               height={300}
@@ -152,12 +104,12 @@ export default function CoursesPage() {
           </div>
         )}
         <div className="absolute top-2 left-2 flex gap-2">
-          {course.isPopular && (
+          {course.is_popular && (
             <Badge variant="secondary" className="bg-amber-500 text-white">
               Populaire
             </Badge>
           )}
-          {course.isNew && (
+          {course.is_new && (
             <Badge variant="secondary" className="bg-green-500 text-white">
               Nouveau
             </Badge>
@@ -193,6 +145,29 @@ export default function CoursesPage() {
           <PlayCircle className="mr-2 h-4 w-4" />
           Commencer le cours
         </Button>
+      </CardFooter>
+    </Card>
+  )
+
+  // Composant pour le squelette de chargement
+  const CourseCardSkeleton = () => (
+    <Card className="overflow-hidden">
+      <div className="relative aspect-video w-full overflow-hidden">
+        <Skeleton className="h-full w-full" />
+      </div>
+      <CardHeader>
+        <Skeleton className="h-6 w-2/3" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-4 w-3/4 mb-4" />
+        <div className="flex justify-between">
+          <Skeleton className="h-4 w-1/4" />
+          <Skeleton className="h-4 w-1/4" />
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Skeleton className="h-10 w-full" />
       </CardFooter>
     </Card>
   )
@@ -241,7 +216,7 @@ export default function CoursesPage() {
             </div>
           </div>
 
-          <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+          <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="all">Tous</TabsTrigger>
               <TabsTrigger value="design">Design</TabsTrigger>
@@ -250,7 +225,13 @@ export default function CoursesPage() {
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
-              {filteredCourses.length > 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array(6).fill(0).map((_, index) => (
+                    <CourseCardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : filteredCourses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredCourses.map((course) => (
                     <CourseCard key={course.id} course={course} />

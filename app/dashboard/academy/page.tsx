@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -15,127 +15,49 @@ import { BookOpen, Video, FileText, Award, Clock, Users, Layers, ArrowRight, Pla
 import { Badge } from '@/components/ui/badge'
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 
-// Types pour les données de l'Academy
-type Course = {
-  id: string
-  title: string
-  description: string
-  category: string
-  level: 'Débutant' | 'Intermédiaire' | 'Avancé'
-  duration: string
-  lessons: number
-  image: string
-  popular?: boolean
-  new?: boolean
-  progress: number
-  tags: string[]
-}
-
-type Resource = {
-  id: string
-  title: string
-  description: string
-  type: 'eBook' | 'Vidéo' | 'Template' | 'Checklist'
-  image: string
-  downloadLink?: string
-}
+// Services
+import { Course, Resource, getCourses, getResources } from '@/lib/academy-service'
 
 export default function AcademyPage() {
   const { user } = useAuth()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("courses")
+  const [activeTab, setActiveTab] = useState('courses')
+  const [loading, setLoading] = useState(true)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [resources, setResources] = useState<Resource[]>([])
 
-  // Données factices pour les cours
-  const courses: Course[] = [
-    {
-      id: 'design-principles',
-      title: 'Principes fondamentaux du design',
-      description: 'Découvrez les principes de base du design et comment ils s\'appliquent aux interfaces numériques modernes.',
-      category: 'Design',
-      level: 'Débutant',
-      duration: '3h 20min',
-      lessons: 12,
-      image: '/images/academy/design-principles.jpg',
-      popular: true,
-      progress: 0,
-      tags: ["UX", "UI", "Design"]
-    },
-    {
-      id: 'ui-components',
-      title: 'Création de composants UI réutilisables',
-      description: 'Apprenez à concevoir et développer des composants UI modulaires et réutilisables pour vos projets.',
-      category: 'Développement',
-      level: 'Intermédiaire',
-      duration: '4h 45min',
-      lessons: 15,
-      image: '/images/academy/ui-components.jpg',
-      progress: 25,
-      tags: ["Design", "UI", "Composants"]
-    },
-    {
-      id: 'branding-strategy',
-      title: 'Stratégie de marque efficace',
-      description: 'Développez une stratégie de marque cohérente qui résonne avec votre public cible.',
-      category: 'Branding',
-      level: 'Intermédiaire',
-      duration: '5h 10min',
-      lessons: 18,
-      image: '/images/academy/branding-strategy.jpg',
-      progress: 75,
-      tags: ["Branding", "Marketing", "Stratégie"]
-    },
-    {
-      id: 'figma-advanced',
-      title: 'Techniques avancées sur Figma',
-      description: 'Maîtrisez les fonctionnalités avancées de Figma pour optimiser votre workflow de design.',
-      category: 'Design',
-      level: 'Avancé',
-      duration: '6h 30min',
-      lessons: 22,
-      image: '/images/academy/figma-advanced.jpg',
-      new: true,
-      progress: 0,
-      tags: ["Design", "Figma", "Avancé"]
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        // Récupère les cours et ressources en parallèle
+        const [coursesData, resourcesData] = await Promise.all([
+          getCourses(),
+          getResources()
+        ])
+        
+        setCourses(coursesData)
+        setResources(resourcesData)
+      } catch (error) {
+        console.error('Erreur lors du chargement des données Academy:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
 
-  // Données factices pour les ressources
-  const resources: Resource[] = [
-    {
-      id: 'ux-principles-ebook',
-      title: 'Guide des principes UX essentiels',
-      description: 'Un guide complet sur les principes fondamentaux de l\'expérience utilisateur.',
-      type: 'eBook',
-      image: '/images/academy/ux-ebook.jpg',
-      downloadLink: '#'
-    },
-    {
-      id: 'design-system-template',
-      title: 'Template de Design System',
-      description: 'Un template prêt à l\'emploi pour démarrer votre propre design system.',
-      type: 'Template',
-      image: '/images/academy/design-system.jpg',
-      downloadLink: '#'
-    },
-    {
-      id: 'client-presentation',
-      title: 'L\'art de la présentation client',
-      description: 'Apprenez à présenter efficacement vos designs aux clients pour maximiser l\'impact.',
-      type: 'Vidéo',
-      image: '/images/academy/client-presentation.jpg'
-    }
-  ]
+    fetchData()
+  }, [])
 
   // Composant pour afficher une carte de cours
   const CourseCard = ({ course }: { course: Course }) => (
     <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="relative h-48 w-full bg-gray-100">
-        {course.image ? (
+      <div className="relative h-40 w-full bg-gray-100">
+        {course.image_url ? (
           <div className="relative h-full w-full">
             <Image 
-              src={course.image} 
+              src={course.image_url} 
               alt={course.title}
               fill
               className="object-cover"
@@ -146,39 +68,58 @@ export default function AcademyPage() {
             <BookOpen className="h-12 w-12 text-gray-400" />
           </div>
         )}
-        <div className="absolute top-2 right-2 flex gap-2">
-          {course.popular && (
-            <Badge className="bg-amber-500">Populaire</Badge>
+        
+        <div className="absolute top-2 left-2 space-x-2">
+          {course.is_new && (
+            <Badge className="bg-green-500 hover:bg-green-600 text-white">
+              Nouveau
+            </Badge>
           )}
-          {course.new && (
-            <Badge className="bg-blue-500">Nouveau</Badge>
+          {course.is_popular && (
+            <Badge className="bg-amber-500 hover:bg-amber-600 text-white">
+              Populaire
+            </Badge>
           )}
         </div>
-      </div>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <Badge variant="outline" className="text-xs font-normal">
-            {course.category}
-          </Badge>
-          <Badge variant="secondary" className="text-xs font-normal">
+        
+        <div className="absolute top-2 right-2">
+          <Badge className={
+            course.level === 'Débutant' ? 'bg-green-500' : 
+            course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
+          }>
             {course.level}
           </Badge>
         </div>
-        <CardTitle className="mt-2 text-xl">{course.title}</CardTitle>
+      </div>
+      
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">{course.title}</CardTitle>
+        <CardDescription>{course.category}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm text-gray-500">{course.description}</p>
-        <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
+      
+      <CardContent className="pb-2">
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
           <div className="flex items-center">
             <Clock className="mr-1 h-4 w-4" />
-            {course.duration}
+            <span>{course.duration}</span>
           </div>
           <div className="flex items-center">
             <Layers className="mr-1 h-4 w-4" />
-            {course.lessons} leçons
+            <span>{course.lessons} leçons</span>
           </div>
         </div>
+        
+        {user && (
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span>Progression</span>
+              <span className="font-medium">0%</span>
+            </div>
+            <Progress value={0} />
+          </div>
+        )}
       </CardContent>
+      
       <CardFooter>
         <Button className="w-full">
           Voir le cours
@@ -192,10 +133,10 @@ export default function AcademyPage() {
   const ResourceCard = ({ resource }: { resource: Resource }) => (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative h-40 w-full bg-gray-100">
-        {resource.image ? (
+        {resource.image_url ? (
           <div className="relative h-full w-full">
             <Image 
-              src={resource.image} 
+              src={resource.image_url} 
               alt={resource.title}
               fill
               className="object-cover"
@@ -224,10 +165,10 @@ export default function AcademyPage() {
       </CardContent>
       <CardFooter>
         <Button 
-          variant={resource.downloadLink ? "default" : "outline"}
+          variant={resource.download_link ? "default" : "outline"}
           className="w-full"
         >
-          {resource.downloadLink ? (
+          {resource.download_link ? (
             <>
               <Download className="mr-2 h-4 w-4" />
               Télécharger
@@ -239,6 +180,29 @@ export default function AcademyPage() {
             </>
           )}
         </Button>
+      </CardFooter>
+    </Card>
+  )
+
+  // Composant pour les squelettes de chargement
+  const CardSkeleton = () => (
+    <Card className="overflow-hidden">
+      <div className="h-40 w-full">
+        <Skeleton className="h-full w-full" />
+      </div>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-3/4 mb-2" />
+        <Skeleton className="h-4 w-1/2" />
+      </CardHeader>
+      <CardContent className="pb-2">
+        <div className="flex justify-between mb-3">
+          <Skeleton className="h-4 w-1/4" />
+          <Skeleton className="h-4 w-1/4" />
+        </div>
+        <Skeleton className="h-4 w-full" />
+      </CardContent>
+      <CardFooter>
+        <Skeleton className="h-10 w-full" />
       </CardFooter>
     </Card>
   )
@@ -272,7 +236,7 @@ export default function AcademyPage() {
                     <BookOpen className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-medium">+20 Cours</p>
+                    <p className="font-medium">+{courses.length} Cours</p>
                     <p className="text-sm text-gray-500">Mis à jour régulièrement</p>
                   </div>
                 </div>
@@ -281,7 +245,7 @@ export default function AcademyPage() {
                     <FileText className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="font-medium">+30 Ressources</p>
+                    <p className="font-medium">+{resources.length} Ressources</p>
                     <p className="text-sm text-gray-500">eBooks, templates, etc.</p>
                   </div>
                 </div>
@@ -300,7 +264,9 @@ export default function AcademyPage() {
               <Users className="h-12 w-12 text-blue-500 mb-4" />
               <h3 className="text-xl font-bold mb-2">Rejoignez la communauté</h3>
               <p className="text-gray-600 mb-6">Connectez-vous avec d'autres professionnels et partagez vos connaissances</p>
-              <Button>Découvrir la communauté</Button>
+              <Link href="/dashboard/academy/community">
+                <Button>Découvrir la communauté</Button>
+              </Link>
             </ContentCard>
           </div>
         </PageSection>
@@ -316,11 +282,19 @@ export default function AcademyPage() {
             </TabsList>
             
             <TabsContent value="courses" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.map((course) => (
-                  <CourseCard key={course.id} course={course} />
-                ))}
-              </div>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((index) => (
+                    <CardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {courses.slice(0, 3).map((course) => (
+                    <CourseCard key={course.id} course={course} />
+                  ))}
+                </div>
+              )}
               <div className="mt-8 text-center">
                 <Link href="/dashboard/academy/courses">
                   <Button variant="outline">
@@ -332,14 +306,23 @@ export default function AcademyPage() {
             </TabsContent>
             
             <TabsContent value="design" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses
-                  .filter(course => course.category === 'Design')
-                  .map((course) => (
-                    <CourseCard key={course.id} course={course} />
-                  ))
-                }
-              </div>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((index) => (
+                    <CardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {courses
+                    .filter(course => course.category === 'Design')
+                    .slice(0, 3)
+                    .map((course) => (
+                      <CourseCard key={course.id} course={course} />
+                    ))
+                  }
+                </div>
+              )}
               <div className="mt-8 text-center">
                 <Link href="/dashboard/academy/courses?category=design">
                   <Button variant="outline">
@@ -351,14 +334,23 @@ export default function AcademyPage() {
             </TabsContent>
             
             <TabsContent value="development" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses
-                  .filter(course => course.category === 'Développement')
-                  .map((course) => (
-                    <CourseCard key={course.id} course={course} />
-                  ))
-                }
-              </div>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((index) => (
+                    <CardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {courses
+                    .filter(course => course.category === 'Développement')
+                    .slice(0, 3)
+                    .map((course) => (
+                      <CourseCard key={course.id} course={course} />
+                    ))
+                  }
+                </div>
+              )}
               <div className="mt-8 text-center">
                 <Link href="/dashboard/academy/courses?category=développement">
                   <Button variant="outline">
@@ -370,14 +362,23 @@ export default function AcademyPage() {
             </TabsContent>
             
             <TabsContent value="branding" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses
-                  .filter(course => course.category === 'Branding')
-                  .map((course) => (
-                    <CourseCard key={course.id} course={course} />
-                  ))
-                }
-              </div>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((index) => (
+                    <CardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {courses
+                    .filter(course => course.category === 'Branding')
+                    .slice(0, 3)
+                    .map((course) => (
+                      <CourseCard key={course.id} course={course} />
+                    ))
+                  }
+                </div>
+              )}
               <div className="mt-8 text-center">
                 <Link href="/dashboard/academy/courses?category=branding">
                   <Button variant="outline">
@@ -392,11 +393,19 @@ export default function AcademyPage() {
 
         {/* Section des ressources */}
         <PageSection title="Ressources" description="Explorez nos ressources gratuites pour compléter votre apprentissage">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {resources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((index) => (
+                <CardSkeleton key={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {resources.slice(0, 3).map((resource) => (
+                <ResourceCard key={resource.id} resource={resource} />
+              ))}
+            </div>
+          )}
           <div className="mt-8 text-center">
             <Link href="/dashboard/academy/resources">
               <Button variant="outline">

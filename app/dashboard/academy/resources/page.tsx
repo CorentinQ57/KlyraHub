@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, Download, FileText, Filter, PlayCircle, Search, BookOpen, File, Zap } from 'lucide-react'
 
 // Components
@@ -32,120 +33,55 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
 
-// Types
-type Resource = {
-  id: string
-  title: string
-  description: string
-  type: 'eBook' | 'Vidéo' | 'Template' | 'Checklist'
-  category: string
-  image?: string
-  downloadLink?: string
-  isPopular?: boolean
-  isNew?: boolean
-}
-
-// Mock Data
-const resources: Resource[] = [
-  {
-    id: '1',
-    title: 'Guide complet du Branding pour Startups',
-    description: 'Un guide pas à pas pour créer une identité de marque cohérente et mémorable.',
-    type: 'eBook',
-    category: 'Branding',
-    image: '/images/academy/branding-ebook.jpg',
-    downloadLink: '/resources/branding-guide.pdf',
-    isPopular: true
-  },
-  {
-    id: '2',
-    title: 'Template Figma pour Landing Page',
-    description: 'Un template Figma complet et personnalisable pour créer des landing pages efficaces.',
-    type: 'Template',
-    category: 'Design',
-    image: '/images/academy/figma-template.jpg',
-    downloadLink: '/resources/figma-template.fig',
-    isNew: true
-  },
-  {
-    id: '3',
-    title: 'Masterclass UI Animation',
-    description: 'Apprenez à créer des animations UI captivantes et performantes.',
-    type: 'Vidéo',
-    category: 'Design',
-    image: '/images/academy/animation-video.jpg'
-  },
-  {
-    id: '4',
-    title: "Checklist SEO pour Designers",
-    description: "Tous les points à vérifier pour s'assurer que votre design soit optimisé pour le SEO.",
-    type: 'Checklist',
-    category: 'Branding',
-    image: '/images/academy/seo-checklist.jpg',
-    downloadLink: '/resources/seo-checklist.pdf'
-  },
-  {
-    id: '5',
-    title: 'Kit UI Dark Mode',
-    description: 'Un kit UI complet pour créer des interfaces en mode sombre élégantes et accessibles.',
-    type: 'Template',
-    category: 'Design',
-    image: '/images/academy/dark-mode-kit.jpg',
-    downloadLink: '/resources/dark-mode-kit.sketch',
-    isPopular: true
-  },
-  {
-    id: '6',
-    title: 'Guide des meilleures pratiques UX',
-    description: 'Découvrez les meilleures pratiques pour créer des expériences utilisateur exceptionnelles.',
-    type: 'eBook',
-    category: 'Design',
-    image: '/images/academy/ux-practices.jpg',
-    downloadLink: '/resources/ux-best-practices.pdf'
-  },
-  {
-    id: '7',
-    title: 'Template Email Marketing',
-    description: 'Collection de templates HTML responsive pour vos campagnes email.',
-    type: 'Template',
-    category: 'Marketing',
-    image: '/images/academy/email-templates.jpg',
-    downloadLink: '/resources/email-templates.zip'
-  },
-  {
-    id: '8',
-    title: "Webinaire - Conception d'application mobile",
-    description: "Enregistrement de notre webinaire sur les meilleures pratiques de conception mobile.",
-    type: 'Vidéo',
-    category: 'Design',
-    image: '/images/academy/mobile-design.jpg'
-  },
-  {
-    id: '9',
-    title: "Kit d'icônes Klyra",
-    description: "Une collection d'icônes originales Klyra à utiliser dans vos projets.",
-    type: 'Template',
-    category: 'Design',
-    image: '/images/academy/icon-kit.jpg',
-    downloadLink: '/resources/klyra-icons.zip',
-    isNew: true
-  }
-]
+// Services
+import { Resource, getResources, getResourcesByCategory, getResourcesByType } from '@/lib/academy-service'
 
 export default function ResourcesPage() {
-  const [activeTab, setActiveTab] = useState('all')
+  const searchParams = useSearchParams()
+  const categoryParam = searchParams.get('category')
+  const typeParam = searchParams.get('type')
+  
+  const [activeTab, setActiveTab] = useState(categoryParam?.toLowerCase() || 'all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedType, setSelectedType] = useState<string>('all')
+  const [selectedType, setSelectedType] = useState<string>(typeParam?.toLowerCase() || 'all')
+  const [resources, setResources] = useState<Resource[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      setLoading(true)
+      try {
+        let resourcesData;
+        
+        if (categoryParam) {
+          resourcesData = await getResourcesByCategory(categoryParam)
+        } else if (typeParam) {
+          resourcesData = await getResourcesByType(typeParam)
+        } else {
+          resourcesData = await getResources()
+        }
+        
+        setResources(resourcesData)
+      } catch (error) {
+        console.error('Erreur lors du chargement des ressources:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchResources()
+  }, [categoryParam, typeParam])
 
   // Filtrer les ressources en fonction des critères
   const filteredResources = resources.filter(resource => {
     const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         resource.description.toLowerCase().includes(searchQuery.toLowerCase())
+                         (resource.description && resource.description.toLowerCase().includes(searchQuery.toLowerCase()))
     
     const matchesType = selectedType === 'all' || resource.type.toLowerCase() === selectedType.toLowerCase()
     
-    const matchesCategory = activeTab === 'all' || resource.category.toLowerCase() === activeTab.toLowerCase()
+    const matchesCategory = activeTab === 'all' || (resource.category && resource.category.toLowerCase() === activeTab.toLowerCase())
     
     return matchesSearch && matchesType && matchesCategory
   })
@@ -154,10 +90,10 @@ export default function ResourcesPage() {
   const ResourceCard = ({ resource }: { resource: Resource }) => (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="relative aspect-video w-full overflow-hidden">
-        {resource.image ? (
+        {resource.image_url ? (
           <div className="relative h-full w-full">
             <Image
-              src={resource.image}
+              src={resource.image_url}
               alt={resource.title}
               width={500}
               height={300}
@@ -171,12 +107,12 @@ export default function ResourcesPage() {
           </div>
         )}
         <div className="absolute top-2 left-2 flex gap-2">
-          {resource.isPopular && (
+          {resource.is_popular && (
             <Badge variant="secondary" className="bg-amber-500 text-white">
               Populaire
             </Badge>
           )}
-          {resource.isNew && (
+          {resource.is_new && (
             <Badge variant="secondary" className="bg-green-500 text-white">
               Nouveau
             </Badge>
@@ -200,10 +136,10 @@ export default function ResourcesPage() {
       </CardContent>
       <CardFooter>
         <Button 
-          variant={resource.downloadLink ? "default" : "outline"}
+          variant={resource.download_link ? "default" : "outline"}
           className="w-full"
         >
-          {resource.downloadLink ? (
+          {resource.download_link ? (
             <>
               <Download className="mr-2 h-4 w-4" />
               Télécharger
@@ -215,6 +151,25 @@ export default function ResourcesPage() {
             </>
           )}
         </Button>
+      </CardFooter>
+    </Card>
+  )
+
+  // Composant pour le squelette de chargement
+  const ResourceCardSkeleton = () => (
+    <Card className="overflow-hidden">
+      <div className="relative aspect-video w-full overflow-hidden">
+        <Skeleton className="h-full w-full" />
+      </div>
+      <CardHeader>
+        <Skeleton className="h-6 w-2/3" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-4 w-3/4" />
+      </CardContent>
+      <CardFooter>
+        <Skeleton className="h-10 w-full" />
       </CardFooter>
     </Card>
   )
@@ -264,7 +219,7 @@ export default function ResourcesPage() {
             </div>
           </div>
 
-          <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+          <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="all">Tous</TabsTrigger>
               <TabsTrigger value="design">Design</TabsTrigger>
@@ -273,7 +228,13 @@ export default function ResourcesPage() {
             </TabsList>
             
             <TabsContent value="all" className="mt-0">
-              {filteredResources.length > 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array(6).fill(0).map((_, index) => (
+                    <ResourceCardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : filteredResources.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredResources.map((resource) => (
                     <ResourceCard key={resource.id} resource={resource} />

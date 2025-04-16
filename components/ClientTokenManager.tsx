@@ -357,8 +357,8 @@ export default function ClientTokenManager() {
       
       // Annuler le timeout car la réponse est arrivée
       clearTimeout(timeoutId);
-      
-      if (error) {
+        
+        if (error) {
         console.error('[ClientTokenManager] Error getting user:', error.message);
         
         // Réessayer avec backoff si ce n'est pas déjà une tentative
@@ -421,7 +421,7 @@ export default function ClientTokenManager() {
         // Lancer la vérification complète
         checkSession();
       }
-    } catch (error) {
+      } catch (error) {
       console.error('Error during initial auth check:', error);
       setState('unauthenticated'); // Fallback pour permettre la connexion
     }
@@ -460,7 +460,7 @@ export default function ClientTokenManager() {
     try {
       window.addEventListener('klyra:token-refreshed', handleTokenRefreshed);
       return () => window.removeEventListener('klyra:token-refreshed', handleTokenRefreshed);
-    } catch (error) {
+        } catch (error) {
       console.warn('Error setting up token refresh listener:', error);
     }
   }, [checkSession]);
