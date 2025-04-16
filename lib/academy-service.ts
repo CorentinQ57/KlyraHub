@@ -332,4 +332,270 @@ export async function getCourseModules(courseId: string): Promise<CourseModule[]
     ...module,
     lessons: (module.course_lessons || []).sort((a: CourseLesson, b: CourseLesson) => a.order - b.order),
   }));
+}
+
+/**
+ * Crée un nouveau module pour un cours
+ */
+export async function createCourseModule(moduleData: {
+  title: string;
+  description?: string;
+  order: number;
+  course_id: string;
+}): Promise<CourseModule | null> {
+  const { data, error } = await supabase
+    .from('course_modules')
+    .insert({
+      ...moduleData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Erreur lors de la création du module:', error);
+    return null;
+  }
+
+  return {
+    ...data,
+    lessons: []
+  };
+}
+
+/**
+ * Met à jour un module existant
+ */
+export async function updateCourseModule(
+  moduleId: string,
+  moduleData: {
+    title?: string;
+    description?: string;
+    order?: number;
+  }
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('course_modules')
+    .update({
+      ...moduleData,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', moduleId);
+
+  if (error) {
+    console.error(`Erreur lors de la mise à jour du module ${moduleId}:`, error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Supprime un module et toutes ses leçons
+ */
+export async function deleteCourseModule(moduleId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('course_modules')
+    .delete()
+    .eq('id', moduleId);
+
+  if (error) {
+    console.error(`Erreur lors de la suppression du module ${moduleId}:`, error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Récupère une leçon par son ID
+ */
+export async function getLessonById(lessonId: string): Promise<CourseLesson | null> {
+  const { data, error } = await supabase
+    .from('course_lessons')
+    .select('*')
+    .eq('id', lessonId)
+    .single();
+
+  if (error) {
+    console.error(`Erreur lors de la récupération de la leçon ${lessonId}:`, error);
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * Crée une nouvelle leçon dans un module
+ */
+export async function createCourseLesson(lessonData: {
+  title: string;
+  description?: string;
+  duration: string;
+  type: 'video' | 'text' | 'quiz';
+  content?: string;
+  video_url?: string;
+  order: number;
+  is_free: boolean;
+  module_id: string;
+}): Promise<CourseLesson | null> {
+  const { data, error } = await supabase
+    .from('course_lessons')
+    .insert({
+      ...lessonData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Erreur lors de la création de la leçon:', error);
+    return null;
+  }
+
+  // Mettre à jour le nombre de leçons dans le cours parent
+  try {
+    // D'abord, récupérer l'ID du cours
+    const { data: moduleData, error: moduleError } = await supabase
+      .from('course_modules')
+      .select('course_id')
+      .eq('id', lessonData.module_id)
+      .single();
+
+    if (!moduleError && moduleData) {
+      const courseId = moduleData.course_id;
+      
+      // Puis compter le nombre total de leçons pour ce cours
+      const { count, error: countError } = await supabase
+        .from('course_lessons')
+        .select('id', { count: 'exact' })
+        .eq('module_id', lessonData.module_id);
+      
+      if (!countError && count !== null) {
+        // Mettre à jour le cours avec le nouveau nombre
+        await supabase
+          .from('courses')
+          .update({ 
+            lessons: count,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', courseId);
+      }
+    }
+  } catch (updateError) {
+    console.error('Erreur lors de la mise à jour du compte de leçons:', updateError);
+  }
+
+  return data;
+}
+
+/**
+ * Met à jour une leçon existante
+ */
+export async function updateCourseLesson(
+  lessonId: string,
+  lessonData: {
+    title?: string;
+    description?: string;
+    duration?: string;
+    type?: 'video' | 'text' | 'quiz';
+    content?: string;
+    video_url?: string;
+    order?: number;
+    is_free?: boolean;
+  }
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('course_lessons')
+    .update({
+      ...lessonData,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', lessonId);
+
+  if (error) {
+    console.error(`Erreur lors de la mise à jour de la leçon ${lessonId}:`, error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Supprime une leçon
+ */
+export async function deleteCourseLesson(lessonId: string): Promise<boolean> {
+  // D'abord, récupérer les informations de la leçon pour ensuite mettre à jour le compte dans le cours
+  const { data: lessonData, error: lessonError } = await supabase
+    .from('course_lessons')
+    .select('module_id')
+    .eq('id', lessonId)
+    .single();
+
+  if (lessonError) {
+    console.error(`Erreur lors de la récupération des infos de la leçon ${lessonId}:`, lessonError);
+    return false;
+  }
+
+  // Supprimer la leçon
+  const { error } = await supabase
+    .from('course_lessons')
+    .delete()
+    .eq('id', lessonId);
+
+  if (error) {
+    console.error(`Erreur lors de la suppression de la leçon ${lessonId}:`, error);
+    return false;
+  }
+
+  // Mettre à jour le nombre de leçons dans le cours parent
+  try {
+    if (lessonData) {
+      const moduleId = lessonData.module_id;
+      
+      // Récupérer l'ID du cours
+      const { data: moduleData, error: moduleError } = await supabase
+        .from('course_modules')
+        .select('course_id')
+        .eq('id', moduleId)
+        .single();
+
+      if (!moduleError && moduleData) {
+        const courseId = moduleData.course_id;
+        
+        // Obtenir tous les modules du cours
+        const { data: modulesData, error: modulesError } = await supabase
+          .from('course_modules')
+          .select('id')
+          .eq('course_id', courseId);
+        
+        if (!modulesError && modulesData) {
+          const moduleIds = modulesData.map(m => m.id);
+          
+          // Compter le nombre total de leçons pour ces modules
+          const { count, error: countError } = await supabase
+            .from('course_lessons')
+            .select('id', { count: 'exact' })
+            .in('module_id', moduleIds);
+          
+          if (!countError && count !== null) {
+            // Mettre à jour le cours avec le nouveau nombre
+            await supabase
+              .from('courses')
+              .update({ 
+                lessons: count,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', courseId);
+          }
+        }
+      }
+    }
+  } catch (updateError) {
+    console.error('Erreur lors de la mise à jour du compte de leçons:', updateError);
+  }
+
+  return true;
 } 

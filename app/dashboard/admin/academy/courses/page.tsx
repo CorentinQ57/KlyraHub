@@ -12,7 +12,8 @@ import {
   Check, 
   X,
   BookOpen,
-  ChevronLeft 
+  ChevronLeft,
+  Layers
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -436,10 +437,21 @@ export default function CoursesManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Link href={`/dashboard/admin/academy/courses/${course.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          title="Gérer les modules et leçons"
+                        >
+                          <Layers className="h-4 w-4" />
+                          <span className="sr-only">Gérer les modules et leçons</span>
+                        </Button>
+                      </Link>
                       <Button 
                         variant="ghost" 
                         size="icon"
                         onClick={() => handleEditCourse(course)}
+                        title="Modifier le cours"
                       >
                         <FileEdit className="h-4 w-4" />
                         <span className="sr-only">Modifier</span>
@@ -448,6 +460,7 @@ export default function CoursesManagementPage() {
                         variant="ghost" 
                         size="icon"
                         onClick={() => handleDeleteCourse(course.id)}
+                        title="Supprimer le cours"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Supprimer</span>
