@@ -144,21 +144,19 @@
   
   /* Standardized Typography Scale */
   h1 {
-    @apply text-[28px] font-bold leading-[1.2] text-[#1A2333];
-    letter-spacing: -0.01em;
+    @apply text-[28px] font-bold leading-[1.2] text-[#1A2333] tracking-tighter;
   }
   
   h2 {
-    @apply text-[20px] font-semibold leading-[1.2] text-[#1A2333];
-    letter-spacing: -0.01em;
+    @apply text-[20px] font-semibold leading-[1.2] text-[#1A2333] tracking-tight;
   }
   
   h3 {
-    @apply text-[18px] font-semibold leading-[1.3] text-[#1A2333];
+    @apply text-[18px] font-semibold leading-[1.3] text-[#1A2333] tracking-snug;
   }
   
   h4 {
-    @apply text-[16px] font-semibold leading-[1.3] text-[#1A2333];
+    @apply text-[16px] font-semibold leading-[1.3] text-[#1A2333] tracking-normal;
   }
   
   p {
@@ -391,4 +389,40 @@
 .z-layer-overlay { z-index: 80; }
 .z-layer-modal { z-index: 100; }
 .z-layer-toast { z-index: 150; }
-.z-layer-popover { z-index: 200; } 
+.z-layer-popover { z-index: 200; }
+
+@layer utilities {
+  /* Heading letter spacing utilities */
+  .heading-1 {
+    @apply tracking-tighter;
+  }
+  
+  .heading-2 {
+    @apply tracking-tight;
+  }
+  
+  .heading-3 {
+    @apply tracking-snug;
+  }
+  
+  .heading-4 {
+    @apply tracking-normal;
+  }
+
+  /* Auto-apply letter spacing based on text size */
+  .text-4xl, .text-3xl {
+    @apply tracking-tighter;
+  }
+
+  .text-2xl {
+    @apply tracking-tight;
+  }
+
+  .text-xl {
+    @apply tracking-snug;
+  }
+
+  .text-lg {
+    @apply tracking-normal;
+  }
+} 
