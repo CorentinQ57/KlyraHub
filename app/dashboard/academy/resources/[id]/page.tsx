@@ -131,7 +131,7 @@ export default function ResourcePage({ params }: { params: { id: string } }) {
         <PageSection>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative">
+              <div className="rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 aspect-video relative">
                 {resource.image_url ? (
                   <Image
                     src={resource.image_url}
@@ -141,7 +141,7 @@ export default function ResourcePage({ params }: { params: { id: string } }) {
                     priority
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center">
+                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
                     {getResourceTypeIcon()}
                   </div>
                 )}

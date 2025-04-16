@@ -188,7 +188,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         <PageSection className="pb-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="col-span-1 lg:col-span-2">
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative">
+              <div className="rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 aspect-video relative">
                 {course.image_url ? (
                   <>
                     <Image
@@ -209,8 +209,8 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     </div>
                   </>
                 ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <BookOpen className="h-20 w-20 text-gray-400" />
+                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+                    <BookOpen className="h-20 w-20 text-blue-300" />
                   </div>
                 )}
               </div>
@@ -512,14 +512,14 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     </div>
                     
                     {selectedLesson.type === 'video' && (
-                      <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative mb-6">
+                      <div className="rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 aspect-video relative mb-6">
                         <div className="flex h-full items-center justify-center">
                           <Button 
                             onClick={() => setIsPlaying(!isPlaying)} 
                             size="lg" 
                             className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
                           >
-                            <Play className="h-8 w-8 text-gray-800" fill="currentColor" />
+                            <Play className="h-8 w-8 text-blue-500" fill="currentColor" />
                           </Button>
                         </div>
                       </div>

@@ -53,7 +53,7 @@ export default function AcademyPage() {
   // Composant pour afficher une carte de cours
   const CourseCard = ({ course }: { course: Course }) => (
     <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="relative h-40 w-full bg-gray-100">
+      <div className="relative h-40 w-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         {course.image_url ? (
           <div className="relative h-full w-full">
             <Image 
@@ -65,7 +65,7 @@ export default function AcademyPage() {
           </div>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <BookOpen className="h-12 w-12 text-gray-400" />
+            <BookOpen className="h-12 w-12 text-blue-300" />
           </div>
         )}
         
@@ -132,7 +132,7 @@ export default function AcademyPage() {
   // Composant pour afficher une carte de ressource
   const ResourceCard = ({ resource }: { resource: Resource }) => (
     <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="relative h-40 w-full bg-gray-100">
+      <div className="relative h-40 w-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         {resource.image_url ? (
           <div className="relative h-full w-full">
             <Image 
@@ -144,7 +144,15 @@ export default function AcademyPage() {
           </div>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <FileText className="h-12 w-12 text-gray-400" />
+            {resource.type === 'eBook' ? (
+              <BookOpen className="h-12 w-12 text-purple-300" />
+            ) : resource.type === 'Vidéo' ? (
+              <Video className="h-12 w-12 text-red-300" />
+            ) : resource.type === 'Template' ? (
+              <FileText className="h-12 w-12 text-green-300" />
+            ) : (
+              <FileText className="h-12 w-12 text-blue-300" />
+            )}
           </div>
         )}
         <div className="absolute top-2 right-2">
@@ -188,7 +196,7 @@ export default function AcademyPage() {
   const CardSkeleton = () => (
     <Card className="overflow-hidden">
       <div className="h-40 w-full">
-        <Skeleton className="h-full w-full" />
+        <Skeleton className="h-full w-full bg-gradient-to-br from-gray-100 via-blue-50 to-gray-100" />
       </div>
       <CardHeader className="pb-2">
         <Skeleton className="h-5 w-3/4 mb-2" />
