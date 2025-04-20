@@ -527,15 +527,25 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     
                     {selectedLesson.type === 'video' && (
                       <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative mb-6">
-                        <div className="flex h-full items-center justify-center">
-                          <Button 
-                            onClick={() => setIsPlaying(!isPlaying)} 
-                            size="lg" 
-                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-                          >
-                            <Play className="h-8 w-8 text-gray-800" fill="currentColor" />
-                          </Button>
-                        </div>
+                        {isPlaying ? (
+                          <iframe 
+                            className="w-full h-full"
+                            src={selectedLesson.video_url}
+                            title={selectedLesson.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <Button 
+                              onClick={() => setIsPlaying(true)} 
+                              size="lg" 
+                              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                            >
+                              <Play className="h-8 w-8 text-gray-800" fill="currentColor" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -544,7 +554,9 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                         {selectedLesson.description || 'Contenu de la leçon en cours de développement.'}
                       </p>
                       
-                      {!selectedLesson.content && (
+                      {selectedLesson.content ? (
+                        <div dangerouslySetInnerHTML={{ __html: selectedLesson.content }} />
+                      ) : (
                         <>
                           <p>
                             Dans cette leçon, nous allons explorer les concepts fondamentaux et les principes clés
