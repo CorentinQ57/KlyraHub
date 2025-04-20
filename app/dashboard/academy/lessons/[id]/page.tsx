@@ -29,6 +29,45 @@ export default function LessonPage() {
   const [nextLesson, setNextLesson] = useState<CourseLesson | null>(null)
   const [prevLesson, setPrevLesson] = useState<CourseLesson | null>(null)
   
+  // Fonction pour convertir les URLs YouTube en URLs d'intégration
+  const getEmbedUrl = (url: string | undefined) => {
+    if (!url) return 'https://www.youtube.com/embed/dQw4w9WgXcQ'; // URL de fallback pour tester
+    
+    try {
+      // Conversion des URLs YouTube standard (watch?v=...)
+      if (url.includes('youtube.com/watch')) {
+        const videoId = new URL(url).searchParams.get('v');
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+      
+      // Conversion des URLs YouTube courtes (youtu.be/...)
+      if (url.includes('youtu.be/')) {
+        const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+      
+      // Si déjà une URL d'intégration
+      if (url.includes('youtube.com/embed/')) {
+        return url;
+      }
+      
+      // Si c'est juste un ID YouTube
+      if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
+        return `https://www.youtube.com/embed/${url}`;
+      }
+      
+      // Pour tout autre type d'URL, essayez de la retourner telle quelle
+      return url;
+    } catch (error) {
+      console.error('Erreur lors de la conversion de l\'URL:', error);
+      return 'https://www.youtube.com/embed/dQw4w9WgXcQ'; // URL de fallback en cas d'erreur
+    }
+  };
+  
   // Récupérer les informations de la leçon
   useEffect(() => {
     async function fetchLessonData() {
@@ -250,25 +289,14 @@ export default function LessonPage() {
             
             {lesson.type === 'video' && lesson.video_url && (
               <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative mb-6">
-                {isPlaying ? (
-                  <iframe 
-                    className="w-full h-full"
-                    src={lesson.video_url}
-                    title={lesson.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <Button 
-                      onClick={() => setIsPlaying(true)} 
-                      size="lg" 
-                      className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-                    >
-                      <Play className="h-8 w-8 text-gray-800" fill="currentColor" />
-                    </Button>
-                  </div>
-                )}
+                <iframe 
+                  className="w-full h-full border-0"
+                  src={getEmbedUrl(lesson.video_url)}
+                  title={lesson.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                />
               </div>
             )}
             
