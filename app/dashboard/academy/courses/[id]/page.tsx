@@ -264,83 +264,11 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     <span>{course.lessons} leçons</span>
                   </div>
                 </div>
-                
-                <div className="flex items-center">
-                  <Users className="mr-1 h-4 w-4" />
-                  <span>152 inscrits</span>
-                </div>
               </div>
             </div>
             
             <div className="col-span-1">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl">Inscrivez-vous au cours</CardTitle>
-                </CardHeader>
-                <CardContent className="pb-4">
-                  <ul className="space-y-2 mb-6">
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">{course.lessons} leçons</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Accès à vie au contenu</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Certificat d'achèvement</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Ressources téléchargeables</span>
-                    </li>
-                  </ul>
-                  
-                  {user ? (
-                    <Button className="w-full" onClick={() => {
-                      if (modules.length > 0 && modules[0].lessons.length > 0) {
-                        // Rediriger vers la première leçon
-                        window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
-                      } else {
-                        // Activer l'onglet contenu si pas de leçon disponible
-                        setActiveTab('content');
-                      }
-                    }}>Commencer le cours</Button>
-                  ) : (
-                    <div className="space-y-3">
-                      <Button className="w-full">S'inscrire pour commencer</Button>
-                      <Link href="/auth" className="block text-center text-sm text-blue-600 hover:text-blue-800">
-                        Déjà inscrit? Connectez-vous
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              <div className="mt-6">
-                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Ressources incluses</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      <li className="flex items-center">
-                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Download className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm">Guide de référence PDF</span>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Download className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm">Exercices pratiques</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Cette partie sera déplacée dans l'onglet Vue d'ensemble */}
             </div>
           </div>
         </PageSection>
@@ -350,7 +278,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-              <TabsTrigger value="content">Contenu</TabsTrigger>
               {selectedLesson && (
                 <TabsTrigger value="lesson">Leçon en cours</TabsTrigger>
               )}
@@ -427,12 +354,83 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       </div>
                     </ContentCard>
                   </div>
+                  
+                  {/* Sections "Inscrivez-vous au cours" et "Ressources incluses" déplacées ici */}
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="bg-white shadow-sm">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="text-xl">Inscrivez-vous au cours</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pb-4">
+                        <ul className="space-y-2 mb-6">
+                          <li className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            <span className="text-sm">{course.lessons} leçons</span>
+                          </li>
+                          <li className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            <span className="text-sm">Accès à vie au contenu</span>
+                          </li>
+                          <li className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            <span className="text-sm">Certificat d'achèvement</span>
+                          </li>
+                          <li className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            <span className="text-sm">Ressources téléchargeables</span>
+                          </li>
+                        </ul>
+                        
+                        {user ? (
+                          <Button className="w-full" onClick={() => {
+                            if (modules.length > 0 && modules[0].lessons.length > 0) {
+                              // Rediriger vers la première leçon
+                              window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
+                            } else {
+                              // Activer l'onglet leçon si pas de leçon disponible
+                              setActiveTab('lesson');
+                            }
+                          }}>Commencer le cours</Button>
+                        ) : (
+                          <div className="space-y-3">
+                            <Button className="w-full">S'inscrire pour commencer</Button>
+                            <Link href="/auth" className="block text-center text-sm text-blue-600 hover:text-blue-800">
+                              Déjà inscrit? Connectez-vous
+                            </Link>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Ressources incluses</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-3">
+                          <li className="flex items-center">
+                            <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                              <Download className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <span className="text-sm">Guide de référence PDF</span>
+                          </li>
+                          <li className="flex items-center">
+                            <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                              <Download className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <span className="text-sm">Exercices pratiques</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
                 
                 <div className="col-span-1">
+                  {/* Colonne de droite avec le détail du cours et le contenu du cours */}
                   <ContentCard>
                     <h2 className="text-xl font-bold mb-4">Détails du cours</h2>
-                    <div className="space-y-4">
+                    <div className="space-y-4 mb-6">
                       <div>
                         <h3 className="text-sm font-medium text-gray-500">Durée totale</h3>
                         <p className="font-medium">{formatTotalDuration()}</p>
@@ -458,11 +456,8 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                         })}</p>
                       </div>
                     </div>
-                  </ContentCard>
-                  
-                  <div className="mt-6">
-                    <ContentCard>
-                      <h2 className="text-xl font-bold mb-4">Certification</h2>
+                    
+                    <div className="mt-6 mb-6">
                       <div className="flex items-center space-x-3 mb-4">
                         <Award className="h-10 w-10 text-amber-500" />
                         <div>
@@ -473,59 +468,55 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       <Button variant="outline" className="w-full" disabled={!user}>
                         {user ? 'Voir le certificat' : 'Connectez-vous pour obtenir'}
                       </Button>
-                    </ContentCard>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="content" className="mt-0">
-              <div className="grid grid-cols-1 gap-6">
-                <ContentCard>
-                  <h2 className="text-2xl font-bold mb-6">Contenu du cours</h2>
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="text-gray-500">
-                        {modules.length} modules • {course.lessons} leçons • {formatTotalDuration()}
-                      </p>
                     </div>
                     
-                    <Button variant="ghost" size="sm">
-                      {modules.every(m => m.id === 'expanded') ? 'Réduire tout' : 'Développer tout'}
-                    </Button>
-                  </div>
-                  
-                  <Accordion type="multiple" defaultValue={['module-0']} className="space-y-4">
-                    {modules.map((module, moduleIndex) => (
-                      <AccordionItem 
-                        key={module.id} 
-                        value={`module-${moduleIndex}`}
-                        className="border rounded-lg overflow-hidden"
-                      >
-                        <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
-                          <div className="flex-1 flex items-center">
-                            <span className="text-lg font-medium">{module.title}</span>
-                            <span className="ml-2 text-sm text-gray-500">
-                              • {module.lessons.length} leçons
-                            </span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-0 pt-2">
-                          <div className="space-y-1 p-1">
-                            {module.lessons.map((lesson) => (
-                              <LessonItem 
-                                key={lesson.id} 
-                                lesson={lesson} 
-                                moduleId={module.id} 
-                              />
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </ContentCard>
+                    {/* Contenu du cours déplacé ici */}
+                    <Separator className="my-6" />
+                    
+                    <h2 className="text-xl font-bold mb-6">Contenu du cours</h2>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-gray-500">
+                          {modules.length} modules • {course.lessons} leçons • {formatTotalDuration()}
+                        </p>
+                      </div>
+                      
+                      <Button variant="ghost" size="sm">
+                        {modules.every(m => m.id === 'expanded') ? 'Réduire tout' : 'Développer tout'}
+                      </Button>
+                    </div>
+                    
+                    <Accordion type="multiple" defaultValue={['module-0']} className="space-y-4">
+                      {modules.map((module, moduleIndex) => (
+                        <AccordionItem 
+                          key={module.id} 
+                          value={`module-${moduleIndex}`}
+                          className="border rounded-lg overflow-hidden"
+                        >
+                          <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
+                            <div className="flex-1 flex items-center">
+                              <span className="text-lg font-medium">{module.title}</span>
+                              <span className="ml-2 text-sm text-gray-500">
+                                • {module.lessons.length} leçons
+                              </span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-0 pt-2">
+                            <div className="space-y-1 p-1">
+                              {module.lessons.map((lesson) => (
+                                <LessonItem 
+                                  key={lesson.id} 
+                                  lesson={lesson} 
+                                  moduleId={module.id} 
+                                />
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </ContentCard>
+                </div>
               </div>
             </TabsContent>
             
