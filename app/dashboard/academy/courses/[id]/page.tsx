@@ -32,6 +32,40 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const [selectedLesson, setSelectedLesson] = useState<CourseLesson | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
 
+  // Fonction pour convertir les URLs YouTube en URLs d'intégration
+  const getEmbedUrl = (url: string | undefined) => {
+    if (!url) return '';
+    
+    try {
+      // Conversion des URLs YouTube standard (watch?v=...)
+      if (url.includes('youtube.com/watch')) {
+        const videoId = new URL(url).searchParams.get('v');
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+      
+      // Conversion des URLs YouTube courtes (youtu.be/...)
+      if (url.includes('youtu.be/')) {
+        const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+      
+      // Si déjà une URL d'intégration
+      if (url.includes('youtube.com/embed/')) {
+        return url;
+      }
+      
+      // Pour tout autre type d'URL, essayez de la retourner telle quelle
+      return url;
+    } catch (error) {
+      console.error('Erreur lors de la conversion de l\'URL:', error);
+      return url;
+    }
+  };
+
   // Récupérer les données du cours et des modules
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -105,6 +139,9 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       
       // Activer l'onglet leçon
       setActiveTab('lesson');
+      
+      // Réinitialiser l'état de lecture pour la nouvelle leçon
+      setIsPlaying(false);
     }
     
     return (
@@ -182,6 +219,13 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
   if (!course) {
     return notFound()
+  }
+
+  // Debug - Afficher les informations sur la vidéo sélectionnée
+  console.log('Leçon sélectionnée:', selectedLesson);
+  if (selectedLesson?.video_url) {
+    console.log('URL vidéo originale:', selectedLesson.video_url);
+    console.log('URL vidéo transformée:', getEmbedUrl(selectedLesson.video_url));
   }
 
   return (
@@ -527,10 +571,10 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     
                     {selectedLesson.type === 'video' && (
                       <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative mb-6">
-                        {isPlaying ? (
+                        {isPlaying && selectedLesson.video_url ? (
                           <iframe 
                             className="w-full h-full"
-                            src={selectedLesson.video_url}
+                            src={getEmbedUrl(selectedLesson.video_url)}
                             title={selectedLesson.title}
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
