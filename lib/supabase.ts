@@ -189,6 +189,18 @@ interface ServiceWithCategory {
   };
 }
 
+// Nouveau type pour les achats
+export type Purchase = {
+  id: string
+  service_name: string
+  price: number
+  date: string
+  status: 'completed' | 'processing' | 'refunded'
+  invoice_url?: string
+  project_id?: string
+  stripe_session_id?: string
+}
+
 // Helper functions
 export async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser()
@@ -1743,4 +1755,96 @@ export function debugAuthState(): boolean {
 }
 
 // Export des nouvelles fonctions utilitaires pour l'authentification
-export { verifyTokenExpiration, refreshSession }; 
+export { verifyTokenExpiration, refreshSession };
+
+/**
+ * Récupère les achats d'un utilisateur depuis Stripe et la base de données
+ */
+export async function fetchPurchases(userId: string): Promise<Purchase[]> {
+  try {
+    console.log(`Fetching purchases for user ${userId}`);
+    
+    // Récupérer les projets de l'utilisateur (qui sont créés après chaque achat)
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select(`
+        id,
+        title,
+        price,
+        created_at,
+        status,
+        service_id,
+        metadata
+      `)
+      .eq('client_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (projectsError) {
+      console.error('Error fetching projects for purchases:', projectsError);
+      return [];
+    }
+    
+    if (!projects || projects.length === 0) {
+      console.log('No purchases found');
+      return [];
+    }
+    
+    // Initialiser les achats en utilisant les projets comme source de données
+    const purchases: Purchase[] = projects.map(project => {
+      // Extraire l'ID de session Stripe s'il est stocké dans les métadonnées
+      const stripeSessionId = project.metadata?.stripe_session_id || '';
+      
+      return {
+        id: project.id,
+        service_name: project.title,
+        price: project.price,
+        date: project.created_at,
+        status: project.status === 'pending' ? 'processing' : 'completed',
+        project_id: project.id,
+        stripe_session_id: stripeSessionId
+      };
+    });
+    
+    // Pour chaque achat, essayer de récupérer l'URL de facture de Stripe si possible
+    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_STRIPE_INVOICES === 'true') {
+      try {
+        // Appel à une API pour récupérer les factures Stripe
+        const response = await fetch('/api/stripe/get-invoices', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            sessionIds: purchases
+              .filter(p => p.stripe_session_id)
+              .map(p => p.stripe_session_id)
+          }),
+        });
+        
+        if (response.ok) {
+          const invoiceData = await response.json();
+          
+          // Associer les URLs de facture aux achats
+          if (invoiceData.invoices && Array.isArray(invoiceData.invoices)) {
+            invoiceData.invoices.forEach((invoice: any) => {
+              const purchase = purchases.find(p => p.stripe_session_id === invoice.session_id);
+              if (purchase) {
+                purchase.invoice_url = invoice.invoice_url;
+              }
+            });
+          }
+        }
+      } catch (invoiceError) {
+        console.error('Error fetching invoice URLs:', invoiceError);
+        // Continuer sans factures
+      }
+    }
+    
+    console.log(`Found ${purchases.length} purchases`);
+    return purchases;
+  } catch (error) {
+    console.error('Exception in fetchPurchases:', error);
+    return [];
+  }
+} 
