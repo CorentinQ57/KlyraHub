@@ -930,7 +930,7 @@ export default function DashboardPage() {
 
         {/* Indicateurs visuels pour mettre en évidence les éléments du menu latéral */}
         {focusElement === "sidebar-dashboard" && (
-          <div className="fixed left-0 top-[88px] z-[140] pointer-events-none">
+          <div className="fixed left-0 top-[72px] z-[140] pointer-events-none">
             <div className="relative">
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
@@ -962,7 +962,7 @@ export default function DashboardPage() {
         )}
         
         {focusElement === "sidebar-marketplace" && (
-          <div className="fixed left-0 top-[208px] z-[140] pointer-events-none">
+          <div className="fixed left-0 top-[152px] z-[140] pointer-events-none">
             <div className="relative">
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
@@ -994,7 +994,7 @@ export default function DashboardPage() {
         )}
         
         {focusElement === "sidebar-academy" && (
-          <div className="fixed left-0 top-[248px] z-[140] pointer-events-none">
+          <div className="fixed left-0 top-[232px] z-[140] pointer-events-none">
             <div className="relative">
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
@@ -1026,7 +1026,7 @@ export default function DashboardPage() {
         )}
         
         {focusElement === "sidebar-docs" && (
-          <div className="fixed left-0 top-[288px] z-[140] pointer-events-none">
+          <div className="fixed left-0 top-[272px] z-[140] pointer-events-none">
             <div className="relative">
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
