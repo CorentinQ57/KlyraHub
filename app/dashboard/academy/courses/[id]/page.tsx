@@ -267,8 +267,52 @@ export default function CoursePage({ params }: { params: { id: string } }) {
               </div>
             </div>
             
+            {/* Colonne de droite avec le contenu du cours */}
             <div className="col-span-1">
-              {/* Cette partie sera déplacée dans l'onglet Vue d'ensemble */}
+              <ContentCard className="h-full overflow-auto">
+                <h2 className="text-xl font-bold mb-6">Contenu du cours</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-gray-500">
+                      {modules.length} modules • {course.lessons} leçons • {formatTotalDuration()}
+                    </p>
+                  </div>
+                  
+                  <Button variant="ghost" size="sm">
+                    {modules.every(m => m.id === 'expanded') ? 'Réduire tout' : 'Développer tout'}
+                  </Button>
+                </div>
+                
+                <Accordion type="multiple" defaultValue={['module-0']} className="space-y-4">
+                  {modules.map((module, moduleIndex) => (
+                    <AccordionItem 
+                      key={module.id} 
+                      value={`module-${moduleIndex}`}
+                      className="border rounded-lg overflow-hidden"
+                    >
+                      <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
+                        <div className="flex-1 flex items-center">
+                          <span className="text-lg font-medium">{module.title}</span>
+                          <span className="ml-2 text-sm text-gray-500">
+                            • {module.lessons.length} leçons
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-0 pt-2">
+                        <div className="space-y-1 p-1">
+                          {module.lessons.map((lesson) => (
+                            <LessonItem 
+                              key={lesson.id} 
+                              lesson={lesson} 
+                              moduleId={module.id} 
+                            />
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </ContentCard>
             </div>
           </div>
         </PageSection>
@@ -284,239 +328,189 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </TabsList>
             
             <TabsContent value="overview" className="mt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                  <ContentCard>
-                    <h2 className="text-2xl font-bold mb-4">À propos de ce cours</h2>
-                    <p className="text-gray-700 mb-6">{course.description}</p>
-                    
-                    <h3 className="text-xl font-bold mb-3">Ce que vous apprendrez</h3>
-                    <ul className="space-y-2 mb-6">
-                      {course.objectives ? course.objectives.map((objective, index) => (
-                        <li key={index} className="flex items-start">
+              <div className="grid grid-cols-1 gap-8">
+                <ContentCard>
+                  <h2 className="text-2xl font-bold mb-4">À propos de ce cours</h2>
+                  <p className="text-gray-700 mb-6">{course.description}</p>
+                  
+                  <h3 className="text-xl font-bold mb-3">Ce que vous apprendrez</h3>
+                  <ul className="space-y-2 mb-6">
+                    {course.objectives ? course.objectives.map((objective, index) => (
+                      <li key={index} className="flex items-start">
+                        <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>{objective}</span>
+                      </li>
+                    )) : (
+                      <>
+                        <li className="flex items-start">
                           <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>{objective}</span>
+                          <span>Maîtriser les concepts fondamentaux du design</span>
                         </li>
-                      )) : (
-                        <>
-                          <li className="flex items-start">
-                            <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>Maîtriser les concepts fondamentaux du design</span>
-                          </li>
-                          <li className="flex items-start">
-                            <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>Créer une identité de marque cohérente et professionnelle</span>
-                          </li>
-                          <li className="flex items-start">
-                            <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                            <span>Développer une stratégie de communication efficace</span>
-                          </li>
-                        </>
-                      )}
-                    </ul>
-                    
-                    <h3 className="text-xl font-bold mb-3">Prérequis</h3>
-                    <p className="text-gray-700 mb-6">Aucun prérequis spécifique. Ce cours est accessible aux débutants.</p>
-                    
-                    <h3 className="text-xl font-bold mb-3">Public cible</h3>
-                    <ul className="space-y-2">
-                      <li className="flex items-start">
-                        <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                        <span>Entrepreneurs souhaitant développer leur propre marque</span>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                        <span>Étudiants en design ou marketing</span>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                        <span>Professionnels cherchant à améliorer leurs compétences</span>
-                      </li>
-                    </ul>
-                  </ContentCard>
+                        <li className="flex items-start">
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span>Créer une identité de marque cohérente et professionnelle</span>
+                        </li>
+                        <li className="flex items-start">
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span>Développer une stratégie de communication efficace</span>
+                        </li>
+                      </>
+                    )}
+                  </ul>
                   
-                  <div className="mt-8">
-                    <ContentCard>
-                      <h2 className="text-2xl font-bold mb-4">Instructeur</h2>
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-16 w-16">
-                          <AvatarImage src="/images/avatars/instructor.jpg" alt="Sophie Martin" />
-                          <AvatarFallback>SM</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="text-lg font-bold">Sophie Martin</h3>
-                          <p className="text-gray-500 mb-2">Directrice Créative chez Klyra</p>
-                          <p className="text-sm text-gray-700">
-                            Designer avec plus de 10 ans d'expérience, spécialisée dans l'identité de marque et le design d'interfaces. 
-                            Sophie a travaillé avec des startups et des entreprises internationales.
-                          </p>
-                        </div>
-                      </div>
-                    </ContentCard>
-                  </div>
+                  <h3 className="text-xl font-bold mb-3">Prérequis</h3>
+                  <p className="text-gray-700 mb-6">Aucun prérequis spécifique. Ce cours est accessible aux débutants.</p>
                   
-                  {/* Sections "Inscrivez-vous au cours" et "Ressources incluses" déplacées ici */}
-                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="bg-white shadow-sm">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="text-xl">Inscrivez-vous au cours</CardTitle>
-                      </CardHeader>
-                      <CardContent className="pb-4">
-                        <ul className="space-y-2 mb-6">
-                          <li className="flex items-center">
-                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                            <span className="text-sm">{course.lessons} leçons</span>
-                          </li>
-                          <li className="flex items-center">
-                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                            <span className="text-sm">Accès à vie au contenu</span>
-                          </li>
-                          <li className="flex items-center">
-                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                            <span className="text-sm">Certificat d'achèvement</span>
-                          </li>
-                          <li className="flex items-center">
-                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                            <span className="text-sm">Ressources téléchargeables</span>
-                          </li>
-                        </ul>
-                        
-                        {user ? (
-                          <Button className="w-full" onClick={() => {
-                            if (modules.length > 0 && modules[0].lessons.length > 0) {
-                              // Rediriger vers la première leçon
-                              window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
-                            } else {
-                              // Activer l'onglet leçon si pas de leçon disponible
-                              setActiveTab('lesson');
-                            }
-                          }}>Commencer le cours</Button>
-                        ) : (
-                          <div className="space-y-3">
-                            <Button className="w-full">S'inscrire pour commencer</Button>
-                            <Link href="/auth" className="block text-center text-sm text-blue-600 hover:text-blue-800">
-                              Déjà inscrit? Connectez-vous
-                            </Link>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">Ressources incluses</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-3">
-                          <li className="flex items-center">
-                            <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                              <Download className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <span className="text-sm">Guide de référence PDF</span>
-                          </li>
-                          <li className="flex items-center">
-                            <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                              <Download className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <span className="text-sm">Exercices pratiques</span>
-                          </li>
-                        </ul>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
+                  <h3 className="text-xl font-bold mb-3">Public cible</h3>
+                  <ul className="space-y-2">
+                    <li className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>Entrepreneurs souhaitant développer leur propre marque</span>
+                    </li>
+                    <li className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>Étudiants en design ou marketing</span>
+                    </li>
+                    <li className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span>Professionnels cherchant à améliorer leurs compétences</span>
+                    </li>
+                  </ul>
+                </ContentCard>
                 
-                <div className="col-span-1">
-                  {/* Colonne de droite avec le détail du cours et le contenu du cours */}
-                  <ContentCard>
-                    <h2 className="text-xl font-bold mb-4">Détails du cours</h2>
-                    <div className="space-y-4 mb-6">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Durée totale</h3>
-                        <p className="font-medium">{formatTotalDuration()}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Leçons</h3>
-                        <p className="font-medium">{course.lessons} leçons</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Niveau</h3>
-                        <p className="font-medium">{course.level}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Catégorie</h3>
-                        <p className="font-medium">{course.category}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Dernière mise à jour</h3>
-                        <p className="font-medium">{new Date(course.updated_at).toLocaleDateString('fr-FR', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}</p>
-                      </div>
+                <ContentCard>
+                  <h2 className="text-2xl font-bold mb-4">Instructeur</h2>
+                  <div className="flex items-start space-x-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src="/images/avatars/instructor.jpg" alt="Sophie Martin" />
+                      <AvatarFallback>SM</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-bold">Sophie Martin</h3>
+                      <p className="text-gray-500 mb-2">Directrice Créative chez Klyra</p>
+                      <p className="text-sm text-gray-700">
+                        Designer avec plus de 10 ans d'expérience, spécialisée dans l'identité de marque et le design d'interfaces. 
+                        Sophie a travaillé avec des startups et des entreprises internationales.
+                      </p>
                     </div>
-                    
-                    <div className="mt-6 mb-6">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <Award className="h-10 w-10 text-amber-500" />
+                  </div>
+                </ContentCard>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="bg-white shadow-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl">Détails du cours</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pb-4">
+                      <div className="space-y-4">
                         <div>
-                          <h3 className="font-bold">Certificat d'achèvement</h3>
-                          <p className="text-sm text-gray-500">Après avoir terminé le cours</p>
+                          <h3 className="text-sm font-medium text-gray-500">Durée totale</h3>
+                          <p className="font-medium">{formatTotalDuration()}</p>
                         </div>
-                      </div>
-                      <Button variant="outline" className="w-full" disabled={!user}>
-                        {user ? 'Voir le certificat' : 'Connectez-vous pour obtenir'}
-                      </Button>
-                    </div>
-                    
-                    {/* Contenu du cours déplacé ici */}
-                    <Separator className="my-6" />
-                    
-                    <h2 className="text-xl font-bold mb-6">Contenu du cours</h2>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-gray-500">
-                          {modules.length} modules • {course.lessons} leçons • {formatTotalDuration()}
-                        </p>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Leçons</h3>
+                          <p className="font-medium">{course.lessons} leçons</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Niveau</h3>
+                          <p className="font-medium">{course.level}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Catégorie</h3>
+                          <p className="font-medium">{course.category}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Dernière mise à jour</h3>
+                          <p className="font-medium">{new Date(course.updated_at).toLocaleDateString('fr-FR', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}</p>
+                        </div>
                       </div>
                       
-                      <Button variant="ghost" size="sm">
-                        {modules.every(m => m.id === 'expanded') ? 'Réduire tout' : 'Développer tout'}
-                      </Button>
-                    </div>
-                    
-                    <Accordion type="multiple" defaultValue={['module-0']} className="space-y-4">
-                      {modules.map((module, moduleIndex) => (
-                        <AccordionItem 
-                          key={module.id} 
-                          value={`module-${moduleIndex}`}
-                          className="border rounded-lg overflow-hidden"
-                        >
-                          <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
-                            <div className="flex-1 flex items-center">
-                              <span className="text-lg font-medium">{module.title}</span>
-                              <span className="ml-2 text-sm text-gray-500">
-                                • {module.lessons.length} leçons
-                              </span>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-0 pt-2">
-                            <div className="space-y-1 p-1">
-                              {module.lessons.map((lesson) => (
-                                <LessonItem 
-                                  key={lesson.id} 
-                                  lesson={lesson} 
-                                  moduleId={module.id} 
-                                />
-                              ))}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  </ContentCard>
+                      <div className="mt-6">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <Award className="h-10 w-10 text-amber-500" />
+                          <div>
+                            <h3 className="font-bold">Certificat d'achèvement</h3>
+                            <p className="text-sm text-gray-500">Après avoir terminé le cours</p>
+                          </div>
+                        </div>
+                        <Button variant="outline" className="w-full" disabled={!user}>
+                          {user ? 'Voir le certificat' : 'Connectez-vous pour obtenir'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-white shadow-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-xl">Inscrivez-vous au cours</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pb-4">
+                      <ul className="space-y-2 mb-6">
+                        <li className="flex items-center">
+                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                          <span className="text-sm">{course.lessons} leçons</span>
+                        </li>
+                        <li className="flex items-center">
+                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                          <span className="text-sm">Accès à vie au contenu</span>
+                        </li>
+                        <li className="flex items-center">
+                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                          <span className="text-sm">Certificat d'achèvement</span>
+                        </li>
+                        <li className="flex items-center">
+                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                          <span className="text-sm">Ressources téléchargeables</span>
+                        </li>
+                      </ul>
+                      
+                      {user ? (
+                        <Button className="w-full" onClick={() => {
+                          if (modules.length > 0 && modules[0].lessons.length > 0) {
+                            // Rediriger vers la première leçon
+                            window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
+                          } else {
+                            // Activer l'onglet leçon si pas de leçon disponible
+                            setActiveTab('lesson');
+                          }
+                        }}>Commencer le cours</Button>
+                      ) : (
+                        <div className="space-y-3">
+                          <Button className="w-full">S'inscrire pour commencer</Button>
+                          <Link href="/auth" className="block text-center text-sm text-blue-600 hover:text-blue-800">
+                            Déjà inscrit? Connectez-vous
+                          </Link>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
+                
+                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Ressources incluses</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      <li className="flex items-center">
+                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Download className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm">Guide de référence PDF</span>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Download className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm">Exercices pratiques</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
             
