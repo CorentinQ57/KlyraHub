@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { notFound } from 'next/navigation'
+import { notFound, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, BookOpen, Clock, Play, CheckCircle, Lock, Award, Users, Download, Video, FileText, MessageSquare, ExternalLink } from 'lucide-react'
@@ -32,6 +32,8 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const [selectedLesson, setSelectedLesson] = useState<CourseLesson | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
 
+  const router = useRouter()
+
   // Récupérer les données du cours et des modules
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -40,7 +42,8 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         const courseData = await getCourseById(params.id)
         
         if (!courseData) {
-          return notFound()
+          router.push('/dashboard/academy/courses')
+          return
         }
         
         setCourse(courseData)
@@ -61,34 +64,30 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     }
     
     fetchCourseData()
-  }, [params.id])
+  }, [params.id, router])
 
   // Fonction pour formater la durée totale
   const formatTotalDuration = () => {
-    // Calculer la durée totale des leçons (en supposant un format comme "15-20 min")
+    if (!modules.length) return '0 min'
+    
     let totalMinutes = 0
     
     modules.forEach(module => {
       module.lessons.forEach(lesson => {
-        // Extraire les minutes du format "XX-YY min" ou "XX min"
-        const durationText = lesson.duration
-        const minutes = durationText.includes('-')
-          ? parseInt(durationText.split('-')[1])
-          : parseInt(durationText)
-          
-        if (!isNaN(minutes)) {
-          totalMinutes += minutes
+        // Extrait les minutes de la durée (ex: "10 min" -> 10)
+        const durationMatch = lesson.duration?.match(/(\d+)/)
+        if (durationMatch) {
+          totalMinutes += parseInt(durationMatch[1], 10)
         }
       })
     })
     
-    // Formater en heures et minutes
-    if (totalMinutes >= 60) {
+    if (totalMinutes < 60) {
+      return `${totalMinutes} min`
+    } else {
       const hours = Math.floor(totalMinutes / 60)
       const minutes = totalMinutes % 60
       return `${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`
-    } else {
-      return `${totalMinutes} min`
     }
   }
 
@@ -158,6 +157,92 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         </div>
       </div>
     )
+  }
+
+  // Ajouter cette fonction pour vérifier si c'est la dernière leçon du dernier module
+  const isLastLesson = () => {
+    if (!selectedLesson || modules.length === 0) return false;
+    
+    // Trouver le dernier module
+    const lastModule = modules[modules.length - 1];
+    // Vérifier que le dernier module a des leçons
+    if (!lastModule.lessons || lastModule.lessons.length === 0) return false;
+    
+    // Trouver la dernière leçon du dernier module
+    const lastLesson = lastModule.lessons[lastModule.lessons.length - 1];
+    if (!lastLesson) return false;
+    
+    // Vérifier si la leçon sélectionnée est la dernière
+    return lastLesson.id === selectedLesson.id;
+  }
+
+  // Gestion de la navigation
+  const handleNextLesson = () => {
+    if (!selectedLesson) return;
+    
+    // Trouver le module courant
+    const currentModule = modules.find(m => m.lessons.some(l => l.id === selectedLesson.id));
+    if (!currentModule) return;
+    
+    // Trouver l'index de la leçon courante dans ce module
+    const lessonIndex = currentModule.lessons.findIndex(l => l.id === selectedLesson.id);
+    
+    // S'il y a une leçon suivante dans ce module
+    if (lessonIndex < currentModule.lessons.length - 1) {
+      router.push(`/dashboard/academy/courses/${params.id}/lessons/${currentModule.lessons[lessonIndex + 1].id}`);
+    } else {
+      // Trouver le module suivant
+      const moduleIndex = modules.findIndex(m => m.id === currentModule.id);
+      if (moduleIndex < modules.length - 1) {
+        // Aller à la première leçon du module suivant
+        const nextModule = modules[moduleIndex + 1];
+        if (nextModule.lessons.length > 0) {
+          router.push(`/dashboard/academy/courses/${params.id}/lessons/${nextModule.lessons[0].id}`);
+        }
+      }
+    }
+  }
+
+  const handlePreviousLesson = () => {
+    if (!selectedLesson) return;
+    
+    // Trouver le module courant
+    const currentModule = modules.find(m => m.lessons.some(l => l.id === selectedLesson.id));
+    if (!currentModule) return;
+    
+    // Trouver l'index de la leçon courante dans ce module
+    const lessonIndex = currentModule.lessons.findIndex(l => l.id === selectedLesson.id);
+    
+    // S'il y a une leçon précédente dans ce module
+    if (lessonIndex > 0) {
+      router.push(`/dashboard/academy/courses/${params.id}/lessons/${currentModule.lessons[lessonIndex - 1].id}`);
+    } else {
+      // Trouver le module précédent
+      const moduleIndex = modules.findIndex(m => m.id === currentModule.id);
+      if (moduleIndex > 0) {
+        // Aller à la dernière leçon du module précédent
+        const prevModule = modules[moduleIndex - 1];
+        if (prevModule.lessons.length > 0) {
+          router.push(`/dashboard/academy/courses/${params.id}/lessons/${prevModule.lessons[prevModule.lessons.length - 1].id}`);
+        }
+      }
+    }
+  }
+
+  const isFirstLesson = () => {
+    if (!selectedLesson || modules.length === 0) return false;
+    
+    // Trouver le premier module
+    const firstModule = modules[0];
+    // Vérifier que le premier module a des leçons
+    if (!firstModule.lessons || firstModule.lessons.length === 0) return false;
+    
+    // Trouver la première leçon du premier module
+    const firstLesson = firstModule.lessons[0];
+    if (!firstLesson) return false;
+    
+    // Vérifier si la leçon sélectionnée est la première
+    return firstLesson.id === selectedLesson.id;
   }
 
   if (loading) {
@@ -595,22 +680,35 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     <div className="mt-8 pt-6 border-t flex items-center justify-between">
                       <Button 
                         variant="outline" 
-                        disabled={
-                          modules[0].lessons[0].id === selectedLesson.id
-                        }
+                        disabled={isFirstLesson()}
                         onClick={() => {
                           // Trouver la leçon précédente
                           let found = false
+                          let prevLesson = null
                           
-                          for (const module of modules) {
+                          // Parcourir tous les modules pour trouver la leçon précédente,
+                          // y compris lorsqu'il faut passer au module précédent
+                          for (let m = 0; m < modules.length; m++) {
+                            const module = modules[m]
                             for (let i = 0; i < module.lessons.length; i++) {
-                              if (module.lessons[i].id === selectedLesson.id && i > 0) {
-                                setSelectedLesson(module.lessons[i - 1])
+                              if (module.lessons[i].id === selectedLesson.id) {
+                                if (i > 0) {
+                                  // Leçon précédente dans le même module
+                                  prevLesson = module.lessons[i - 1]
+                                } else if (m > 0) {
+                                  // Dernière leçon du module précédent
+                                  const prevModule = modules[m - 1]
+                                  prevLesson = prevModule.lessons[prevModule.lessons.length - 1]
+                                }
                                 found = true
                                 break
                               }
                             }
                             if (found) break
+                          }
+                          
+                          if (prevLesson) {
+                            setSelectedLesson(prevLesson)
                           }
                         }}
                       >
@@ -619,22 +717,34 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       </Button>
                       
                       <Button 
-                        disabled={
-                          modules[modules.length - 1].lessons[modules[modules.length - 1].lessons.length - 1].id === selectedLesson.id
-                        }
+                        disabled={isLastLesson()}
                         onClick={() => {
                           // Trouver la leçon suivante
                           let found = false
+                          let nextLesson = null
                           
-                          for (const module of modules) {
+                          // Parcourir tous les modules pour trouver la leçon suivante,
+                          // y compris lorsqu'il faut passer au module suivant
+                          for (let m = 0; m < modules.length; m++) {
+                            const module = modules[m]
                             for (let i = 0; i < module.lessons.length; i++) {
-                              if (module.lessons[i].id === selectedLesson.id && i < module.lessons.length - 1) {
-                                setSelectedLesson(module.lessons[i + 1])
+                              if (module.lessons[i].id === selectedLesson.id) {
+                                if (i < module.lessons.length - 1) {
+                                  // Leçon suivante dans le même module
+                                  nextLesson = module.lessons[i + 1]
+                                } else if (m < modules.length - 1) {
+                                  // Première leçon du module suivant
+                                  nextLesson = modules[m + 1].lessons[0]
+                                }
                                 found = true
                                 break
                               }
                             }
                             if (found) break
+                          }
+                          
+                          if (nextLesson) {
+                            setSelectedLesson(nextLesson)
                           }
                         }}
                       >
