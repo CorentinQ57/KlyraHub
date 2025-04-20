@@ -10,7 +10,7 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus, LayoutDashboard, GraduationCap, BookOpen, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus, LayoutDashboard, GraduationCap, BookOpen, HelpCircle } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -19,7 +19,6 @@ import VideoWalkthrough from '@/components/VideoWalkthrough'
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { debounce } from 'lodash'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -217,290 +216,133 @@ const TutorialStep = ({
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="fixed bottom-6 left-6 z-50 bg-white rounded-lg shadow-2xl border border-gray-100 w-[380px] p-6 flex flex-col"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm"
     >
-      {/* Indicateur d'étape */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1">
-            {Array.from({ length: 7 }, (_, i) => (
-              <motion.div 
-                key={i}
-                className={`h-1.5 rounded-full ${i < step ? 'bg-primary w-5' : 'bg-gray-200 w-2'}`}
-                initial={false}
-                animate={i < step ? { width: 20 } : { width: 8 }}
-                transition={{ duration: 0.3 }}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-gray-500 font-medium">
-            Étape {step}/7
-          </span>
-        </div>
-        
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onClose} 
-          className="h-7 w-7"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      {/* Contenu */}
-      <div className="flex items-start space-x-4 mb-4">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-          {icon}
-        </div>
-        <div>
-          <motion.h3 
-            key={title}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="text-[16px] font-semibold mb-1"
-          >
-            {title}
-          </motion.h3>
-          <motion.p 
-            key={description}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="text-[14px] text-gray-600 leading-relaxed"
-          >
-            {description}
-          </motion.p>
-        </div>
-      </div>
-      
-      {/* Actions */}
-      <div className="flex justify-between items-center mt-2">
-        {step > 1 ? (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => onNext()}
-            className="text-sm"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Précédent
-          </Button>
-        ) : (
-          <div></div>
-        )}
-        
-        <Button 
-          onClick={onNext} 
-          size="sm"
-          className="text-sm"
-        >
-          {isLast ? (
-            <>
-              Terminer
-              <CheckCircle className="h-4 w-4 ml-1" />
-            </>
-          ) : (
-            <>
-              Suivant
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </>
-          )}
-        </Button>
-      </div>
-    </motion.div>
-  )
-}
-
-// Composant pour la flèche de focus du tutoriel
-const TutorialHighlight = ({ 
-  target, 
-  position = "left", 
-  arrowPosition = "center",
-  active = false,
-  label,
-}: { 
-  target: string;
-  position?: "left" | "right" | "top" | "bottom";
-  arrowPosition?: "start" | "center" | "end"; 
-  active: boolean;
-  label?: string;
-}) => {
-  const [elementPosition, setElementPosition] = useState<{
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-  } | null>(null)
-  
-  useEffect(() => {
-    if (target && typeof window !== 'undefined') {
-      const updatePosition = () => {
-        const element = document.getElementById(target)
-        if (element) {
-          const rect = element.getBoundingClientRect()
-          setElementPosition({
-            top: rect.top + window.scrollY,
-            left: rect.left + window.scrollX,
-            width: rect.width,
-            height: rect.height
-          })
-        }
-      }
-      
-      updatePosition()
-      
-      const handleResize = debounce(() => {
-        updatePosition()
-      }, 100)
-      
-      window.addEventListener('resize', handleResize)
-      window.addEventListener('scroll', handleResize)
-      
-      // Observer pour surveiller les changements de position de l'élément cible
-      const observer = new MutationObserver(updatePosition)
-      const targetEl = document.getElementById(target)
-      if (targetEl) {
-        observer.observe(targetEl, { attributes: true, childList: true, subtree: true })
-      }
-      
-      return () => {
-        window.removeEventListener('resize', handleResize)
-        window.removeEventListener('scroll', handleResize)
-        observer.disconnect()
-      }
-    }
-  }, [target])
-  
-  if (!elementPosition || !active || !target) return null
-  
-  // Classes pour les flèches selon la position
-  const arrowClasses = {
-    left: {
-      container: "right-full mr-2",
-      arrow: {
-        start: "top-1/4 -translate-y-1/2",
-        center: "top-1/2 -translate-y-1/2",
-        end: "top-3/4 -translate-y-1/2",
-      },
-      polygon: "polygon(0 50%, 100% 0, 100% 100%)",
-    },
-    right: {
-      container: "left-full ml-2",
-      arrow: {
-        start: "top-1/4 -translate-y-1/2",
-        center: "top-1/2 -translate-y-1/2",
-        end: "top-3/4 -translate-y-1/2",
-      },
-      polygon: "polygon(100% 50%, 0 0, 0 100%)",
-    },
-    top: {
-      container: "bottom-full mb-2",
-      arrow: {
-        start: "left-1/4 -translate-x-1/2",
-        center: "left-1/2 -translate-x-1/2",
-        end: "left-3/4 -translate-x-1/2",
-      },
-      polygon: "polygon(50% 0, 0 100%, 100% 100%)",
-    },
-    bottom: {
-      container: "top-full mt-2",
-      arrow: {
-        start: "left-1/4 -translate-x-1/2",
-        center: "left-1/2 -translate-x-1/2",
-        end: "left-3/4 -translate-x-1/2",
-      },
-      polygon: "polygon(50% 100%, 0 0, 100% 0)",
-    },
-  }
-  
-  const getHighlightPosition = () => {
-    const { top, left, width, height } = elementPosition
-    const positions = {
-      top: top - 5,
-      left: left - 5,
-      width: width + 10,
-      height: height + 10
-    }
-    
-    // Adjustments for specific targets
-    const adjustPositions: Record<string, { top?: number, left?: number, width?: number, height?: number }> = {
-      "dashboard-link": { left: left - 5, width: width + 20 },
-      "marketplace-link": { left: left - 5, width: width + 20 },
-      "academy-link": { left: left - 5, width: width + 20 },
-      "docs-link": { left: left - 5, width: width + 20 },
-      "help-link": { top: top - 5, height: height + 20 },
-    }
-    
-    return {
-      ...positions,
-      ...adjustPositions[target]
-    }
-  }
-  
-  const highlightPosition = getHighlightPosition()
-  
-  return (
-    <>
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        style={{
-          position: 'absolute',
-          top: highlightPosition.top,
-          left: highlightPosition.left,
-          width: highlightPosition.width,
-          height: highlightPosition.height,
-          zIndex: 40,
-        }}
-        className="rounded-lg pointer-events-none"
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 350 }}
+        className="w-full max-w-md mx-4"
       >
-        {/* Overlay de surbrillance */}
-        <div className="absolute inset-0 rounded-lg bg-transparent ring-4 ring-primary ring-opacity-70 shadow-lg" />
-        
-        {/* Pulsation d'effet */}
-        <motion.div 
-          className="absolute inset-0 rounded-lg ring-4 ring-primary ring-opacity-30"
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-        
-        {/* Flèche */}
-        <div className={`absolute ${arrowClasses[position].container}`}>
-          <div className={`absolute ${arrowClasses[position].arrow[arrowPosition]}`}>
-            <motion.div 
-              className="w-6 h-6 bg-primary"
-              style={{ clipPath: arrowClasses[position].polygon }}
-              animate={{ x: position === 'left' ? [-3, 0, -3] : position === 'right' ? [3, 0, 3] : 0,
-                         y: position === 'top' ? [-3, 0, -3] : position === 'bottom' ? [3, 0, 3] : 0 }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
+        <Card className="border-0 shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-black to-blue-900 p-6 text-white">
+            <div className="flex justify-between items-start mb-4">
+              <motion.div
+                initial={{ x: -10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-full w-12 h-12 flex items-center justify-center shadow-md"
+              >
+                <div className="text-white">
+                  {icon}
+                </div>
+              </motion.div>
+              <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full bg-white/10 hover:bg-white/20 text-white">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <CardTitle className="text-2xl text-white">{title}</CardTitle>
+              <div className="flex mt-2 items-center">
+                <div className="flex space-x-1">
+                  {[...Array(7)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className={`h-2 rounded-full ${i < step ? 'bg-blue-400' : 'bg-blue-900/50'} ${i === step - 1 ? 'w-6' : 'w-2'}`}
+                      initial={i === step - 1 ? { width: 8 } : {}}
+                      animate={i === step - 1 ? { width: 24 } : {}}
+                      transition={{ delay: 0.5 }}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs ml-3 text-blue-200">Étape {step}/7</p>
+              </div>
+            </motion.div>
           </div>
-        </div>
-        
-        {/* Label */}
-        {label && (
-          <div className={`absolute whitespace-nowrap px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-md
-            ${position === 'left' ? 'right-full mr-10' : 
-              position === 'right' ? 'left-full ml-10' : 
-              position === 'top' ? 'bottom-full mb-10' : 'top-full mt-10'}`}
-          >
-            {label}
-          </div>
-        )}
+          <CardContent className="p-6 bg-gradient-to-b from-blue-50 to-white">
+            {isLast ? (
+              <motion.div 
+                className="flex flex-col items-center justify-center mb-6"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              >
+                <motion.div
+                  className="relative mb-4"
+                  initial={{ y: -20 }}
+                  animate={{ y: 0 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-blue-500 rounded-full opacity-20"
+                    animate={{ 
+                      scale: [1, 1.8, 1],
+                      opacity: [0.2, 0, 0.2] 
+                    }}
+                    transition={{ 
+                      repeat: Infinity,
+                      duration: 2,
+                      ease: "easeInOut"
+                    }}
+                  />
+                  <div className="bg-gradient-to-tr from-blue-600 to-blue-400 w-24 h-24 rounded-full flex items-center justify-center shadow-lg relative z-10">
+                    <Award className="h-12 w-12 text-white" />
+                  </div>
+                </motion.div>
+                <motion.p 
+                  className="text-blue-600 font-bold text-lg mb-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  Badge "Explorateur" débloqué !
+                </motion.p>
+                <motion.p 
+                  className="text-gray-600 text-center text-sm"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  Félicitations ! Tu viens de débloquer ton premier badge en terminant le tutoriel. Continue à explorer Klyra Hub pour en débloquer d'autres !
+                </motion.p>
+              </motion.div>
+            ) : (
+              <motion.p 
+                className="text-gray-700 mb-6"
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                {description}
+              </motion.p>
+            )}
+          </CardContent>
+          <CardFooter className="p-4 bg-blue-50 flex justify-between">
+            <Button variant="ghost" onClick={onClose} size="sm" className="text-blue-700 hover:text-blue-800 hover:bg-blue-100">
+              Ignorer le tutoriel
+            </Button>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button onClick={onNext} className="font-medium bg-blue-600 hover:bg-blue-700" size="sm">
+                {isLast ? "Terminer" : "Suivant"} <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </motion.div>
+          </CardFooter>
+        </Card>
       </motion.div>
-      
-      {/* Overlay global pour mettre en valeur l'élément */}
-      <div className="fixed inset-0 bg-black/50 z-30 pointer-events-none" />
-    </>
-  )
-}
+    </motion.div>
+  );
+};
 
 // Nouveau composant pour les statistiques
 const StatsOverview = ({ stats }: { stats: ProjectStats }) => {
@@ -607,8 +449,8 @@ export default function DashboardPage() {
   // État pour le tutoriel
   const [showTutorial, setShowTutorial] = useState<boolean>(false)
   const [tutorialStep, setTutorialStep] = useState<number>(1)
+  // Ref pour l'animation de focus
   const [focusElement, setFocusElement] = useState<string>("")
-  const [highlightLabel, setHighlightLabel] = useState<string>("")
   
   // Paramètres de paiement réussi
   const paymentSuccess = searchParams.get('payment_success')
@@ -739,35 +581,27 @@ export default function DashboardPage() {
     switch(step) {
       case 1: // Bienvenue
         setFocusElement("");
-        setHighlightLabel("");
         break;
       case 2: // Dashboard
-        setFocusElement("dashboard-link");
-        setHighlightLabel("Voici ton Dashboard");
+        setFocusElement("sidebar-dashboard");
         break;
       case 3: // Marketplace
-        setFocusElement("marketplace-link");
-        setHighlightLabel("Découvre nos services ici");
+        setFocusElement("sidebar-marketplace");
         break;
       case 4: // Projets
-        setFocusElement("projects-tab");
-        setHighlightLabel("Gère tes projets");
+        setFocusElement("sidebar-dashboard"); // Projets sont dans le dashboard
         break;
       case 5: // Academy
-        setFocusElement("academy-link");
-        setHighlightLabel("Apprends avec l'Academy");
+        setFocusElement("sidebar-academy");
         break;
       case 6: // Documentation
-        setFocusElement("docs-link");
-        setHighlightLabel("Consulte la documentation");
+        setFocusElement("sidebar-docs");
         break;
       case 7: // Support
-        setFocusElement("help-link");
-        setHighlightLabel("Besoin d'aide ? Clique ici");
+        setFocusElement("sidebar-help");
         break;
       default:
         setFocusElement("");
-        setHighlightLabel("");
     }
   }
   
@@ -846,12 +680,22 @@ export default function DashboardPage() {
     {
       title: "Ton tableau de bord 📊",
       description: "Voici ton dashboard ! C'est ici que tu retrouveras une vue d'ensemble de tous tes projets, tes statistiques personnelles et tes dernières activités. Un vrai centre de contrôle !",
-      icon: <LayoutDashboard className="h-6 w-6" />
+      icon: <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              <LayoutDashboard className="h-6 w-6" />
+            </motion.div>
     },
     {
       title: "Découvre notre marketplace 🛍️",
       description: "Notre marketplace regroupe tous nos services design et web. Trouve ce dont tu as besoin en filtrant par catégorie ou budget, puis commande en quelques clics !",
-      icon: <Store className="h-6 w-6" />
+      icon: <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              <Store className="h-6 w-6" />
+            </motion.div>
     },
     {
       title: "Gère tes projets efficacement 🚀",
@@ -866,12 +710,22 @@ export default function DashboardPage() {
     {
       title: "Explore notre Academy 🎓",
       description: "Notre Academy te propose des cours, tutoriels et ressources pour approfondir tes connaissances en design et développement. Apprends à ton rythme !",
-      icon: <GraduationCap className="h-6 w-6" />
+      icon: <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              <GraduationCap className="h-6 w-6" />
+            </motion.div>
     },
     {
       title: "Consulte la documentation 📚",
       description: "Besoin d'aide ? Notre documentation complète te guide pas à pas dans l'utilisation de Klyra Hub. Tu y trouveras des réponses à toutes tes questions !",
-      icon: <BookOpen className="h-6 w-6" />
+      icon: <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              <BookOpen className="h-6 w-6" />
+            </motion.div>
     },
     {
       title: "Notre support est là pour toi 💬",
@@ -931,7 +785,7 @@ export default function DashboardPage() {
         >
           <Link 
             href="/dashboard/marketplace"
-            id="marketplace-link"
+            className={`${focusElement === "sidebar-marketplace" ? "relative animate-pulse" : ""}`}
           >
             <Button>
               <Store className="mr-2 h-4 w-4" /> Explorer les services
@@ -941,8 +795,7 @@ export default function DashboardPage() {
 
         <PageSection>
           <div 
-            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${focusElement === "dashboard-stats" ? "relative animate-pulse" : ""}`}
-            id="dashboard-stats"
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${focusElement === "sidebar-dashboard" ? "relative animate-pulse" : ""}`}
           >
             <ContentCard>
               <div className="flex flex-col">
@@ -1001,7 +854,7 @@ export default function DashboardPage() {
             <TabsList className="mb-6">
               <TabsTrigger 
                 value="projects" 
-                id="projects-tab"
+                className={`${focusElement === "sidebar-dashboard" ? "relative animate-pulse" : ""}`}
               >
                 Projets
               </TabsTrigger>
@@ -1075,12 +928,175 @@ export default function DashboardPage() {
           </Tabs>
         </PageSection>
 
-        {/* Composant de mise en évidence du tutoriel */}
-        <TutorialHighlight 
-          target={focusElement}
-          active={showTutorial && focusElement !== ""}
-          label={highlightLabel}
-        />
+        {/* Indicateurs visuels pour mettre en évidence les éléments du menu latéral */}
+        {focusElement === "sidebar-dashboard" && (
+          <div className="fixed left-0 top-[88px] z-[140] pointer-events-none">
+            <div className="relative">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", damping: 12 }}
+                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
+              />
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.3, type: "spring", damping: 8 }}
+                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                </motion.div>
+              </motion.div>
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 30, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.3 }}
+                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
+              />
+            </div>
+          </div>
+        )}
+        
+        {focusElement === "sidebar-marketplace" && (
+          <div className="fixed left-0 top-[208px] z-[140] pointer-events-none">
+            <div className="relative">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", damping: 12 }}
+                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
+              />
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.3, type: "spring", damping: 8 }}
+                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <Store className="h-4 w-4" />
+                </motion.div>
+              </motion.div>
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 30, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.3 }}
+                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
+              />
+            </div>
+          </div>
+        )}
+        
+        {focusElement === "sidebar-academy" && (
+          <div className="fixed left-0 top-[248px] z-[140] pointer-events-none">
+            <div className="relative">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", damping: 12 }}
+                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
+              />
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.3, type: "spring", damping: 8 }}
+                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <GraduationCap className="h-4 w-4" />
+                </motion.div>
+              </motion.div>
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 30, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.3 }}
+                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
+              />
+            </div>
+          </div>
+        )}
+        
+        {focusElement === "sidebar-docs" && (
+          <div className="fixed left-0 top-[288px] z-[140] pointer-events-none">
+            <div className="relative">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", damping: 12 }}
+                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
+              />
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.3, type: "spring", damping: 8 }}
+                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <BookOpen className="h-4 w-4" />
+                </motion.div>
+              </motion.div>
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 30, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.3 }}
+                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
+              />
+            </div>
+          </div>
+        )}
+        
+        {focusElement === "sidebar-help" && (
+          <div className="fixed left-0 bottom-[60px] z-[140] pointer-events-none">
+            <div className="relative">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", damping: 12 }}
+                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
+              />
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 1] }}
+                transition={{ delay: 0.3, type: "spring", damping: 8 }}
+                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </motion.div>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ delay: 0.5, type: "spring" }}
+                className="absolute left-[80px] top-[-45px] bg-blue-500 text-white px-3 py-2 rounded text-sm shadow-lg whitespace-nowrap"
+              >
+                Clique ici pour obtenir de l'aide !
+                <div className="absolute bottom-[-6px] left-[40px] w-3 h-3 bg-blue-500 rotate-45"></div>
+              </motion.div>
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 30, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.3 }}
+                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
+              />
+            </div>
+          </div>
+        )}
 
         {showTutorial && (
           <TutorialStep
