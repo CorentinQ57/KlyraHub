@@ -10,7 +10,7 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus, LayoutDashboard, GraduationCap, BookOpen, HelpCircle } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus, LayoutDashboard, GraduationCap, BookOpen, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -19,6 +19,7 @@ import VideoWalkthrough from '@/components/VideoWalkthrough'
 import Image from 'next/image'
 import { AuroraBackground } from "@/components/ui/aurora-background"
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { debounce } from 'lodash'
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -216,133 +217,105 @@ const TutorialStep = ({
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="fixed bottom-6 left-6 z-50 bg-white rounded-lg shadow-2xl border border-gray-100 w-[380px] p-6 flex flex-col"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        transition={{ type: "spring", damping: 25, stiffness: 350 }}
-        className="w-full max-w-md mx-4"
-      >
-        <Card className="border-0 shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-black to-blue-900 p-6 text-white">
-            <div className="flex justify-between items-start mb-4">
-              <motion.div
-                initial={{ x: -10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-full w-12 h-12 flex items-center justify-center shadow-md"
-              >
-                <div className="text-white">
-                  {icon}
-                </div>
-              </motion.div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full bg-white/10 hover:bg-white/20 text-white">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <motion.div
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              <CardTitle className="text-2xl text-white">{title}</CardTitle>
-              <div className="flex mt-2 items-center">
-                <div className="flex space-x-1">
-                  {[...Array(7)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className={`h-2 rounded-full ${i < step ? 'bg-blue-400' : 'bg-blue-900/50'} ${i === step - 1 ? 'w-6' : 'w-2'}`}
-                      initial={i === step - 1 ? { width: 8 } : {}}
-                      animate={i === step - 1 ? { width: 24 } : {}}
-                      transition={{ delay: 0.5 }}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs ml-3 text-blue-200">Étape {step}/7</p>
-              </div>
-            </motion.div>
-          </div>
-          <CardContent className="p-6 bg-gradient-to-b from-blue-50 to-white">
-            {isLast ? (
+      {/* Indicateur d'étape */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: 7 }, (_, i) => (
               <motion.div 
-                className="flex flex-col items-center justify-center mb-6"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              >
-                <motion.div
-                  className="relative mb-4"
-                  initial={{ y: -20 }}
-                  animate={{ y: 0 }}
-                  transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
-                >
-                  <motion.div
-                    className="absolute inset-0 bg-blue-500 rounded-full opacity-20"
-                    animate={{ 
-                      scale: [1, 1.8, 1],
-                      opacity: [0.2, 0, 0.2] 
-                    }}
-                    transition={{ 
-                      repeat: Infinity,
-                      duration: 2,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  <div className="bg-gradient-to-tr from-blue-600 to-blue-400 w-24 h-24 rounded-full flex items-center justify-center shadow-lg relative z-10">
-                    <Award className="h-12 w-12 text-white" />
-                  </div>
-                </motion.div>
-                <motion.p 
-                  className="text-blue-600 font-bold text-lg mb-2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  Badge "Explorateur" débloqué !
-                </motion.p>
-                <motion.p 
-                  className="text-gray-600 text-center text-sm"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                >
-                  Félicitations ! Tu viens de débloquer ton premier badge en terminant le tutoriel. Continue à explorer Klyra Hub pour en débloquer d'autres !
-                </motion.p>
-              </motion.div>
-            ) : (
-              <motion.p 
-                className="text-gray-700 mb-6"
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                {description}
-              </motion.p>
-            )}
-          </CardContent>
-          <CardFooter className="p-4 bg-blue-50 flex justify-between">
-            <Button variant="ghost" onClick={onClose} size="sm" className="text-blue-700 hover:text-blue-800 hover:bg-blue-100">
-              Ignorer le tutoriel
-            </Button>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Button onClick={onNext} className="font-medium bg-blue-600 hover:bg-blue-700" size="sm">
-                {isLast ? "Terminer" : "Suivant"} <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </motion.div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+                key={i}
+                className={`h-1.5 rounded-full ${i < step ? 'bg-primary w-5' : 'bg-gray-200 w-2'}`}
+                initial={false}
+                animate={i < step ? { width: 20 } : { width: 8 }}
+                transition={{ duration: 0.3 }}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-gray-500 font-medium">
+            Étape {step}/7
+          </span>
+        </div>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose} 
+          className="h-7 w-7"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      {/* Contenu */}
+      <div className="flex items-start space-x-4 mb-4">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          {icon}
+        </div>
+        <div>
+          <motion.h3 
+            key={title}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="text-[16px] font-semibold mb-1"
+          >
+            {title}
+          </motion.h3>
+          <motion.p 
+            key={description}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="text-[14px] text-gray-600 leading-relaxed"
+          >
+            {description}
+          </motion.p>
+        </div>
+      </div>
+      
+      {/* Actions */}
+      <div className="flex justify-between items-center mt-2">
+        {step > 1 ? (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onNext()}
+            className="text-sm"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Précédent
+          </Button>
+        ) : (
+          <div></div>
+        )}
+        
+        <Button 
+          onClick={onNext} 
+          size="sm"
+          className="text-sm"
+        >
+          {isLast ? (
+            <>
+              Terminer
+              <CheckCircle className="h-4 w-4 ml-1" />
+            </>
+          ) : (
+            <>
+              Suivant
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </>
+          )}
+        </Button>
+      </div>
     </motion.div>
-  );
-};
+  )
+}
 
 // Composant pour la flèche de focus du tutoriel
 const TutorialHighlight = ({ 
@@ -358,211 +331,176 @@ const TutorialHighlight = ({
   active: boolean;
   label?: string;
 }) => {
-  const [mounted, setMounted] = useState(false);
-  const [dimensions, setDimensions] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800
-  });
+  const [elementPosition, setElementPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null)
   
-  // S'adapter au redimensionnement de la fenêtre
   useEffect(() => {
-    const handleResize = () => {
-      setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (target && typeof window !== 'undefined') {
+      const updatePosition = () => {
+        const element = document.getElementById(target)
+        if (element) {
+          const rect = element.getBoundingClientRect()
+          setElementPosition({
+            top: rect.top + window.scrollY,
+            left: rect.left + window.scrollX,
+            width: rect.width,
+            height: rect.height
+          })
+        }
+      }
+      
+      updatePosition()
+      
+      const handleResize = debounce(() => {
+        updatePosition()
+      }, 100)
+      
+      window.addEventListener('resize', handleResize)
+      window.addEventListener('scroll', handleResize)
+      
+      // Observer pour surveiller les changements de position de l'élément cible
+      const observer = new MutationObserver(updatePosition)
+      const targetEl = document.getElementById(target)
+      if (targetEl) {
+        observer.observe(targetEl, { attributes: true, childList: true, subtree: true })
+      }
+      
+      return () => {
+        window.removeEventListener('resize', handleResize)
+        window.removeEventListener('scroll', handleResize)
+        observer.disconnect()
+      }
+    }
+  }, [target])
   
-  // Ne rendre le composant que côté client
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (!elementPosition || !active || !target) return null
   
-  if (!active || !mounted) return null;
-
-  // Positions prédéfinies pour des éléments spécifiques - aide à positionner correctement la flèche
-  const predefinedPositions: Record<string, { x: number, y: number, position: "left" | "right" | "top" | "bottom" }> = {
-    "dashboard-stats": { x: dimensions.width / 2 - 100, y: 220, position: "top" },
-    "marketplace-link": { x: dimensions.width - 200, y: 80, position: "top" },
-    "projects-tab": { x: 280, y: 400, position: "top" },
-    "dashboard-link": { x: 20, y: 110, position: "left" },
-    "academy-link": { x: 20, y: 280, position: "left" },
-    "docs-link": { x: 20, y: 320, position: "left" },
-    "help-link": { x: 20, y: 620, position: "left" }
-  };
-
-  // Utiliser les positions prédéfinies si disponibles
-  const pos = predefinedPositions[target] || { 
-    x: 100, 
-    y: 100, 
-    position: position 
-  };
-
-  // Classes CSS pour les positions des flèches
+  // Classes pour les flèches selon la position
   const arrowClasses = {
     left: {
-      container: "fixed z-[500]",
-      arrow: "w-16 h-8 flex items-center justify-center",
-      base: "w-12 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-sm",
-      head: "w-5 h-5 border-t-2 border-r-2 border-blue-500 transform -rotate-45 shadow-md",
-      highlight: "absolute rounded-lg bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
-      text: "absolute text-blue-600 font-medium text-sm whitespace-nowrap bg-white px-2 py-1 rounded-md shadow-md"
+      container: "right-full mr-2",
+      arrow: {
+        start: "top-1/4 -translate-y-1/2",
+        center: "top-1/2 -translate-y-1/2",
+        end: "top-3/4 -translate-y-1/2",
+      },
+      polygon: "polygon(0 50%, 100% 0, 100% 100%)",
     },
     right: {
-      container: "fixed z-[500]",
-      arrow: "w-16 h-8 flex items-center justify-center transform rotate-180",
-      base: "w-12 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-sm",
-      head: "w-5 h-5 border-t-2 border-r-2 border-blue-500 transform -rotate-45 shadow-md",
-      highlight: "absolute rounded-lg bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
-      text: "absolute text-blue-600 font-medium text-sm whitespace-nowrap bg-white px-2 py-1 rounded-md shadow-md transform -rotate-180"
+      container: "left-full ml-2",
+      arrow: {
+        start: "top-1/4 -translate-y-1/2",
+        center: "top-1/2 -translate-y-1/2",
+        end: "top-3/4 -translate-y-1/2",
+      },
+      polygon: "polygon(100% 50%, 0 0, 0 100%)",
     },
     top: {
-      container: "fixed z-[500]",
-      arrow: "w-8 h-16 flex flex-col items-center justify-center transform -rotate-90",
-      base: "w-12 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-sm",
-      head: "w-5 h-5 border-t-2 border-r-2 border-blue-500 transform -rotate-45 shadow-md",
-      highlight: "absolute rounded-lg bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
-      text: "absolute text-blue-600 font-medium text-sm whitespace-nowrap bg-white px-2 py-1 rounded-md shadow-md transform rotate-90"
+      container: "bottom-full mb-2",
+      arrow: {
+        start: "left-1/4 -translate-x-1/2",
+        center: "left-1/2 -translate-x-1/2",
+        end: "left-3/4 -translate-x-1/2",
+      },
+      polygon: "polygon(50% 0, 0 100%, 100% 100%)",
     },
     bottom: {
-      container: "fixed z-[500]",
-      arrow: "w-8 h-16 flex flex-col items-center justify-center transform rotate-90",
-      base: "w-12 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-sm",
-      head: "w-5 h-5 border-t-2 border-r-2 border-blue-500 transform -rotate-45 shadow-md",
-      highlight: "absolute rounded-lg bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
-      text: "absolute text-blue-600 font-medium text-sm whitespace-nowrap bg-white px-2 py-1 rounded-md shadow-md transform -rotate-90"
-    }
-  };
-
-  // Ajustements pour les positions de l'élément mis en évidence
-  const highlightAdjustments: Record<string, { width: number, height: number, x: number, y: number }> = {
-    "dashboard-stats": { width: 500, height: 100, x: -250, y: -50 },
-    "marketplace-link": { width: 180, height: 40, x: -90, y: -20 },
-    "projects-tab": { width: 100, height: 40, x: -50, y: -20 },
-    "dashboard-link": { width: 200, height: 40, x: 50, y: -20 },
-    "academy-link": { width: 200, height: 40, x: 50, y: -20 },
-    "docs-link": { width: 200, height: 40, x: 50, y: -20 },
-    "help-link": { width: 200, height: 40, x: 50, y: -20 }
-  };
-
-  const highAdj = highlightAdjustments[target] || { width: 100, height: 40, x: -50, y: -20 };
+      container: "top-full mt-2",
+      arrow: {
+        start: "left-1/4 -translate-x-1/2",
+        center: "left-1/2 -translate-x-1/2",
+        end: "left-3/4 -translate-x-1/2",
+      },
+      polygon: "polygon(50% 100%, 0 0, 100% 0)",
+    },
+  }
   
-  // Placement du texte en fonction de la position de la flèche
-  const textPlacement = {
-    left: { right: "24px", top: "50%", transform: "translateY(-50%)" },
-    right: { left: "24px", top: "50%", transform: "translateY(-50%) rotate(180deg)" },
-    top: { bottom: "24px", left: "50%", transform: "translateX(-50%) rotate(90deg)" },
-    bottom: { top: "24px", left: "50%", transform: "translateX(-50%) rotate(-90deg)" }
-  };
-
-  const classes = arrowClasses[pos.position];
-
+  const getHighlightPosition = () => {
+    const { top, left, width, height } = elementPosition
+    const positions = {
+      top: top - 5,
+      left: left - 5,
+      width: width + 10,
+      height: height + 10
+    }
+    
+    // Adjustments for specific targets
+    const adjustPositions: Record<string, { top?: number, left?: number, width?: number, height?: number }> = {
+      "dashboard-link": { left: left - 5, width: width + 20 },
+      "marketplace-link": { left: left - 5, width: width + 20 },
+      "academy-link": { left: left - 5, width: width + 20 },
+      "docs-link": { left: left - 5, width: width + 20 },
+      "help-link": { top: top - 5, height: height + 20 },
+    }
+    
+    return {
+      ...positions,
+      ...adjustPositions[target]
+    }
+  }
+  
+  const highlightPosition = getHighlightPosition()
+  
   return (
     <>
-      <motion.div
-        className={classes.container}
-        style={{ 
-          left: pos.x, 
-          top: pos.y 
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        style={{
+          position: 'absolute',
+          top: highlightPosition.top,
+          left: highlightPosition.left,
+          width: highlightPosition.width,
+          height: highlightPosition.height,
+          zIndex: 40,
         }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        className="rounded-lg pointer-events-none"
       >
-        <div className={classes.arrow}>
-          <motion.div 
-            className={classes.base}
-            initial={{ width: 0 }}
-            animate={{ 
-              width: "3rem",
-              boxShadow: ["0 0 0px rgba(59,130,246,0.5)", "0 0 10px rgba(59,130,246,0.8)", "0 0 0px rgba(59,130,246,0.5)"]
-            }}
-            transition={{ 
-              width: { duration: 0.5 },
-              boxShadow: { 
-                repeat: Infinity, 
-                duration: 1.5,
-                ease: "easeInOut" 
-              }
-            }}
-          />
-          <motion.div
-            className={classes.head}
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: 1,
-              boxShadow: ["0 0 0px rgba(59,130,246,0.5)", "0 0 8px rgba(59,130,246,0.8)", "0 0 0px rgba(59,130,246,0.5)"]
-            }}
-            transition={{ 
-              opacity: { delay: 0.4, duration: 0.3 },
-              boxShadow: { 
-                repeat: Infinity, 
-                duration: 1.5,
-                ease: "easeInOut" 
-              }
-            }}
-          />
+        {/* Overlay de surbrillance */}
+        <div className="absolute inset-0 rounded-lg bg-transparent ring-4 ring-primary ring-opacity-70 shadow-lg" />
+        
+        {/* Pulsation d'effet */}
+        <motion.div 
+          className="absolute inset-0 rounded-lg ring-4 ring-primary ring-opacity-30"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+        
+        {/* Flèche */}
+        <div className={`absolute ${arrowClasses[position].container}`}>
+          <div className={`absolute ${arrowClasses[position].arrow[arrowPosition]}`}>
+            <motion.div 
+              className="w-6 h-6 bg-primary"
+              style={{ clipPath: arrowClasses[position].polygon }}
+              animate={{ x: position === 'left' ? [-3, 0, -3] : position === 'right' ? [3, 0, 3] : 0,
+                         y: position === 'top' ? [-3, 0, -3] : position === 'bottom' ? [3, 0, 3] : 0 }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+          </div>
         </div>
         
+        {/* Label */}
         {label && (
-          <motion.div
-            className={classes.text}
-            style={textPlacement[pos.position]}
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: 1,
-              y: [0, -3, 0],
-            }}
-            transition={{ 
-              opacity: { delay: 0.6, duration: 0.3 },
-              y: { 
-                delay: 0.8,
-                repeat: Infinity, 
-                duration: 2,
-                ease: "easeInOut" 
-              }
-            }}
+          <div className={`absolute whitespace-nowrap px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-md
+            ${position === 'left' ? 'right-full mr-10' : 
+              position === 'right' ? 'left-full ml-10' : 
+              position === 'top' ? 'bottom-full mb-10' : 'top-full mt-10'}`}
           >
             {label}
-          </motion.div>
+          </div>
         )}
       </motion.div>
       
-      <motion.div
-        className={classes.highlight}
-        style={{ 
-          left: pos.x + highAdj.x, 
-          top: pos.y + highAdj.y,
-          width: highAdj.width,
-          height: highAdj.height
-        }}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ 
-          opacity: 0.6, 
-          scale: [0.95, 1.05, 0.95],
-          boxShadow: ["0 0 5px rgba(59,130,246,0.5)", "0 0 20px rgba(59,130,246,0.5)", "0 0 5px rgba(59,130,246,0.5)"]
-        }}
-        transition={{ 
-          opacity: { duration: 0.3 },
-          scale: {
-            duration: 2,
-            repeat: Infinity,
-            repeatType: "reverse"
-          },
-          boxShadow: {
-            duration: 2,
-            repeat: Infinity,
-            repeatType: "reverse"
-          }
-        }}
-      />
+      {/* Overlay global pour mettre en valeur l'élément */}
+      <div className="fixed inset-0 bg-black/50 z-30 pointer-events-none" />
     </>
-  );
-};
+  )
+}
 
 // Nouveau composant pour les statistiques
 const StatsOverview = ({ stats }: { stats: ProjectStats }) => {
