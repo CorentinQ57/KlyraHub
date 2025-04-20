@@ -10,7 +10,7 @@ import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/s
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus } from 'lucide-react'
+import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus, LayoutDashboard, GraduationCap, BookOpen, HelpCircle } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -229,19 +229,19 @@ const TutorialStep = ({
         className="w-full max-w-md mx-4"
       >
         <Card className="border-0 shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-6">
+          <div className="bg-gradient-to-r from-black to-blue-900 p-6 text-white">
             <div className="flex justify-between items-start mb-4">
               <motion.div
                 initial={{ x: -10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-md"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-full w-12 h-12 flex items-center justify-center shadow-md"
               >
-                <div className="text-primary">
+                <div className="text-white">
                   {icon}
                 </div>
               </motion.div>
-              <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full bg-white/80 hover:bg-white">
+              <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full bg-white/10 hover:bg-white/20 text-white">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -250,42 +250,90 @@ const TutorialStep = ({
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <CardTitle className="text-2xl">{title}</CardTitle>
+              <CardTitle className="text-2xl text-white">{title}</CardTitle>
               <div className="flex mt-2 items-center">
                 <div className="flex space-x-1">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(7)].map((_, i) => (
                     <motion.div
                       key={i}
-                      className={`h-2 rounded-full ${i < step ? 'bg-primary' : 'bg-primary/20'} ${i === step - 1 ? 'w-6' : 'w-2'}`}
+                      className={`h-2 rounded-full ${i < step ? 'bg-blue-400' : 'bg-blue-900/50'} ${i === step - 1 ? 'w-6' : 'w-2'}`}
                       initial={i === step - 1 ? { width: 8 } : {}}
                       animate={i === step - 1 ? { width: 24 } : {}}
                       transition={{ delay: 0.5 }}
                     />
                   ))}
                 </div>
-                <p className="text-xs ml-3 text-gray-600">Étape {step}/5</p>
+                <p className="text-xs ml-3 text-blue-200">Étape {step}/7</p>
               </div>
             </motion.div>
           </div>
-          <CardContent className="p-6">
-            <motion.p 
-              className="text-gray-600 mb-6"
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              {description}
-            </motion.p>
+          <CardContent className="p-6 bg-gradient-to-b from-blue-50 to-white">
+            {isLast ? (
+              <motion.div 
+                className="flex flex-col items-center justify-center mb-6"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              >
+                <motion.div
+                  className="relative mb-4"
+                  initial={{ y: -20 }}
+                  animate={{ y: 0 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-blue-500 rounded-full opacity-20"
+                    animate={{ 
+                      scale: [1, 1.8, 1],
+                      opacity: [0.2, 0, 0.2] 
+                    }}
+                    transition={{ 
+                      repeat: Infinity,
+                      duration: 2,
+                      ease: "easeInOut"
+                    }}
+                  />
+                  <div className="bg-gradient-to-tr from-blue-600 to-blue-400 w-24 h-24 rounded-full flex items-center justify-center shadow-lg relative z-10">
+                    <Award className="h-12 w-12 text-white" />
+                  </div>
+                </motion.div>
+                <motion.p 
+                  className="text-blue-600 font-bold text-lg mb-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  Badge "Explorateur" débloqué !
+                </motion.p>
+                <motion.p 
+                  className="text-gray-600 text-center text-sm"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  Félicitations ! Tu viens de débloquer ton premier badge en terminant le tutoriel. Continue à explorer Klyra Hub pour en débloquer d'autres !
+                </motion.p>
+              </motion.div>
+            ) : (
+              <motion.p 
+                className="text-gray-700 mb-6"
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                {description}
+              </motion.p>
+            )}
           </CardContent>
-          <CardFooter className="p-4 bg-gray-50 flex justify-between">
-            <Button variant="ghost" onClick={onClose} size="sm">
+          <CardFooter className="p-4 bg-blue-50 flex justify-between">
+            <Button variant="ghost" onClick={onClose} size="sm" className="text-blue-700 hover:text-blue-800 hover:bg-blue-100">
               Ignorer le tutoriel
             </Button>
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Button onClick={onNext} className="font-medium" size="sm">
+              <Button onClick={onNext} className="font-medium bg-blue-600 hover:bg-blue-700" size="sm">
                 {isLast ? "Terminer" : "Suivant"} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>
@@ -401,6 +449,8 @@ export default function DashboardPage() {
   // État pour le tutoriel
   const [showTutorial, setShowTutorial] = useState<boolean>(false)
   const [tutorialStep, setTutorialStep] = useState<number>(1)
+  // Ref pour l'animation de focus
+  const [focusElement, setFocusElement] = useState<string>("")
   
   // Paramètres de paiement réussi
   const paymentSuccess = searchParams.get('payment_success')
@@ -492,10 +542,13 @@ export default function DashboardPage() {
   
   // Fonction pour passer à l'étape suivante du tutoriel
   const nextTutorialStep = () => {
-    if (tutorialStep < 5) {
+    if (tutorialStep < 7) {
       setTutorialStep(tutorialStep + 1)
+      // Mettre à jour l'élément à mettre en évidence
+      updateFocusElement(tutorialStep + 1)
     } else {
       setShowTutorial(false)
+      setFocusElement("")
       // Marquer le tutoriel comme terminé dans localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('hasCompletedOnboarding', 'true')
@@ -511,6 +564,7 @@ export default function DashboardPage() {
   // Fonction pour fermer le tutoriel
   const closeTutorial = () => {
     setShowTutorial(false)
+    setFocusElement("")
     // Marquer le tutoriel comme terminé même si fermé prématurément
     if (typeof window !== 'undefined') {
       localStorage.setItem('hasCompletedOnboarding', 'true')
@@ -519,6 +573,35 @@ export default function DashboardPage() {
     if (showTutorialParam) {
       const newUrl = window.location.pathname
       window.history.replaceState({}, document.title, newUrl)
+    }
+  }
+  
+  // Fonction pour déterminer quel élément mettre en évidence en fonction de l'étape
+  const updateFocusElement = (step: number) => {
+    switch(step) {
+      case 1: // Bienvenue
+        setFocusElement("");
+        break;
+      case 2: // Dashboard
+        setFocusElement("dashboard-stats");
+        break;
+      case 3: // Marketplace
+        setFocusElement("marketplace-link");
+        break;
+      case 4: // Projets
+        setFocusElement("projects-tab");
+        break;
+      case 5: // Academy
+        setFocusElement("academy-link");
+        break;
+      case 6: // Documentation
+        setFocusElement("docs-link");
+        break;
+      case 7: // Support
+        setFocusElement("help-link");
+        break;
+      default:
+        setFocusElement("");
     }
   }
   
@@ -534,6 +617,7 @@ export default function DashboardPage() {
     if (showTutorialParam === 'true') {
       setTutorialStep(1)
       setShowTutorial(true)
+      updateFocusElement(1)
     }
   }, [showTutorialParam])
   
@@ -594,13 +678,18 @@ export default function DashboardPage() {
             </motion.div>
     },
     {
+      title: "Ton tableau de bord 📊",
+      description: "Voici ton dashboard ! C'est ici que tu retrouveras une vue d'ensemble de tous tes projets, tes statistiques personnelles et tes dernières activités. Un vrai centre de contrôle !",
+      icon: <LayoutDashboard className="h-6 w-6" />
+    },
+    {
       title: "Découvre notre marketplace 🛍️",
-      description: "Ici, tu trouveras tous nos services design et web. Tu peux filtrer par catégorie ou prix pour trouver exactement ce qu'il te faut. N'hésite pas à explorer !",
+      description: "Notre marketplace regroupe tous nos services design et web. Trouve ce dont tu as besoin en filtrant par catégorie ou budget, puis commande en quelques clics !",
       icon: <Store className="h-6 w-6" />
     },
     {
-      title: "Tes projets en direct 🚀",
-      description: "Après ton premier achat, tes projets apparaîtront ici. Tu pourras suivre leur avancement, échanger avec notre équipe et voir les livrables... Tout ça au même endroit !",
+      title: "Gère tes projets efficacement 🚀",
+      description: "Suis l'avancement de tes projets, échange avec notre équipe, consulte les livrables et valide les étapes clés. Tout est centralisé pour faciliter ta vie !",
       icon: <motion.div
               animate={{ y: [0, -5, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
@@ -609,18 +698,23 @@ export default function DashboardPage() {
             </motion.div>
     },
     {
-      title: "Ton historique d'achats 📝",
-      description: "Toutes tes commandes, factures et transactions sont conservées dans la section 'Mes achats'. Pratique pour garder une trace de tout, non ?",
-      icon: <ShoppingCart className="h-6 w-6" />
+      title: "Explore notre Academy 🎓",
+      description: "Notre Academy te propose des cours, tutoriels et ressources pour approfondir tes connaissances en design et développement. Apprends à ton rythme !",
+      icon: <GraduationCap className="h-6 w-6" />
     },
     {
-      title: "C'est toi qui décides 🎯",
-      description: "N'oublie pas de personnaliser ton profil ! Tu peux modifier tes infos, préférences et paramètres quand tu veux. C'est ton espace, fais-toi plaisir !",
+      title: "Consulte la documentation 📚",
+      description: "Besoin d'aide ? Notre documentation complète te guide pas à pas dans l'utilisation de Klyra Hub. Tu y trouveras des réponses à toutes tes questions !",
+      icon: <BookOpen className="h-6 w-6" />
+    },
+    {
+      title: "Notre support est là pour toi 💬",
+      description: "Une question ? Un problème ? Notre équipe support est disponible pour t'aider. Clique sur le bouton Aide en bas de la sidebar pour nous contacter à tout moment !",
       icon: <motion.div
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ repeat: Infinity, duration: 2 }}
             >
-              🎯
+              <HelpCircle className="h-6 w-6" />
             </motion.div>
     }
   ]
@@ -669,7 +763,11 @@ export default function DashboardPage() {
           title="Tableau de bord" 
           description={`Bienvenue ${user?.user_metadata?.full_name || 'sur votre espace client'}`}
         >
-          <Link href="/dashboard/marketplace">
+          <Link 
+            href="/dashboard/marketplace"
+            className={`${focusElement === "marketplace-link" ? "relative animate-pulse" : ""}`}
+            id="marketplace-link"
+          >
             <Button>
               <Store className="mr-2 h-4 w-4" /> Explorer les services
             </Button>
@@ -677,7 +775,10 @@ export default function DashboardPage() {
         </PageHeader>
 
         <PageSection>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div 
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${focusElement === "dashboard-stats" ? "relative animate-pulse" : ""}`}
+            id="dashboard-stats"
+          >
             <ContentCard>
               <div className="flex flex-col">
                 <div className="flex justify-between items-center mb-2">
@@ -733,7 +834,13 @@ export default function DashboardPage() {
         <PageSection>
           <Tabs defaultValue="projects" className="w-full">
             <TabsList className="mb-6">
-              <TabsTrigger value="projects">Projets</TabsTrigger>
+              <TabsTrigger 
+                value="projects" 
+                className={`${focusElement === "projects-tab" ? "relative animate-pulse" : ""}`}
+                id="projects-tab"
+              >
+                Projets
+              </TabsTrigger>
               <TabsTrigger value="activity">Activité</TabsTrigger>
             </TabsList>
             <TabsContent value="projects" className="mt-0">
@@ -804,6 +911,58 @@ export default function DashboardPage() {
           </Tabs>
         </PageSection>
 
+        {/* Overlay d'animation pour les éléments de la sidebar */}
+        {focusElement === "academy-link" && (
+          <div className="fixed left-[200px] top-[320px] z-[140] animate-pulse">
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
+            >
+              <GraduationCap className="h-4 w-4" />
+            </motion.div>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 100 }}
+              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
+            />
+          </div>
+        )}
+        
+        {focusElement === "docs-link" && (
+          <div className="fixed left-[200px] top-[360px] z-[140] animate-pulse">
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
+            >
+              <BookOpen className="h-4 w-4" />
+            </motion.div>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 100 }}
+              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
+            />
+          </div>
+        )}
+        
+        {focusElement === "help-link" && (
+          <div className="fixed left-[200px] top-[680px] z-[140] animate-pulse">
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </motion.div>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 100 }}
+              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
+            />
+          </div>
+        )}
+
         {showTutorial && (
           <TutorialStep
             step={tutorialStep}
@@ -811,7 +970,7 @@ export default function DashboardPage() {
             description={tutorialSteps[tutorialStep - 1].description}
             onNext={nextTutorialStep}
             onClose={closeTutorial}
-            isLast={tutorialStep === 5}
+            isLast={tutorialStep === 7}
             icon={tutorialSteps[tutorialStep - 1].icon}
           />
         )}
