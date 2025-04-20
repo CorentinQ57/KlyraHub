@@ -105,9 +105,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       
       // Activer l'onglet leçon
       setActiveTab('lesson');
-      
-      // Option pour naviguer directement vers la page de leçon individuelle
-      // router.push(`/dashboard/academy/lessons/${lesson.id}`);
     }
     
     return (
@@ -142,14 +139,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         </div>
         
         <div className="flex items-center gap-2">
-          {canAccess && (
-            <Link href={`/dashboard/academy/lessons/${lesson.id}`}>
-              <Button variant="ghost" size="sm" className="px-2 py-1 h-auto">
-                Voir
-              </Button>
-            </Link>
-          )}
-          
           {canAccess ? (
             <CheckCircle className={`h-5 w-5 ${isActive ? 'text-blue-500' : 'text-gray-300'}`} />
           ) : (
