@@ -21,17 +21,16 @@ export type AuthVerificationState = 'not_started' | 'in_progress' | 'completed' 
 
 // TIMEOUTS & RETRY CONSTANTS
 const RETRY_COUNT = 3;
-const RETRY_DELAY_BASE = 2000; // 2 secondes (augmenté pour plus de fiabilité)
+const RETRY_DELAY_BASE = 1500; // 1,5 secondes (augmenté pour plus de fiabilité)
 const RETRY_DELAY_FACTOR = 1.5; // Facteur de backoff exponentiel
-const RETRY_DELAY_JITTER = 500; // Jitter pour éviter les requêtes simultanées
-const PRIMARY_TIMEOUT = 15000; // Augmenté de 8000 à 15000ms
-const FALLBACK_TIMEOUT = 10000; // Augmenté de 5000 à 10000ms
-const SAFETY_TIMEOUT = 20000; // Timeout de sécurité augmenté
-const CIRCUIT_BREAKER_TIMEOUT = 60000; // 60 secondes (augmenté pour plus de fiabilité)
+const RETRY_DELAY_JITTER = 300; // Jitter pour éviter les requêtes simultanées
+const PRIMARY_TIMEOUT = 8000; // Augmenté de 4000 à 8000ms
+const FALLBACK_TIMEOUT = 5000; // Augmenté de 3000 à 5000ms
+const SAFETY_TIMEOUT = 12000; // Timeout de sécurité
+const CIRCUIT_BREAKER_TIMEOUT = 20000; // 20 secondes (augmenté pour plus de fiabilité)
 const DEGRADED_MODE_ENABLED = true; // Activer le mode dégradé en cas d'échec
 const MAX_RETRIES = 3; // Nombre maximum de tentatives
-const INITIAL_BACKOFF = 2000; // Délai initial pour le backoff exponentiel
-const ABSOLUTE_TIMEOUT = 30000; // Timeout absolu de 30 secondes pour éviter les blocages complets
+const INITIAL_BACKOFF = 1000; // Délai initial pour le backoff exponentiel
 
 // Liste des routes publiques
 const publicRoutes = [
@@ -86,7 +85,7 @@ function getBackoffDelay(attempt: number) {
   // Ajout d'un jitter aléatoire pour éviter les tempêtes de requêtes
   const jitter = Math.random() * RETRY_DELAY_JITTER;
   
-  return Math.min(exponentialDelay + jitter, 20000); // Maximum 20 secondes
+  return Math.min(exponentialDelay + jitter, 15000); // Maximum 15 secondes
 }
 
 // État du gestionnaire de token
@@ -109,8 +108,6 @@ export default function ClientTokenManager() {
   const hasRedirectedRef = useRef<boolean>(false);
   const inDegradedMode = useRef<boolean>(false);
   const latestSessionRef = useRef<Session | null>(null);
-  const absoluteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSuccessfulAuthRef = useRef<number>(0);
   
   // Protection contre les redirections en boucle - simplifiée
   useEffect(() => {
@@ -171,8 +168,8 @@ export default function ClientTokenManager() {
         const cachedTimeMs = parseInt(cachedTime);
         const now = Date.now();
         
-        // Le cache est valide pendant 10 minutes (600000ms)
-        if (!isNaN(cachedTimeMs) && now - cachedTimeMs < 600000) {
+        // Le cache est valide pendant 5 minutes (300000ms)
+        if (!isNaN(cachedTimeMs) && now - cachedTimeMs < 300000) {
           console.log('Using cached auth status:', cachedStatus);
           if (cachedStatus === 'authenticated') {
             setState('authenticated');
@@ -201,47 +198,58 @@ export default function ClientTokenManager() {
     }
   }, []);
 
-  // GESTION DE LA REDIRECTION - simplifiée et protégée contre les boucles
+  // Effet redirection avec protection améliorée
   useEffect(() => {
-    // Protection contre les actions simultanées
+    // Si circuit breaker actif, ne pas rediriger
+    if (circuitBreakerRef.current) return;
+    
+    // Ne pas rediriger en mode dégradé
+    if (state === 'degraded') return;
+    
+    // Ne pas rediriger si en cours de chargement
+    if (state === 'loading') return;
+    
+    // Protection: ne pas rediriger si déjà redirigé récemment
     if (hasRedirectedRef.current) return;
     
     try {
-      // Ne pas rediriger si on est en mode dégradé
-      if (inDegradedMode.current) {
-        console.log('In degraded mode, skipping redirection');
+      const now = Date.now();
+      const lastRedirectionTime = parseInt(localStorage.getItem('last_redirection') || '0');
+      
+      // Vérifie si une redirection a eu lieu dans les 5 dernières secondes
+      if (now - lastRedirectionTime < 5000) {
+        console.warn('Skipping redirection: too recent');
         return;
       }
       
-      // Ne pas rediriger si on est toujours en chargement initial
-      if (state === 'loading') {
-        return;
-      }
+      const isPublic = isPublicRoute(pathname || '');
       
-      // Cas 1: Utilisateur authentifié sur une page de login -> Dashboard
-      if (state === 'authenticated' && pathname && loginRoutes.includes(pathname)) {
-        console.log('Authenticated user on login page, redirecting to dashboard');
-        hasRedirectedRef.current = true;
-        
-        // Incrémenter le compteur de redirection
-        const redirectionCount = parseInt(localStorage.getItem('redirection_count') || '0');
-        localStorage.setItem('redirection_count', (redirectionCount + 1).toString());
-        
-        router.push('/dashboard');
-      } 
-      // Cas 2: Utilisateur non authentifié sur une page protégée -> Login
-      else if (state === 'unauthenticated' && pathname && !isPublicRoute(pathname)) {
-        console.log('Unauthenticated user on protected page, redirecting to login');
-        hasRedirectedRef.current = true;
-        
-        // Incrémenter le compteur de redirection
-        const redirectionCount = parseInt(localStorage.getItem('redirection_count') || '0');
-        localStorage.setItem('redirection_count', (redirectionCount + 1).toString());
-        
-        // Stocker la page d'origine pour y revenir après login
-        localStorage.setItem('redirect_after_login', pathname);
+      if (state === 'authenticated') {
+        // Si connecté et sur une page de login, rediriger vers le dashboard
+        if (loginRoutes.includes(pathname || '')) {
+          console.log('Authenticated user on login page, redirecting to dashboard');
+          hasRedirectedRef.current = true;
+          localStorage.setItem('last_redirection', now.toString());
           
-        router.push('/login');
+          // Incrémenter compteur pour le circuit breaker
+          const count = parseInt(localStorage.getItem('redirection_count') || '0');
+          localStorage.setItem('redirection_count', (count + 1).toString());
+          
+          router.push('/dashboard');
+        }
+      } else if (state === 'unauthenticated') {
+        // Si non connecté et sur une page protégée, rediriger vers la connexion
+        if (!isPublic) {
+          console.log('Unauthenticated user on protected page, redirecting to login');
+          hasRedirectedRef.current = true;
+          localStorage.setItem('last_redirection', now.toString());
+          
+          // Incrémenter compteur pour le circuit breaker
+          const count = parseInt(localStorage.getItem('redirection_count') || '0');
+          localStorage.setItem('redirection_count', (count + 1).toString());
+          
+          router.push('/login');
+        }
       }
     } catch (error) {
       console.error('Error in redirection effect:', error);
@@ -265,28 +273,6 @@ export default function ClientTokenManager() {
     try {
       checkInProgressRef.current = true;
       
-      // Mettre en place un timeout absolu pour éviter les blocages complets
-      if (absoluteTimeoutRef.current) {
-        clearTimeout(absoluteTimeoutRef.current);
-      }
-      
-      absoluteTimeoutRef.current = setTimeout(() => {
-        console.error('[ClientTokenManager] Absolute timeout reached, forcing completion');
-        checkInProgressRef.current = false;
-        
-        // Si nous n'avons pas eu d'authentification réussie récemment, passer en mode dégradé
-        const now = Date.now();
-        if (now - lastSuccessfulAuthRef.current > 60000) { // 1 minute sans succès
-          inDegradedMode.current = true;
-          setState('degraded');
-          toast({
-            title: "Mode dégradé activé",
-            description: "L'application fonctionne en mode limité suite à un délai d'authentification excessif.",
-            variant: "destructive"
-          });
-        }
-      }, ABSOLUTE_TIMEOUT);
-      
       // Vérifier si nous sommes sur une route publique
       const isPublic = isPublicRoute(pathname || '');
       
@@ -295,7 +281,6 @@ export default function ClientTokenManager() {
       if (state === 'authenticated' && isPublic && !options.isRetry && !options.isInitial) {
         console.log('[ClientTokenManager] Already authenticated on public route, skipping check');
         checkInProgressRef.current = false;
-        clearTimeout(absoluteTimeoutRef.current!);
         return;
       }
             
@@ -316,7 +301,7 @@ export default function ClientTokenManager() {
           console.error(`[ClientTokenManager] Maximum retries (${MAX_RETRIES}) reached, activating circuit breaker`);
           circuitBreakerRef.current = true;
           
-          // Active le circuit breaker pour 60 secondes
+          // Active le circuit breaker pour 30 secondes
           if (circuitBreakerTimerRef.current) {
             clearTimeout(circuitBreakerTimerRef.current);
           }
@@ -325,7 +310,7 @@ export default function ClientTokenManager() {
             console.log('[ClientTokenManager] Resetting circuit breaker');
             circuitBreakerRef.current = false;
             retryCountRef.current = 0;
-          }, CIRCUIT_BREAKER_TIMEOUT);
+          }, 30000);
           
           // En mode dégradé après échec complet
           inDegradedMode.current = true;
@@ -361,7 +346,6 @@ export default function ClientTokenManager() {
         inDegradedMode.current = true;
         console.warn('[ClientTokenManager] Forced degraded mode active');
         clearTimeout(timeoutId);
-        clearTimeout(absoluteTimeoutRef.current!);
         checkInProgressRef.current = false;
         return;
       }
@@ -373,35 +357,9 @@ export default function ClientTokenManager() {
       
       // Annuler le timeout car la réponse est arrivée
       clearTimeout(timeoutId);
-      clearTimeout(absoluteTimeoutRef.current!);
         
-      if (error) {
+        if (error) {
         console.error('[ClientTokenManager] Error getting user:', error.message);
-        
-        // Tentative de rafraîchissement automatique si le token est expiré
-        if (error.message.includes('expired') || error.message.includes('invalid')) {
-          try {
-            console.log('[ClientTokenManager] Attempting token refresh due to expiration');
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            
-            if (refreshError) {
-              console.error('[ClientTokenManager] Session refresh failed:', refreshError.message);
-              throw refreshError;
-            }
-            
-            if (refreshData.session) {
-              console.log('[ClientTokenManager] Token refreshed successfully');
-              lastSuccessfulAuthRef.current = Date.now();
-              setState('authenticated');
-              retryCountRef.current = 0;
-              dispatchAuthEvent('authenticated', refreshData.user);
-              checkInProgressRef.current = false;
-              return;
-            }
-          } catch (refreshErr) {
-            console.error('[ClientTokenManager] Error during token refresh:', refreshErr);
-          }
-        }
         
         // Réessayer avec backoff si ce n'est pas déjà une tentative
         if (!options.isRetry && retryCountRef.current < MAX_RETRIES) {
@@ -421,7 +379,6 @@ export default function ClientTokenManager() {
         console.log('[ClientTokenManager] User is authenticated');
         setState('authenticated');
         retryCountRef.current = 0; // réinitialiser le compteur de tentatives
-        lastSuccessfulAuthRef.current = Date.now();
         dispatchAuthEvent('authenticated', user);
       } else {
         // Pas d'utilisateur, non authentifié
@@ -437,12 +394,6 @@ export default function ClientTokenManager() {
       await emergencyRecovery();
     } finally {
       checkInProgressRef.current = false;
-      
-      // S'assurer que le timeout absolu est nettoyé
-      if (absoluteTimeoutRef.current) {
-        clearTimeout(absoluteTimeoutRef.current);
-        absoluteTimeoutRef.current = null;
-      }
     }
   }, [supabase, state, pathname, isPublicRoute, getBackoffDelay, toast]);
 
@@ -546,21 +497,6 @@ export default function ClientTokenManager() {
         setState('degraded');
       }, FALLBACK_TIMEOUT);
       
-      // Tenter un rafraîchissement du token avant le dernier essai
-      try {
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        if (!refreshError && refreshData.session) {
-          console.log('[ClientTokenManager] Successfully refreshed session during emergency recovery');
-          clearTimeout(emergencyTimeoutId);
-          setState('authenticated');
-          lastSuccessfulAuthRef.current = Date.now();
-          dispatchAuthEvent('authenticated', refreshData.user);
-          return;
-        }
-      } catch (refreshErr) {
-        console.error('[ClientTokenManager] Error during emergency refresh:', refreshErr);
-      }
-      
       // Dernier essai pour récupérer l'utilisateur
       const { data: { user }, error } = await supabase.auth.getUser();
       
@@ -581,7 +517,6 @@ export default function ClientTokenManager() {
           if (recoveredUser && !retryError) {
             console.log('[ClientTokenManager] Successfully recovered user session');
             setState('authenticated');
-            lastSuccessfulAuthRef.current = Date.now();
             dispatchAuthEvent('authenticated', recoveredUser);
             return;
           }
@@ -602,7 +537,6 @@ export default function ClientTokenManager() {
         // L'utilisateur a été récupéré avec succès
         console.log('[ClientTokenManager] Emergency recovery successful');
         setState('authenticated');
-        lastSuccessfulAuthRef.current = Date.now();
         dispatchAuthEvent('authenticated', user);
       }
     } catch (error) {
@@ -619,12 +553,6 @@ export default function ClientTokenManager() {
       detail: { status, user } 
     });
     window.dispatchEvent(event);
-    
-    // Déclencher un événement spécifique pour la détection des changements d'authentification
-    const authChangeEvent = new CustomEvent('klyra:auth-change', {
-      detail: { status, user, timestamp: Date.now() }
-    });
-    window.dispatchEvent(authChangeEvent);
     
     // Stocker dans le localStorage pour la synchronisation entre onglets
     try {

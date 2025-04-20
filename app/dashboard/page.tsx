@@ -583,22 +583,22 @@ export default function DashboardPage() {
         setFocusElement("");
         break;
       case 2: // Dashboard
-        setFocusElement("sidebar-dashboard");
+        setFocusElement("dashboard-stats");
         break;
       case 3: // Marketplace
-        setFocusElement("sidebar-marketplace");
+        setFocusElement("marketplace-link");
         break;
       case 4: // Projets
-        setFocusElement("sidebar-dashboard"); // Projets sont dans le dashboard
+        setFocusElement("projects-tab");
         break;
       case 5: // Academy
-        setFocusElement("sidebar-academy");
+        setFocusElement("academy-link");
         break;
       case 6: // Documentation
-        setFocusElement("sidebar-docs");
+        setFocusElement("docs-link");
         break;
       case 7: // Support
-        setFocusElement("sidebar-help");
+        setFocusElement("help-link");
         break;
       default:
         setFocusElement("");
@@ -680,22 +680,12 @@ export default function DashboardPage() {
     {
       title: "Ton tableau de bord 📊",
       description: "Voici ton dashboard ! C'est ici que tu retrouveras une vue d'ensemble de tous tes projets, tes statistiques personnelles et tes dernières activités. Un vrai centre de contrôle !",
-      icon: <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            >
-              <LayoutDashboard className="h-6 w-6" />
-            </motion.div>
+      icon: <LayoutDashboard className="h-6 w-6" />
     },
     {
       title: "Découvre notre marketplace 🛍️",
       description: "Notre marketplace regroupe tous nos services design et web. Trouve ce dont tu as besoin en filtrant par catégorie ou budget, puis commande en quelques clics !",
-      icon: <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            >
-              <Store className="h-6 w-6" />
-            </motion.div>
+      icon: <Store className="h-6 w-6" />
     },
     {
       title: "Gère tes projets efficacement 🚀",
@@ -710,22 +700,12 @@ export default function DashboardPage() {
     {
       title: "Explore notre Academy 🎓",
       description: "Notre Academy te propose des cours, tutoriels et ressources pour approfondir tes connaissances en design et développement. Apprends à ton rythme !",
-      icon: <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            >
-              <GraduationCap className="h-6 w-6" />
-            </motion.div>
+      icon: <GraduationCap className="h-6 w-6" />
     },
     {
       title: "Consulte la documentation 📚",
       description: "Besoin d'aide ? Notre documentation complète te guide pas à pas dans l'utilisation de Klyra Hub. Tu y trouveras des réponses à toutes tes questions !",
-      icon: <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            >
-              <BookOpen className="h-6 w-6" />
-            </motion.div>
+      icon: <BookOpen className="h-6 w-6" />
     },
     {
       title: "Notre support est là pour toi 💬",
@@ -785,7 +765,8 @@ export default function DashboardPage() {
         >
           <Link 
             href="/dashboard/marketplace"
-            className={`${focusElement === "sidebar-marketplace" ? "relative animate-pulse" : ""}`}
+            className={`${focusElement === "marketplace-link" ? "relative animate-pulse" : ""}`}
+            id="marketplace-link"
           >
             <Button>
               <Store className="mr-2 h-4 w-4" /> Explorer les services
@@ -795,7 +776,8 @@ export default function DashboardPage() {
 
         <PageSection>
           <div 
-            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${focusElement === "sidebar-dashboard" ? "relative animate-pulse" : ""}`}
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${focusElement === "dashboard-stats" ? "relative animate-pulse" : ""}`}
+            id="dashboard-stats"
           >
             <ContentCard>
               <div className="flex flex-col">
@@ -854,7 +836,8 @@ export default function DashboardPage() {
             <TabsList className="mb-6">
               <TabsTrigger 
                 value="projects" 
-                className={`${focusElement === "sidebar-dashboard" ? "relative animate-pulse" : ""}`}
+                className={`${focusElement === "projects-tab" ? "relative animate-pulse" : ""}`}
+                id="projects-tab"
               >
                 Projets
               </TabsTrigger>
@@ -928,173 +911,55 @@ export default function DashboardPage() {
           </Tabs>
         </PageSection>
 
-        {/* Indicateurs visuels pour mettre en évidence les éléments du menu latéral */}
-        {focusElement === "sidebar-dashboard" && (
-          <div className="fixed left-0 top-[72px] z-[140] pointer-events-none">
-            <div className="relative">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ type: "spring", damping: 12 }}
-                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
-              />
-              <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: [0, 1.2, 1] }}
-                transition={{ delay: 0.3, type: "spring", damping: 8 }}
-                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
-              >
-                <motion.div
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                </motion.div>
-              </motion.div>
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 30, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
-                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
-              />
-            </div>
+        {/* Overlay d'animation pour les éléments de la sidebar */}
+        {focusElement === "academy-link" && (
+          <div className="fixed left-[200px] top-[320px] z-[140] animate-pulse">
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
+            >
+              <GraduationCap className="h-4 w-4" />
+            </motion.div>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 100 }}
+              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
+            />
           </div>
         )}
         
-        {focusElement === "sidebar-marketplace" && (
-          <div className="fixed left-0 top-[152px] z-[140] pointer-events-none">
-            <div className="relative">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ type: "spring", damping: 12 }}
-                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
-              />
-              <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: [0, 1.2, 1] }}
-                transition={{ delay: 0.3, type: "spring", damping: 8 }}
-                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
-              >
-                <motion.div
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <Store className="h-4 w-4" />
-                </motion.div>
-              </motion.div>
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 30, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
-                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
-              />
-            </div>
+        {focusElement === "docs-link" && (
+          <div className="fixed left-[200px] top-[360px] z-[140] animate-pulse">
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
+            >
+              <BookOpen className="h-4 w-4" />
+            </motion.div>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 100 }}
+              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
+            />
           </div>
         )}
         
-        {focusElement === "sidebar-academy" && (
-          <div className="fixed left-0 top-[232px] z-[140] pointer-events-none">
-            <div className="relative">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ type: "spring", damping: 12 }}
-                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
-              />
-              <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: [0, 1.2, 1] }}
-                transition={{ delay: 0.3, type: "spring", damping: 8 }}
-                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
-              >
-                <motion.div
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <GraduationCap className="h-4 w-4" />
-                </motion.div>
-              </motion.div>
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 30, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
-                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
-              />
-            </div>
-          </div>
-        )}
-        
-        {focusElement === "sidebar-docs" && (
-          <div className="fixed left-0 top-[272px] z-[140] pointer-events-none">
-            <div className="relative">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ type: "spring", damping: 12 }}
-                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
-              />
-              <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: [0, 1.2, 1] }}
-                transition={{ delay: 0.3, type: "spring", damping: 8 }}
-                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
-              >
-                <motion.div
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <BookOpen className="h-4 w-4" />
-                </motion.div>
-              </motion.div>
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 30, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
-                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
-              />
-            </div>
-          </div>
-        )}
-        
-        {focusElement === "sidebar-help" && (
-          <div className="fixed left-0 bottom-[60px] z-[140] pointer-events-none">
-            <div className="relative">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ type: "spring", damping: 12 }}
-                className="absolute left-0 w-[240px] h-[40px] bg-blue-500/20 border-l-4 border-blue-500"
-              />
-              <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: [0, 1.2, 1] }}
-                transition={{ delay: 0.3, type: "spring", damping: 8 }}
-                className="absolute left-[220px] top-[5px] w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-lg"
-              >
-                <motion.div
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </motion.div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ delay: 0.5, type: "spring" }}
-                className="absolute left-[80px] top-[-45px] bg-blue-500 text-white px-3 py-2 rounded text-sm shadow-lg whitespace-nowrap"
-              >
-                Clique ici pour obtenir de l'aide !
-                <div className="absolute bottom-[-6px] left-[40px] w-3 h-3 bg-blue-500 rotate-45"></div>
-              </motion.div>
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 30, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.3 }}
-                className="h-0.5 bg-blue-500 absolute left-[-30px] top-[20px]"
-              />
-            </div>
+        {focusElement === "help-link" && (
+          <div className="fixed left-[200px] top-[680px] z-[140] animate-pulse">
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </motion.div>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 100 }}
+              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
+            />
           </div>
         )}
 
