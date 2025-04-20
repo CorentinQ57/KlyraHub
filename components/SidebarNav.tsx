@@ -274,6 +274,12 @@ export function SidebarNav() {
                     <Link
                       key={link.href}
                       href={link.href}
+                      id={
+                        link.href === '/dashboard' ? "dashboard-link" : 
+                        link.href === '/dashboard/academy' ? "academy-link" : 
+                        link.href === '/dashboard/docs' ? "docs-link" : 
+                        undefined
+                      }
                       className={cn(
                         "flex items-center rounded-md transition-colors",
                         isCollapsed ? "justify-center p-3" : "px-4 py-2",
@@ -337,19 +343,20 @@ export function SidebarNav() {
         {/* Action Links */}
         <div className="border-t py-4">
           <div className="px-3 space-y-1">
-            {actionLinks.map((link, index) => (
-              <Link
-                key={index}
+            {actionLinks.map((link) => (
+              <Link 
+                key={link.href}
                 href={link.href}
-                onClick={link.label === 'Actualiser' ? (e) => {
-                  e.preventDefault();
-                  handleReloadAuth();
-                } : undefined}
+                id={link.label === 'Aide' ? "help-link" : undefined}
                 className={cn(
                   "flex items-center rounded-md transition-colors",
                   isCollapsed ? "justify-center p-3" : "px-4 py-2",
                   "text-gray-600 hover:text-primary hover:bg-primary/5"
                 )}
+                onClick={link.href === '#' ? () => {
+                  handleReloadAuth()
+                  return false
+                } : undefined}
               >
                 <span className="flex-shrink-0">{link.icon}</span>
                 {!isCollapsed && (

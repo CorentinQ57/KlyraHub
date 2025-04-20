@@ -344,6 +344,226 @@ const TutorialStep = ({
   );
 };
 
+// Composant pour la flèche de focus du tutoriel
+const TutorialHighlight = ({ 
+  target, 
+  position = "left", 
+  arrowPosition = "center",
+  active = false,
+  label,
+}: { 
+  target: string;
+  position?: "left" | "right" | "top" | "bottom";
+  arrowPosition?: "start" | "center" | "end"; 
+  active: boolean;
+  label?: string;
+}) => {
+  const [mounted, setMounted] = useState(false);
+  const [dimensions, setDimensions] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800
+  });
+  
+  // S'adapter au redimensionnement de la fenêtre
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Ne rendre le composant que côté client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  if (!active || !mounted) return null;
+
+  // Positions prédéfinies pour des éléments spécifiques - aide à positionner correctement la flèche
+  const predefinedPositions: Record<string, { x: number, y: number, position: "left" | "right" | "top" | "bottom" }> = {
+    "dashboard-stats": { x: dimensions.width / 2 - 100, y: 220, position: "top" },
+    "marketplace-link": { x: dimensions.width - 200, y: 80, position: "top" },
+    "projects-tab": { x: 280, y: 400, position: "top" },
+    "dashboard-link": { x: 20, y: 110, position: "left" },
+    "academy-link": { x: 20, y: 280, position: "left" },
+    "docs-link": { x: 20, y: 320, position: "left" },
+    "help-link": { x: 20, y: 620, position: "left" }
+  };
+
+  // Utiliser les positions prédéfinies si disponibles
+  const pos = predefinedPositions[target] || { 
+    x: 100, 
+    y: 100, 
+    position: position 
+  };
+
+  // Classes CSS pour les positions des flèches
+  const arrowClasses = {
+    left: {
+      container: "fixed z-[500]",
+      arrow: "w-16 h-8 flex items-center justify-center",
+      base: "w-12 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-sm",
+      head: "w-5 h-5 border-t-2 border-r-2 border-blue-500 transform -rotate-45 shadow-md",
+      highlight: "absolute rounded-lg bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
+      text: "absolute text-blue-600 font-medium text-sm whitespace-nowrap bg-white px-2 py-1 rounded-md shadow-md"
+    },
+    right: {
+      container: "fixed z-[500]",
+      arrow: "w-16 h-8 flex items-center justify-center transform rotate-180",
+      base: "w-12 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-sm",
+      head: "w-5 h-5 border-t-2 border-r-2 border-blue-500 transform -rotate-45 shadow-md",
+      highlight: "absolute rounded-lg bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
+      text: "absolute text-blue-600 font-medium text-sm whitespace-nowrap bg-white px-2 py-1 rounded-md shadow-md transform -rotate-180"
+    },
+    top: {
+      container: "fixed z-[500]",
+      arrow: "w-8 h-16 flex flex-col items-center justify-center transform -rotate-90",
+      base: "w-12 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-sm",
+      head: "w-5 h-5 border-t-2 border-r-2 border-blue-500 transform -rotate-45 shadow-md",
+      highlight: "absolute rounded-lg bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
+      text: "absolute text-blue-600 font-medium text-sm whitespace-nowrap bg-white px-2 py-1 rounded-md shadow-md transform rotate-90"
+    },
+    bottom: {
+      container: "fixed z-[500]",
+      arrow: "w-8 h-16 flex flex-col items-center justify-center transform rotate-90",
+      base: "w-12 h-2 bg-gradient-to-r from-blue-400 to-blue-600 rounded-sm",
+      head: "w-5 h-5 border-t-2 border-r-2 border-blue-500 transform -rotate-45 shadow-md",
+      highlight: "absolute rounded-lg bg-blue-500/20 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
+      text: "absolute text-blue-600 font-medium text-sm whitespace-nowrap bg-white px-2 py-1 rounded-md shadow-md transform -rotate-90"
+    }
+  };
+
+  // Ajustements pour les positions de l'élément mis en évidence
+  const highlightAdjustments: Record<string, { width: number, height: number, x: number, y: number }> = {
+    "dashboard-stats": { width: 500, height: 100, x: -250, y: -50 },
+    "marketplace-link": { width: 180, height: 40, x: -90, y: -20 },
+    "projects-tab": { width: 100, height: 40, x: -50, y: -20 },
+    "dashboard-link": { width: 200, height: 40, x: 50, y: -20 },
+    "academy-link": { width: 200, height: 40, x: 50, y: -20 },
+    "docs-link": { width: 200, height: 40, x: 50, y: -20 },
+    "help-link": { width: 200, height: 40, x: 50, y: -20 }
+  };
+
+  const highAdj = highlightAdjustments[target] || { width: 100, height: 40, x: -50, y: -20 };
+  
+  // Placement du texte en fonction de la position de la flèche
+  const textPlacement = {
+    left: { right: "24px", top: "50%", transform: "translateY(-50%)" },
+    right: { left: "24px", top: "50%", transform: "translateY(-50%) rotate(180deg)" },
+    top: { bottom: "24px", left: "50%", transform: "translateX(-50%) rotate(90deg)" },
+    bottom: { top: "24px", left: "50%", transform: "translateX(-50%) rotate(-90deg)" }
+  };
+
+  const classes = arrowClasses[pos.position];
+
+  return (
+    <>
+      <motion.div
+        className={classes.container}
+        style={{ 
+          left: pos.x, 
+          top: pos.y 
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className={classes.arrow}>
+          <motion.div 
+            className={classes.base}
+            initial={{ width: 0 }}
+            animate={{ 
+              width: "3rem",
+              boxShadow: ["0 0 0px rgba(59,130,246,0.5)", "0 0 10px rgba(59,130,246,0.8)", "0 0 0px rgba(59,130,246,0.5)"]
+            }}
+            transition={{ 
+              width: { duration: 0.5 },
+              boxShadow: { 
+                repeat: Infinity, 
+                duration: 1.5,
+                ease: "easeInOut" 
+              }
+            }}
+          />
+          <motion.div
+            className={classes.head}
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: 1,
+              boxShadow: ["0 0 0px rgba(59,130,246,0.5)", "0 0 8px rgba(59,130,246,0.8)", "0 0 0px rgba(59,130,246,0.5)"]
+            }}
+            transition={{ 
+              opacity: { delay: 0.4, duration: 0.3 },
+              boxShadow: { 
+                repeat: Infinity, 
+                duration: 1.5,
+                ease: "easeInOut" 
+              }
+            }}
+          />
+        </div>
+        
+        {label && (
+          <motion.div
+            className={classes.text}
+            style={textPlacement[pos.position]}
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: 1,
+              y: [0, -3, 0],
+            }}
+            transition={{ 
+              opacity: { delay: 0.6, duration: 0.3 },
+              y: { 
+                delay: 0.8,
+                repeat: Infinity, 
+                duration: 2,
+                ease: "easeInOut" 
+              }
+            }}
+          >
+            {label}
+          </motion.div>
+        )}
+      </motion.div>
+      
+      <motion.div
+        className={classes.highlight}
+        style={{ 
+          left: pos.x + highAdj.x, 
+          top: pos.y + highAdj.y,
+          width: highAdj.width,
+          height: highAdj.height
+        }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ 
+          opacity: 0.6, 
+          scale: [0.95, 1.05, 0.95],
+          boxShadow: ["0 0 5px rgba(59,130,246,0.5)", "0 0 20px rgba(59,130,246,0.5)", "0 0 5px rgba(59,130,246,0.5)"]
+        }}
+        transition={{ 
+          opacity: { duration: 0.3 },
+          scale: {
+            duration: 2,
+            repeat: Infinity,
+            repeatType: "reverse"
+          },
+          boxShadow: {
+            duration: 2,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }
+        }}
+      />
+    </>
+  );
+};
+
 // Nouveau composant pour les statistiques
 const StatsOverview = ({ stats }: { stats: ProjectStats }) => {
   return (
@@ -449,8 +669,8 @@ export default function DashboardPage() {
   // État pour le tutoriel
   const [showTutorial, setShowTutorial] = useState<boolean>(false)
   const [tutorialStep, setTutorialStep] = useState<number>(1)
-  // Ref pour l'animation de focus
   const [focusElement, setFocusElement] = useState<string>("")
+  const [highlightLabel, setHighlightLabel] = useState<string>("")
   
   // Paramètres de paiement réussi
   const paymentSuccess = searchParams.get('payment_success')
@@ -581,27 +801,35 @@ export default function DashboardPage() {
     switch(step) {
       case 1: // Bienvenue
         setFocusElement("");
+        setHighlightLabel("");
         break;
       case 2: // Dashboard
-        setFocusElement("dashboard-stats");
+        setFocusElement("dashboard-link");
+        setHighlightLabel("Voici ton Dashboard");
         break;
       case 3: // Marketplace
         setFocusElement("marketplace-link");
+        setHighlightLabel("Découvre nos services ici");
         break;
       case 4: // Projets
         setFocusElement("projects-tab");
+        setHighlightLabel("Gère tes projets");
         break;
       case 5: // Academy
         setFocusElement("academy-link");
+        setHighlightLabel("Apprends avec l'Academy");
         break;
       case 6: // Documentation
         setFocusElement("docs-link");
+        setHighlightLabel("Consulte la documentation");
         break;
       case 7: // Support
         setFocusElement("help-link");
+        setHighlightLabel("Besoin d'aide ? Clique ici");
         break;
       default:
         setFocusElement("");
+        setHighlightLabel("");
     }
   }
   
@@ -765,7 +993,6 @@ export default function DashboardPage() {
         >
           <Link 
             href="/dashboard/marketplace"
-            className={`${focusElement === "marketplace-link" ? "relative animate-pulse" : ""}`}
             id="marketplace-link"
           >
             <Button>
@@ -836,7 +1063,6 @@ export default function DashboardPage() {
             <TabsList className="mb-6">
               <TabsTrigger 
                 value="projects" 
-                className={`${focusElement === "projects-tab" ? "relative animate-pulse" : ""}`}
                 id="projects-tab"
               >
                 Projets
@@ -911,57 +1137,12 @@ export default function DashboardPage() {
           </Tabs>
         </PageSection>
 
-        {/* Overlay d'animation pour les éléments de la sidebar */}
-        {focusElement === "academy-link" && (
-          <div className="fixed left-[200px] top-[320px] z-[140] animate-pulse">
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
-            >
-              <GraduationCap className="h-4 w-4" />
-            </motion.div>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: 100 }}
-              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
-            />
-          </div>
-        )}
-        
-        {focusElement === "docs-link" && (
-          <div className="fixed left-[200px] top-[360px] z-[140] animate-pulse">
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
-            >
-              <BookOpen className="h-4 w-4" />
-            </motion.div>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: 100 }}
-              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
-            />
-          </div>
-        )}
-        
-        {focusElement === "help-link" && (
-          <div className="fixed left-[200px] top-[680px] z-[140] animate-pulse">
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white"
-            >
-              <HelpCircle className="h-4 w-4" />
-            </motion.div>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: 100 }}
-              className="h-1 bg-blue-500 absolute -left-[100px] top-4"
-            />
-          </div>
-        )}
+        {/* Composant de mise en évidence du tutoriel */}
+        <TutorialHighlight 
+          target={focusElement}
+          active={showTutorial && focusElement !== ""}
+          label={highlightLabel}
+        />
 
         {showTutorial && (
           <TutorialStep
