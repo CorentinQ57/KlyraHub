@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { notFound, useRouter } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, BookOpen, Clock, Play, CheckCircle, Lock, Award, Users, Download, Video, FileText, MessageSquare, ExternalLink } from 'lucide-react'
@@ -31,8 +31,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedLesson, setSelectedLesson] = useState<CourseLesson | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-
-  const router = useRouter()
+  const [showVideo, setShowVideo] = useState(false)
 
   // Récupérer les données du cours et des modules
   useEffect(() => {
@@ -42,8 +41,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         const courseData = await getCourseById(params.id)
         
         if (!courseData) {
-          router.push('/dashboard/academy/courses')
-          return
+          return notFound()
         }
         
         setCourse(courseData)
@@ -64,30 +62,34 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     }
     
     fetchCourseData()
-  }, [params.id, router])
+  }, [params.id])
 
   // Fonction pour formater la durée totale
   const formatTotalDuration = () => {
-    if (!modules.length) return '0 min'
-    
+    // Calculer la durée totale des leçons (en supposant un format comme "15-20 min")
     let totalMinutes = 0
     
     modules.forEach(module => {
       module.lessons.forEach(lesson => {
-        // Extrait les minutes de la durée (ex: "10 min" -> 10)
-        const durationMatch = lesson.duration?.match(/(\d+)/)
-        if (durationMatch) {
-          totalMinutes += parseInt(durationMatch[1], 10)
+        // Extraire les minutes du format "XX-YY min" ou "XX min"
+        const durationText = lesson.duration
+        const minutes = durationText.includes('-')
+          ? parseInt(durationText.split('-')[1])
+          : parseInt(durationText)
+          
+        if (!isNaN(minutes)) {
+          totalMinutes += minutes
         }
       })
     })
     
-    if (totalMinutes < 60) {
-      return `${totalMinutes} min`
-    } else {
+    // Formater en heures et minutes
+    if (totalMinutes >= 60) {
       const hours = Math.floor(totalMinutes / 60)
       const minutes = totalMinutes % 60
       return `${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`
+    } else {
+      return `${totalMinutes} min`
     }
   }
 
@@ -159,92 +161,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
     )
   }
 
-  // Ajouter cette fonction pour vérifier si c'est la dernière leçon du dernier module
-  const isLastLesson = () => {
-    if (!selectedLesson || modules.length === 0) return false;
-    
-    // Trouver le dernier module
-    const lastModule = modules[modules.length - 1];
-    // Vérifier que le dernier module a des leçons
-    if (!lastModule.lessons || lastModule.lessons.length === 0) return false;
-    
-    // Trouver la dernière leçon du dernier module
-    const lastLesson = lastModule.lessons[lastModule.lessons.length - 1];
-    if (!lastLesson) return false;
-    
-    // Vérifier si la leçon sélectionnée est la dernière
-    return lastLesson.id === selectedLesson.id;
-  }
-
-  // Gestion de la navigation
-  const handleNextLesson = () => {
-    if (!selectedLesson) return;
-    
-    // Trouver le module courant
-    const currentModule = modules.find(m => m.lessons.some(l => l.id === selectedLesson.id));
-    if (!currentModule) return;
-    
-    // Trouver l'index de la leçon courante dans ce module
-    const lessonIndex = currentModule.lessons.findIndex(l => l.id === selectedLesson.id);
-    
-    // S'il y a une leçon suivante dans ce module
-    if (lessonIndex < currentModule.lessons.length - 1) {
-      router.push(`/dashboard/academy/courses/${params.id}/lessons/${currentModule.lessons[lessonIndex + 1].id}`);
-    } else {
-      // Trouver le module suivant
-      const moduleIndex = modules.findIndex(m => m.id === currentModule.id);
-      if (moduleIndex < modules.length - 1) {
-        // Aller à la première leçon du module suivant
-        const nextModule = modules[moduleIndex + 1];
-        if (nextModule.lessons.length > 0) {
-          router.push(`/dashboard/academy/courses/${params.id}/lessons/${nextModule.lessons[0].id}`);
-        }
-      }
-    }
-  }
-
-  const handlePreviousLesson = () => {
-    if (!selectedLesson) return;
-    
-    // Trouver le module courant
-    const currentModule = modules.find(m => m.lessons.some(l => l.id === selectedLesson.id));
-    if (!currentModule) return;
-    
-    // Trouver l'index de la leçon courante dans ce module
-    const lessonIndex = currentModule.lessons.findIndex(l => l.id === selectedLesson.id);
-    
-    // S'il y a une leçon précédente dans ce module
-    if (lessonIndex > 0) {
-      router.push(`/dashboard/academy/courses/${params.id}/lessons/${currentModule.lessons[lessonIndex - 1].id}`);
-    } else {
-      // Trouver le module précédent
-      const moduleIndex = modules.findIndex(m => m.id === currentModule.id);
-      if (moduleIndex > 0) {
-        // Aller à la dernière leçon du module précédent
-        const prevModule = modules[moduleIndex - 1];
-        if (prevModule.lessons.length > 0) {
-          router.push(`/dashboard/academy/courses/${params.id}/lessons/${prevModule.lessons[prevModule.lessons.length - 1].id}`);
-        }
-      }
-    }
-  }
-
-  const isFirstLesson = () => {
-    if (!selectedLesson || modules.length === 0) return false;
-    
-    // Trouver le premier module
-    const firstModule = modules[0];
-    // Vérifier que le premier module a des leçons
-    if (!firstModule.lessons || firstModule.lessons.length === 0) return false;
-    
-    // Trouver la première leçon du premier module
-    const firstLesson = firstModule.lessons[0];
-    if (!firstLesson) return false;
-    
-    // Vérifier si la leçon sélectionnée est la première
-    return firstLesson.id === selectedLesson.id;
-  }
-
   if (loading) {
     return (
       <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
@@ -292,15 +208,25 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           </Link>
         </PageHeader>
 
-        {/* En-tête du cours */}
+        {/* Nouvelle structure avec vidéo à gauche et contenu à droite */}
         <PageSection className="pb-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="col-span-1 lg:col-span-2">
+              {/* Section vidéo d'introduction */}
               <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative">
-                {course.image_url ? (
+                {showVideo ? (
+                  <div className="w-full h-full">
+                    <iframe 
+                      src={course.video_url || "https://player.vimeo.com/video/123456789"} 
+                      className="w-full h-full border-0" 
+                      allow="autoplay; fullscreen; picture-in-picture" 
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                ) : (
                   <>
                     <Image
-                      src={course.image_url}
+                      src={course.image_url || "/images/placeholder-course.jpg"}
                       alt={course.title}
                       fill
                       className="object-cover"
@@ -308,7 +234,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 flex items-center justify-center">
                       <Button 
-                        onClick={() => setIsPlaying(!isPlaying)} 
+                        onClick={() => setShowVideo(true)} 
                         size="lg" 
                         className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
                       >
@@ -316,10 +242,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       </Button>
                     </div>
                   </>
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <BookOpen className="h-20 w-20 text-gray-400" />
-                  </div>
                 )}
               </div>
 
@@ -355,95 +277,17 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   <span>152 inscrits</span>
                 </div>
               </div>
-            </div>
-            
-            <div className="col-span-1">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl">Inscrivez-vous au cours</CardTitle>
-                </CardHeader>
-                <CardContent className="pb-4">
-                  <ul className="space-y-2 mb-6">
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">{course.lessons} leçons</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Accès à vie au contenu</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Certificat d'achèvement</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Ressources téléchargeables</span>
-                    </li>
-                  </ul>
-                  
-                  {user ? (
-                    <Button className="w-full" onClick={() => {
-                      if (modules.length > 0 && modules[0].lessons.length > 0) {
-                        // Rediriger vers la première leçon
-                        window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
-                      } else {
-                        // Activer l'onglet contenu si pas de leçon disponible
-                        setActiveTab('content');
-                      }
-                    }}>Commencer le cours</Button>
-                  ) : (
-                    <div className="space-y-3">
-                      <Button className="w-full">S'inscrire pour commencer</Button>
-                      <Link href="/auth" className="block text-center text-sm text-blue-600 hover:text-blue-800">
-                        Déjà inscrit? Connectez-vous
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
               
-              <div className="mt-6">
-                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Ressources incluses</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      <li className="flex items-center">
-                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Download className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm">Guide de référence PDF</span>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Download className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm">Exercices pratiques</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </PageSection>
-
-        {/* Contenu du cours en onglets */}
-        <PageSection>
-          <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-              <TabsTrigger value="content">Contenu</TabsTrigger>
-              {selectedLesson && (
-                <TabsTrigger value="lesson">Leçon en cours</TabsTrigger>
-              )}
-            </TabsList>
-            
-            <TabsContent value="overview" className="mt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
+              {/* Contenu du cours en onglets */}
+              <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
+                <TabsList className="mb-6">
+                  <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+                  {selectedLesson && (
+                    <TabsTrigger value="lesson">Leçon en cours</TabsTrigger>
+                  )}
+                </TabsList>
+                
+                <TabsContent value="overview" className="mt-0">
                   <ContentCard>
                     <h2 className="text-2xl font-bold mb-4">À propos de ce cours</h2>
                     <p className="text-gray-700 mb-6">{course.description}</p>
@@ -512,251 +356,315 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       </div>
                     </ContentCard>
                   </div>
+                  
+                  {/* Section d'inscription mobile */}
+                  <div className="mt-8 lg:hidden">
+                    <Card className="bg-white shadow-sm">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="text-xl">Inscrivez-vous au cours</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pb-4">
+                        <ul className="space-y-2 mb-6">
+                          <li className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            <span className="text-sm">{course.lessons} leçons</span>
+                          </li>
+                          <li className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            <span className="text-sm">Accès à vie au contenu</span>
+                          </li>
+                          <li className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            <span className="text-sm">Certificat d'achèvement</span>
+                          </li>
+                          <li className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            <span className="text-sm">Ressources téléchargeables</span>
+                          </li>
+                        </ul>
+                        
+                        {user ? (
+                          <Button className="w-full" onClick={() => {
+                            if (modules.length > 0 && modules[0].lessons.length > 0) {
+                              // Rediriger vers la première leçon
+                              window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
+                            }
+                          }}>Commencer le cours</Button>
+                        ) : (
+                          <div className="space-y-3">
+                            <Button className="w-full">S'inscrire pour commencer</Button>
+                            <Link href="/auth" className="block text-center text-sm text-blue-600 hover:text-blue-800">
+                              Déjà inscrit? Connectez-vous
+                            </Link>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+                
+                {selectedLesson && (
+                  <TabsContent value="lesson" className="mt-0">
+                    <ContentCard>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold">{selectedLesson.title}</h2>
+                        
+                        <div className="flex items-center gap-4">
+                          <Link href={`/dashboard/academy/lessons/${selectedLesson.id}`}>
+                            <Button variant="outline" size="sm">
+                              Voir en plein écran
+                              <ExternalLink className="ml-2 h-4 w-4" />
+                            </Button>
+                          </Link>
+                          
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <Clock className="h-4 w-4" />
+                            <span>{selectedLesson.duration}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {selectedLesson.type === 'video' && (
+                        <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative mb-6">
+                          <div className="flex h-full items-center justify-center">
+                            <Button 
+                              onClick={() => setIsPlaying(!isPlaying)} 
+                              size="lg" 
+                              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                            >
+                              <Play className="h-8 w-8 text-gray-800" fill="currentColor" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="prose max-w-none">
+                        <p>
+                          {selectedLesson.description || 'Contenu de la leçon en cours de développement.'}
+                        </p>
+                        
+                        {!selectedLesson.content && (
+                          <>
+                            <p>
+                              Dans cette leçon, nous allons explorer les concepts fondamentaux et les principes clés
+                              qui vous permettront de maîtriser ce sujet important. Vous apprendrez des techniques
+                              pratiques et des approches méthodiques pour résoudre les problèmes courants.
+                            </p>
+                            <h3>Points clés de cette leçon</h3>
+                            <ul>
+                              <li>Comprendre les principes fondamentaux et leur application</li>
+                              <li>Développer une approche méthodique pour résoudre les problèmes</li>
+                              <li>Appliquer les techniques dans des situations réelles</li>
+                              <li>Éviter les erreurs communes et les pièges</li>
+                            </ul>
+                            <p>
+                              Cette leçon contient des exercices pratiques et des exemples concrets pour vous aider
+                              à mieux comprendre et appliquer les concepts présentés.
+                            </p>
+                          </>
+                        )}
+                      </div>
+                      
+                      <div className="mt-8 pt-6 border-t flex items-center justify-between">
+                        <Button 
+                          variant="outline" 
+                          disabled={
+                            modules[0].lessons[0].id === selectedLesson.id
+                          }
+                          onClick={() => {
+                            // Trouver la leçon précédente
+                            let found = false
+                            
+                            for (const module of modules) {
+                              for (let i = 0; i < module.lessons.length; i++) {
+                                if (module.lessons[i].id === selectedLesson.id && i > 0) {
+                                  setSelectedLesson(module.lessons[i - 1])
+                                  found = true
+                                  break
+                                }
+                              }
+                              if (found) break
+                            }
+                          }}
+                        >
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          Leçon précédente
+                        </Button>
+                        
+                        <Button 
+                          disabled={
+                            modules[modules.length - 1].lessons[modules[modules.length - 1].lessons.length - 1].id === selectedLesson.id
+                          }
+                          onClick={() => {
+                            // Trouver la leçon suivante
+                            let found = false
+                            
+                            for (const module of modules) {
+                              for (let i = 0; i < module.lessons.length; i++) {
+                                if (module.lessons[i].id === selectedLesson.id && i < module.lessons.length - 1) {
+                                  setSelectedLesson(module.lessons[i + 1])
+                                  found = true
+                                  break
+                                }
+                              }
+                              if (found) break
+                            }
+                          }}
+                        >
+                          Leçon suivante
+                          <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                        </Button>
+                      </div>
+                    </ContentCard>
+                  </TabsContent>
+                )}
+              </Tabs>
+            </div>
+            
+            <div className="col-span-1">
+              {/* Section d'inscription au cours (desktop seulement) */}
+              <Card className="bg-white shadow-sm mb-6 hidden lg:block">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl">Inscrivez-vous au cours</CardTitle>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <ul className="space-y-2 mb-6">
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span className="text-sm">{course.lessons} leçons</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span className="text-sm">Accès à vie au contenu</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span className="text-sm">Certificat d'achèvement</span>
+                    </li>
+                    <li className="flex items-center">
+                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                      <span className="text-sm">Ressources téléchargeables</span>
+                    </li>
+                  </ul>
+                  
+                  {user ? (
+                    <Button className="w-full" onClick={() => {
+                      if (modules.length > 0 && modules[0].lessons.length > 0) {
+                        // Rediriger vers la première leçon
+                        window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
+                      }
+                    }}>Commencer le cours</Button>
+                  ) : (
+                    <div className="space-y-3">
+                      <Button className="w-full">S'inscrire pour commencer</Button>
+                      <Link href="/auth" className="block text-center text-sm text-blue-600 hover:text-blue-800">
+                        Déjà inscrit? Connectez-vous
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              {/* Section contenu du cours */}
+              <ContentCard>
+                <h2 className="text-xl font-bold mb-4">Contenu du cours</h2>
+                
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-gray-500">
+                      {modules.length} modules • {course.lessons} leçons • {formatTotalDuration()}
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="col-span-1">
-                  <ContentCard>
-                    <h2 className="text-xl font-bold mb-4">Détails du cours</h2>
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Durée totale</h3>
-                        <p className="font-medium">{formatTotalDuration()}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Leçons</h3>
-                        <p className="font-medium">{course.lessons} leçons</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Niveau</h3>
-                        <p className="font-medium">{course.level}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Catégorie</h3>
-                        <p className="font-medium">{course.category}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">Dernière mise à jour</h3>
-                        <p className="font-medium">{new Date(course.updated_at).toLocaleDateString('fr-FR', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}</p>
-                      </div>
-                    </div>
-                  </ContentCard>
-                  
-                  <div className="mt-6">
-                    <ContentCard>
-                      <h2 className="text-xl font-bold mb-4">Certification</h2>
-                      <div className="flex items-center space-x-3 mb-4">
-                        <Award className="h-10 w-10 text-amber-500" />
-                        <div>
-                          <h3 className="font-bold">Certificat d'achèvement</h3>
-                          <p className="text-sm text-gray-500">Après avoir terminé le cours</p>
+                <Accordion type="multiple" defaultValue={['module-0']} className="space-y-4">
+                  {modules.map((module, moduleIndex) => (
+                    <AccordionItem 
+                      key={module.id} 
+                      value={`module-${moduleIndex}`}
+                      className="border rounded-lg overflow-hidden"
+                    >
+                      <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
+                        <div className="flex-1 flex items-center">
+                          <span className="text-lg font-medium">{module.title}</span>
+                          <span className="ml-2 text-sm text-gray-500">
+                            • {module.lessons.length} leçons
+                          </span>
                         </div>
-                      </div>
-                      <Button variant="outline" className="w-full" disabled={!user}>
-                        {user ? 'Voir le certificat' : 'Connectez-vous pour obtenir'}
-                      </Button>
-                    </ContentCard>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-0 pt-2">
+                        <div className="space-y-1 p-1">
+                          {module.lessons.map((lesson) => (
+                            <LessonItem 
+                              key={lesson.id} 
+                              lesson={lesson} 
+                              moduleId={module.id} 
+                            />
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </ContentCard>
+              
+              {/* Section ressources */}
+              <div className="mt-6">
+                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Ressources incluses</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      <li className="flex items-center">
+                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Download className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm">Guide de référence PDF</span>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Download className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm">Exercices pratiques</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Section détails du cours */}
+              <ContentCard className="mt-6">
+                <h2 className="text-xl font-bold mb-4">Détails du cours</h2>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Durée totale</h3>
+                    <p className="font-medium">{formatTotalDuration()}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Leçons</h3>
+                    <p className="font-medium">{course.lessons} leçons</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Niveau</h3>
+                    <p className="font-medium">{course.level}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Catégorie</h3>
+                    <p className="font-medium">{course.category}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Dernière mise à jour</h3>
+                    <p className="font-medium">{new Date(course.updated_at).toLocaleDateString('fr-FR', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</p>
                   </div>
                 </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="content" className="mt-0">
-              <div className="grid grid-cols-1 gap-6">
-                <ContentCard>
-                  <h2 className="text-2xl font-bold mb-6">Contenu du cours</h2>
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="text-gray-500">
-                        {modules.length} modules • {course.lessons} leçons • {formatTotalDuration()}
-                      </p>
-                    </div>
-                    
-                    <Button variant="ghost" size="sm">
-                      {modules.every(m => m.id === 'expanded') ? 'Réduire tout' : 'Développer tout'}
-                    </Button>
-                  </div>
-                  
-                  <Accordion type="multiple" defaultValue={['module-0']} className="space-y-4">
-                    {modules.map((module, moduleIndex) => (
-                      <AccordionItem 
-                        key={module.id} 
-                        value={`module-${moduleIndex}`}
-                        className="border rounded-lg overflow-hidden"
-                      >
-                        <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
-                          <div className="flex-1 flex items-center">
-                            <span className="text-lg font-medium">{module.title}</span>
-                            <span className="ml-2 text-sm text-gray-500">
-                              • {module.lessons.length} leçons
-                            </span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-0 pt-2">
-                          <div className="space-y-1 p-1">
-                            {module.lessons.map((lesson) => (
-                              <LessonItem 
-                                key={lesson.id} 
-                                lesson={lesson} 
-                                moduleId={module.id} 
-                              />
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </ContentCard>
-              </div>
-            </TabsContent>
-            
-            {selectedLesson && (
-              <TabsContent value="lesson" className="mt-0">
-                <div className="grid grid-cols-1 gap-6">
-                  <ContentCard>
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold">{selectedLesson.title}</h2>
-                      
-                      <div className="flex items-center gap-4">
-                        <Link href={`/dashboard/academy/lessons/${selectedLesson.id}`}>
-                          <Button variant="outline" size="sm">
-                            Voir en plein écran
-                            <ExternalLink className="ml-2 h-4 w-4" />
-                          </Button>
-                        </Link>
-                        
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <Clock className="h-4 w-4" />
-                          <span>{selectedLesson.duration}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {selectedLesson.type === 'video' && (
-                      <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative mb-6">
-                        <div className="flex h-full items-center justify-center">
-                          <Button 
-                            onClick={() => setIsPlaying(!isPlaying)} 
-                            size="lg" 
-                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-                          >
-                            <Play className="h-8 w-8 text-gray-800" fill="currentColor" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="prose max-w-none">
-                      <p>
-                        {selectedLesson.description || 'Contenu de la leçon en cours de développement.'}
-                      </p>
-                      
-                      {!selectedLesson.content && (
-                        <>
-                          <p>
-                            Dans cette leçon, nous allons explorer les concepts fondamentaux et les principes clés
-                            qui vous permettront de maîtriser ce sujet important. Vous apprendrez des techniques
-                            pratiques et des approches méthodiques pour résoudre les problèmes courants.
-                          </p>
-                          <h3>Points clés de cette leçon</h3>
-                          <ul>
-                            <li>Comprendre les principes fondamentaux et leur application</li>
-                            <li>Développer une approche méthodique pour résoudre les problèmes</li>
-                            <li>Appliquer les techniques dans des situations réelles</li>
-                            <li>Éviter les erreurs communes et les pièges</li>
-                          </ul>
-                          <p>
-                            Cette leçon contient des exercices pratiques et des exemples concrets pour vous aider
-                            à mieux comprendre et appliquer les concepts présentés.
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="mt-8 pt-6 border-t flex items-center justify-between">
-                      <Button 
-                        variant="outline" 
-                        disabled={isFirstLesson()}
-                        onClick={() => {
-                          // Trouver la leçon précédente
-                          let found = false
-                          let prevLesson = null
-                          
-                          // Parcourir tous les modules pour trouver la leçon précédente,
-                          // y compris lorsqu'il faut passer au module précédent
-                          for (let m = 0; m < modules.length; m++) {
-                            const module = modules[m]
-                            for (let i = 0; i < module.lessons.length; i++) {
-                              if (module.lessons[i].id === selectedLesson.id) {
-                                if (i > 0) {
-                                  // Leçon précédente dans le même module
-                                  prevLesson = module.lessons[i - 1]
-                                } else if (m > 0) {
-                                  // Dernière leçon du module précédent
-                                  const prevModule = modules[m - 1]
-                                  prevLesson = prevModule.lessons[prevModule.lessons.length - 1]
-                                }
-                                found = true
-                                break
-                              }
-                            }
-                            if (found) break
-                          }
-                          
-                          if (prevLesson) {
-                            setSelectedLesson(prevLesson)
-                          }
-                        }}
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Leçon précédente
-                      </Button>
-                      
-                      <Button 
-                        disabled={isLastLesson()}
-                        onClick={() => {
-                          // Trouver la leçon suivante
-                          let found = false
-                          let nextLesson = null
-                          
-                          // Parcourir tous les modules pour trouver la leçon suivante,
-                          // y compris lorsqu'il faut passer au module suivant
-                          for (let m = 0; m < modules.length; m++) {
-                            const module = modules[m]
-                            for (let i = 0; i < module.lessons.length; i++) {
-                              if (module.lessons[i].id === selectedLesson.id) {
-                                if (i < module.lessons.length - 1) {
-                                  // Leçon suivante dans le même module
-                                  nextLesson = module.lessons[i + 1]
-                                } else if (m < modules.length - 1) {
-                                  // Première leçon du module suivant
-                                  nextLesson = modules[m + 1].lessons[0]
-                                }
-                                found = true
-                                break
-                              }
-                            }
-                            if (found) break
-                          }
-                          
-                          if (nextLesson) {
-                            setSelectedLesson(nextLesson)
-                          }
-                        }}
-                      >
-                        Leçon suivante
-                        <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
-                      </Button>
-                    </div>
-                  </ContentCard>
-                </div>
-              </TabsContent>
-            )}
-          </Tabs>
+              </ContentCard>
+            </div>
+          </div>
         </PageSection>
       </PageContainer>
     </AuroraBackground>
