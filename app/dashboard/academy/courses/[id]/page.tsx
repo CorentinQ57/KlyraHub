@@ -12,23 +12,56 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { ContentCard } from '@/components/ui/content-card'
-import { getCoursesById, getCourseById } from '@/lib/academy-service'
-import { CourseLesson, CourseModule } from '@/types/academy-types'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { getCourseById } from '@/lib/academy-service'
 import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/hooks/useAuth'
-import { formatDuration } from '@/lib/utils'
+import { useAuth } from '@/lib/auth'
+import { cn } from '@/lib/utils'
 
 // Components
-import { PageContainer, PageHeader, PageSection } from '@/components/ui/page-container'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 
-// Services
-import LoadingSpinner from '@/components/ui/loading-spinner'
+// Fonction utilitaire pour formater la durée (en minutes)
+const formatDuration = (minutes: number): string => {
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (remainingMinutes === 0) {
+    return `${hours} h`;
+  }
+  
+  return `${hours} h ${remainingMinutes} min`;
+};
+
+// Types
+type CourseLesson = {
+  id: string;
+  title: string;
+  description?: string;
+  duration: string | number;
+  type: 'video' | 'text' | 'quiz';
+  content?: string;
+  video_url?: string;
+  order: number;
+  module_id: string;
+};
+
+type CourseModule = {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  course_id: string;
+  lessons: CourseLesson[];
+};
 
 export default function CoursePage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -217,7 +250,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary">{course.level}</Badge>
             <Badge variant="outline">{course.category}</Badge>
-            {course.tags?.map((tag) => (
+            {course.tags?.map((tag: string) => (
               <Badge key={tag} variant="outline" className="bg-blue-50">{tag}</Badge>
             ))}
             
@@ -286,7 +319,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     <div className="space-y-4">
                       <h2 className="text-xl font-bold">Ce que vous allez apprendre</h2>
                       <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {course.objectives.map((objective, index) => (
+                        {course.objectives.map((objective: string, index: number) => (
                           <li key={index} className="flex items-start">
                             <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mr-2 mt-0.5" />
                             <span>{objective}</span>
@@ -301,7 +334,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     <h2 className="text-xl font-bold">Pré-requis</h2>
                     {course.prerequisites && course.prerequisites.length > 0 ? (
                       <ul className="list-disc list-inside space-y-1">
-                        {course.prerequisites.map((prerequisite, index) => (
+                        {course.prerequisites.map((prerequisite: string, index: number) => (
                           <li key={index}>{prerequisite}</li>
                         ))}
                       </ul>
@@ -317,7 +350,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     <h2 className="text-xl font-bold">Pour qui est ce cours</h2>
                     {course.targetAudience && course.targetAudience.length > 0 ? (
                       <ul className="list-disc list-inside space-y-1">
-                        {course.targetAudience.map((audience, index) => (
+                        {course.targetAudience.map((audience: string, index: number) => (
                           <li key={index}>{audience}</li>
                         ))}
                       </ul>
@@ -335,7 +368,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 <ContentCard>
                   <h2 className="text-xl font-bold mb-4">Ressources incluses</h2>
                   <div className="space-y-3">
-                    {courseResources.map((resource, index) => (
+                    {courseResources.map((resource: any, index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center">
                           <Bookmark className="h-5 w-5 text-blue-500 mr-3" />
@@ -461,7 +494,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
               </div>
               
               <div className="space-y-4">
-                {course.modules?.map((module, index) => (
+                {course.modules?.map((module: CourseModule, index: number) => (
                   <div key={module.id} className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center shrink-0">
@@ -471,7 +504,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     </div>
                     
                     <ul className="pl-8 space-y-1">
-                      {module.lessons.map((lesson) => (
+                      {module.lessons.map((lesson: CourseLesson) => (
                         <li 
                           key={lesson.id}
                           className="flex items-center space-x-2 text-sm cursor-pointer hover:text-blue-600"
