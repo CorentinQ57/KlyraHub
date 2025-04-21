@@ -71,7 +71,8 @@ export default function CoursesManagementPage() {
     tags: [] as string[],
     objectives: [] as string[],
     objectiveInput: '',
-    image: null as File | null
+    image: null as File | null,
+    video_url: ''
   })
   
   const router = useRouter()
@@ -157,8 +158,9 @@ export default function CoursesManagementPage() {
     try {
       let imageUrl = editingCourse?.image_url
 
-      // Upload new image if provided
-      if (formData.image) {
+      if (formData.video_url) {
+        imageUrl = formData.video_url
+      } else if (formData.image) {
         const fileExt = formData.image.name.split('.').pop()
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
         const filePath = fileName
@@ -302,7 +304,10 @@ export default function CoursesManagementPage() {
       tags: course.tags || [],
       objectives: course.objectives || [],
       objectiveInput: '',
-      image: null
+      image: null,
+      video_url: course.image_url?.includes('youtube.com') || course.image_url?.includes('vimeo.com') 
+        ? course.image_url 
+        : ''
     })
     setIsDialogOpen(true)
   }
@@ -321,7 +326,8 @@ export default function CoursesManagementPage() {
       tags: [],
       objectives: [],
       objectiveInput: '',
-      image: null
+      image: null,
+      video_url: ''
     })
   }
 
@@ -560,14 +566,42 @@ export default function CoursesManagementPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">Image du cours</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  onChange={handleImageChange}
-                  accept="image/*"
-                />
-                {editingCourse?.image_url && !formData.image && (
+                <Label htmlFor="image">Image du cours ou URL vidéo</Label>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="video_url" className="text-sm text-muted-foreground">URL vidéo YouTube/Vimeo (recommandé)</Label>
+                    <Input
+                      id="video_url"
+                      type="url"
+                      value={formData.video_url}
+                      onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Une vidéo sera utilisée comme prévisualisation dans la liste des cours et sur la page détaillée.
+                    </p>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-gray-300" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white px-2 text-muted-foreground">Ou</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="image" className="text-sm text-muted-foreground">Upload d'image (alternative)</Label>
+                    <Input
+                      id="image"
+                      type="file"
+                      onChange={handleImageChange}
+                      accept="image/*"
+                    />
+                  </div>
+                </div>
+                {editingCourse?.image_url && !formData.image && !formData.video_url && (
                   <div className="mt-2 flex items-center space-x-2">
                     <div className="relative h-10 w-16 rounded overflow-hidden">
                       <Image 
@@ -577,7 +611,7 @@ export default function CoursesManagementPage() {
                         className="object-cover"
                       />
                     </div>
-                    <span className="text-sm text-muted-foreground">Image actuelle</span>
+                    <span className="text-sm text-muted-foreground">Image/vidéo actuelle</span>
                   </div>
                 )}
               </div>

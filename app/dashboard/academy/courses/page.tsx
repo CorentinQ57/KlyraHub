@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, BookOpen, Clock, Filter, FileText, PlayCircle, Search, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Clock, Filter, FileText, PlayCircle, Search, Trophy, Users, Play } from 'lucide-react'
 
 // Components
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
@@ -84,72 +84,120 @@ export default function CoursesPage() {
   })
 
   // Composant pour la carte de cours
-  const CourseCard = ({ course }: { course: Course }) => (
-    <Link href={`/dashboard/academy/courses/${course.id}`} className="block transition-transform hover:scale-[1.02]">
-      <Card className="overflow-hidden transition-all hover:shadow-md">
-        <div className="relative aspect-video w-full overflow-hidden">
-          {course.image_url ? (
-            <div className="relative h-full w-full">
+  const CourseCard = ({ course }: { course: Course }) => {
+    const isVideo = course.image_url?.includes('youtube.com') || course.image_url?.includes('vimeo.com')
+    const [isHovered, setIsHovered] = useState(false)
+    
+    // Fonction pour convertir les URLs YouTube/Vimeo en URLs d'aperçu d'image
+    const getVideoThumbnail = (url: string) => {
+      try {
+        // YouTube
+        if (url.includes('youtube.com/watch')) {
+          const videoId = new URL(url).searchParams.get('v')
+          if (videoId) {
+            return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+          }
+        }
+        
+        // YouTube format court
+        if (url.includes('youtu.be/')) {
+          const videoId = url.split('youtu.be/')[1]?.split('?')[0]
+          if (videoId) {
+            return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+          }
+        }
+        
+        // Vimeo (note: l'implémentation complète nécessiterait l'API Vimeo)
+        if (url.includes('vimeo.com/')) {
+          // Simplification - dans un cas réel, il faudrait utiliser l'API Vimeo
+          const videoId = url.split('vimeo.com/')[1]?.split('?')[0]
+          if (videoId) {
+            // Utiliser une image générique pour Vimeo
+            return '/images/academy/vimeo-placeholder.jpg'
+          }
+        }
+        
+        // Par défaut, retourner l'URL telle quelle (peut-être déjà une image)
+        return url
+      } catch (error) {
+        console.error('Erreur lors de la conversion de l\'URL en miniature:', error)
+        return url
+      }
+    }
+
+    return (
+      <Link href={`/dashboard/academy/courses/${course.id}`}>
+        <div 
+          className="group relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow transition-all hover:shadow-md"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <div className="relative aspect-video overflow-hidden">
+            {isVideo ? (
+              <>
+                <Image
+                  src={getVideoThumbnail(course.image_url)}
+                  alt={course.title}
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="rounded-full bg-white/80 p-2 backdrop-blur-sm">
+                    <Play className="h-6 w-6 text-blue-600" fill="currentColor" />
+                  </div>
+                </div>
+              </>
+            ) : (
               <Image
-                src={course.image_url}
+                src={course.image_url || '/images/academy/courses/default.jpg'}
                 alt={course.title}
-                width={500}
-                height={300}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform group-hover:scale-105"
               />
-            </div>
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <BookOpen className="h-12 w-12 text-gray-400" />
-            </div>
-          )}
-          <div className="absolute top-2 left-2 flex gap-2">
-            {course.is_popular && (
-              <Badge variant="secondary" className="bg-amber-500 text-white">
-                Populaire
-              </Badge>
             )}
-            {course.is_new && (
-              <Badge variant="secondary" className="bg-green-500 text-white">
-                Nouveau
-              </Badge>
-            )}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent pt-6 pb-3 px-4">
+              <div className="flex gap-2">
+                <Badge className={
+                  course.level === 'Débutant' ? 'bg-green-500' :
+                  course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
+                }>
+                  {course.level}
+                </Badge>
+                {course.is_new && (
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-700">Nouveau</Badge>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="absolute top-2 right-2">
-            <Badge className={
-              course.level === 'Débutant' ? 'bg-green-500' :
-              course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
-            }>
-              {course.level}
-            </Badge>
+          
+          <div className="p-4">
+            <h3 className="font-semibold text-lg leading-tight mb-2">{course.title}</h3>
+            <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+              {course.description}
+            </p>
+            
+            <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center">
+                  <Clock className="mr-1 h-4 w-4" />
+                  <span>{course.duration}</span>
+                </div>
+                <div className="flex items-center">
+                  <BookOpen className="mr-1 h-4 w-4" />
+                  <span>{course.lessons} leçons</span>
+                </div>
+              </div>
+              
+              <div className="text-primary font-medium flex items-center">
+                Voir le cours
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </div>
+            </div>
           </div>
         </div>
-        <CardHeader>
-          <CardTitle className="text-lg">{course.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-500 mb-4">{course.description}</p>
-          <div className="flex justify-between text-sm">
-            <div className="flex items-center">
-              <Clock className="mr-1 h-4 w-4 text-gray-400" />
-              <span>{course.duration}</span>
-            </div>
-            <div className="flex items-center">
-              <BookOpen className="mr-1 h-4 w-4 text-gray-400" />
-              <span>{course.lessons} leçons</span>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button className="w-full">
-            <PlayCircle className="mr-2 h-4 w-4" />
-            Commencer le cours
-          </Button>
-        </CardFooter>
-      </Card>
-    </Link>
-  )
+      </Link>
+    )
+  }
 
   // Composant pour le squelette de chargement
   const CourseCardSkeleton = () => (
