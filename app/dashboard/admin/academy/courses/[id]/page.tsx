@@ -87,7 +87,7 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
     type: 'video' as 'video' | 'text' | 'quiz',
     content: '',
     video_url: '',
-    is_free: false,
+    is_free: true,
     order: 1
   })
   
@@ -257,7 +257,7 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
       type: 'video',
       content: '',
       video_url: '',
-      is_free: false,
+      is_free: true,
       order: nextOrder
     })
     
@@ -274,7 +274,7 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
       type: lesson.type,
       content: lesson.content || '',
       video_url: lesson.video_url || '',
-      is_free: lesson.is_free,
+      is_free: true,
       order: lesson.order
     })
     setIsLessonDialogOpen(true)
@@ -725,17 +725,6 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
                                         <Clock className="h-3 w-3 mr-1" />
                                         {lesson.duration}
                                       </div>
-                                      {lesson.is_free ? (
-                                        <div className="flex items-center text-green-600">
-                                          <Unlock className="h-3 w-3 mr-1" />
-                                          Leçon gratuite
-                                        </div>
-                                      ) : (
-                                        <div className="flex items-center">
-                                          <Lock className="h-3 w-3 mr-1" />
-                                          Accès restreint
-                                        </div>
-                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -961,15 +950,6 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
                 />
               </div>
             )}
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="lesson-is-free"
-                checked={lessonForm.is_free}
-                onCheckedChange={(checked) => setLessonForm({ ...lessonForm, is_free: checked })}
-              />
-              <Label htmlFor="lesson-is-free">Leçon gratuite (accessible sans inscription)</Label>
-            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsLessonDialogOpen(false)}>
