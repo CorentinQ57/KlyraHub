@@ -253,7 +253,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="col-span-1 lg:col-span-2">
               <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative">
-                {isVideoUrl(course.image_url) ? (
+                {course.is_video || isVideoUrl(course.image_url) ? (
                   <iframe 
                     className="w-full h-full border-0"
                     src={getEmbedUrl(course.image_url)}

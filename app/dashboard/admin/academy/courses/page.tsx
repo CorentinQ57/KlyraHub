@@ -157,9 +157,13 @@ export default function CoursesManagementPage() {
     e.preventDefault()
     try {
       let imageUrl = editingCourse?.image_url
+      let isVideo = editingCourse?.image_url?.includes('youtube.com') || 
+                   editingCourse?.image_url?.includes('youtu.be') || 
+                   editingCourse?.image_url?.includes('vimeo.com') || false
 
       if (formData.video_url) {
         imageUrl = formData.video_url
+        isVideo = true
       } else if (formData.image) {
         const fileExt = formData.image.name.split('.').pop()
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
@@ -176,6 +180,7 @@ export default function CoursesManagementPage() {
           .getPublicUrl(filePath)
 
         imageUrl = urlData.publicUrl
+        isVideo = false
       }
 
       const courseData = {
@@ -186,6 +191,7 @@ export default function CoursesManagementPage() {
         duration: formData.duration,
         lessons: formData.lessons,
         image_url: imageUrl,
+        is_video: isVideo,
         is_popular: formData.is_popular,
         is_new: formData.is_new,
         tags: formData.tags,
@@ -305,9 +311,7 @@ export default function CoursesManagementPage() {
       objectives: course.objectives || [],
       objectiveInput: '',
       image: null,
-      video_url: course.image_url?.includes('youtube.com') || course.image_url?.includes('vimeo.com') 
-        ? course.image_url 
-        : ''
+      video_url: course.is_video ? course.image_url : ''
     })
     setIsDialogOpen(true)
   }

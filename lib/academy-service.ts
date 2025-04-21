@@ -19,6 +19,7 @@ export type Course = {
   duration: string;
   lessons: number;
   image_url: string;
+  is_video?: boolean; // Indique si image_url est une vidéo
   is_popular: boolean;
   is_new: boolean;
   tags: string[];
