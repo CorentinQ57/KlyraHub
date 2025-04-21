@@ -69,15 +69,14 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [course, setCourse] = useState<any>({})
+  const [courseResources, setCourseResources] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedLesson, setSelectedLesson] = useState<CourseLesson | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [previousLesson, setPreviousLesson] = useState<CourseLesson | null>(null)
   const [nextLesson, setNextLesson] = useState<CourseLesson | null>(null)
+  const [totalDuration, setTotalDuration] = useState(0)
 
-  // Obtenir les ressources du cours
-  const courseResources = course.resources || [];
-  
   // Naviguer entre les leçons
   const handleLessonNavigate = (lesson: CourseLesson) => {
     setSelectedLesson(lesson);
@@ -123,6 +122,21 @@ export default function CoursePage({ params }: { params: { id: string } }) {
       const data = await getCourseById(params.id)
       if (data) {
         setCourse(data)
+        
+        // Fetch course resources - this would need to be implemented if needed
+        // For now, use an empty array since the Course type doesn't have resources
+        setCourseResources([])
+        
+        // Calculate total duration once when course data is loaded
+        if (data.modules) {
+          let duration = 0
+          data.modules.forEach((module: CourseModule) => {
+            module.lessons.forEach((lesson: CourseLesson) => {
+              duration += Number(lesson.duration) || 0
+            })
+          })
+          setTotalDuration(duration)
+        }
       } else {
         toast({
           title: "Erreur",
@@ -177,14 +191,8 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   }
 
   const formatTotalDuration = () => {
-    if (!course.modules) return "0 min"
-    
-    let totalMinutes = 0
-    course.modules.forEach((module: CourseModule) => {
-      module.lessons.forEach((lesson: CourseLesson) => {
-        totalMinutes += Number(lesson.duration) || 0
-      })
-    })
+    // Use the stored total duration instead of recalculating
+    const totalMinutes = totalDuration
     
     if (totalMinutes < 60) {
       return `${totalMinutes} min`
@@ -257,11 +265,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             <Badge variant="secondary" className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {formatTotalDuration()}
-            </Badge>
-            
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <BookOpen className="h-3 w-3" />
-              {course.lessons} leçons
             </Badge>
           </div>
         </div>
