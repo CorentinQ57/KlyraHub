@@ -274,7 +274,7 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
       type: lesson.type,
       content: lesson.content || '',
       video_url: lesson.video_url || '',
-      is_free: lesson.is_free ?? false,
+      is_free: lesson.is_free,
       order: lesson.order
     })
     setIsLessonDialogOpen(true)

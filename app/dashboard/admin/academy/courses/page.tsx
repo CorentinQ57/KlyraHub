@@ -52,6 +52,21 @@ import { useAuth } from '@/lib/auth'
 import { Course, getCategories, getCourses } from '@/lib/academy-service'
 import { supabase } from '@/lib/supabase'
 
+type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
+
+interface CourseFormData {
+  id?: string;
+  title: string;
+  category_id: string;
+  level: CourseLevel;
+  duration: string;
+  lessons: number;
+  video_url: string | null;
+  description: string;
+  objectives: string[];
+  is_popular: boolean;
+}
+
 export default function CoursesManagementPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [categories, setCategories] = useState<{id: string, name: string}[]>([])
@@ -59,7 +74,7 @@ export default function CoursesManagementPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<Course | null>(null)
   const [tagInput, setTagInput] = useState('')
-  const [formData, setFormData] = useState({
+  const [courseData, setCourseData] = useState({
     title: '',
     description: '',
     category_id: '',
@@ -115,13 +130,13 @@ export default function CoursesManagementPage() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, image: e.target.files![0] }))
+      setCourseData(prev => ({ ...prev, image: e.target.files![0] }))
     }
   }
 
   const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({
+    if (tagInput.trim() && !courseData.tags.includes(tagInput.trim())) {
+      setCourseData(prev => ({
         ...prev,
         tags: [...prev.tags, tagInput.trim()]
       }))
@@ -130,15 +145,15 @@ export default function CoursesManagementPage() {
   }
 
   const handleRemoveTag = (tag: string) => {
-    setFormData(prev => ({
+    setCourseData(prev => ({
       ...prev,
       tags: prev.tags.filter(t => t !== tag)
     }))
   }
 
   const handleAddObjective = () => {
-    if (formData.objectiveInput.trim() && !formData.objectives.includes(formData.objectiveInput.trim())) {
-      setFormData(prev => ({
+    if (courseData.objectiveInput.trim() && !courseData.objectives.includes(courseData.objectiveInput.trim())) {
+      setCourseData(prev => ({
         ...prev,
         objectives: [...prev.objectives, prev.objectiveInput.trim()],
         objectiveInput: ''
@@ -147,11 +162,18 @@ export default function CoursesManagementPage() {
   }
 
   const handleRemoveObjective = (objective: string) => {
-    setFormData(prev => ({
+    setCourseData(prev => ({
       ...prev,
       objectives: prev.objectives.filter(o => o !== objective)
     }))
   }
+
+  const handleInputChange = (field: keyof CourseFormData, value: string | number | boolean | string[] | null) => {
+    setCourseData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -160,19 +182,19 @@ export default function CoursesManagementPage() {
       let videoUrl = editingCourse?.video_url
 
       // Gérer l'URL vidéo si fournie
-      if (formData.video_url) {
-        videoUrl = formData.video_url
+      if (courseData.video_url) {
+        videoUrl = courseData.video_url
       }
 
       // Gérer l'image si fournie
-      if (formData.image) {
-        const fileExt = formData.image.name.split('.').pop()
+      if (courseData.image) {
+        const fileExt = courseData.image.name.split('.').pop()
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
         const filePath = fileName
 
         const { error: uploadError } = await supabase.storage
           .from('klyra-academy')
-          .upload(filePath, formData.image)
+          .upload(filePath, courseData.image)
 
         if (uploadError) throw uploadError
 
@@ -183,19 +205,19 @@ export default function CoursesManagementPage() {
         imageUrl = urlData.publicUrl
       }
 
-      const courseData = {
-        title: formData.title,
-        description: formData.description,
-        category_id: formData.category_id,
-        level: formData.level,
-        duration: formData.duration,
-        lessons: formData.lessons,
+      const courseDataToSave = {
+        title: courseData.title,
+        description: courseData.description,
+        category_id: courseData.category_id,
+        level: courseData.level,
+        duration: courseData.duration,
+        lessons: courseData.lessons,
         image_url: imageUrl,
         video_url: videoUrl,
-        is_popular: formData.is_popular,
-        is_new: formData.is_new,
-        tags: formData.tags,
-        objectives: formData.objectives,
+        is_popular: courseData.is_popular,
+        is_new: courseData.is_new,
+        tags: courseData.tags,
+        objectives: courseData.objectives,
         updated_at: new Date().toISOString()
       }
 
@@ -203,7 +225,7 @@ export default function CoursesManagementPage() {
         // Update existing course
         const { error } = await supabase
           .from('courses')
-          .update(courseData)
+          .update(courseDataToSave)
           .eq('id', editingCourse.id)
 
         if (error) throw error
@@ -212,7 +234,7 @@ export default function CoursesManagementPage() {
         const { error } = await supabase
           .from('courses')
           .insert({
-            ...courseData,
+            ...courseDataToSave,
             created_at: new Date().toISOString(),
           })
 
@@ -298,12 +320,12 @@ export default function CoursesManagementPage() {
 
   const handleEditCourse = (course: Course) => {
     setEditingCourse(course)
-    setFormData({
+    setCourseData({
       title: course.title,
       description: course.description || '',
       category_id: course.category_id,
       level: course.level,
-      duration: course.duration,
+      duration: course.duration.toString(),
       lessons: course.lessons,
       is_popular: course.is_popular,
       is_new: course.is_new,
@@ -318,7 +340,7 @@ export default function CoursesManagementPage() {
 
   const resetForm = () => {
     setEditingCourse(null)
-    setFormData({
+    setCourseData({
       title: '',
       description: '',
       category_id: '',
@@ -496,217 +518,192 @@ export default function CoursesManagementPage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Titre du cours *</Label>
+            <div className="grid grid-cols-1 gap-6 mt-4">
+              <div>
+                <Label htmlFor="title">Titre du cours</Label>
                 <Input
                   id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
+                  value={courseData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  placeholder="Entrez le titre du cours"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">Catégorie *</Label>
-                <Select 
-                  value={formData.category_id} 
-                  onValueChange={(value) => setFormData({ ...formData, category_id: value })}
-                  required
+              <div>
+                <Label htmlFor="category">Catégorie</Label>
+                <Input
+                  id="category"
+                  value={courseData.category_id}
+                  onChange={(e) => handleInputChange('category_id', e.target.value)}
+                  placeholder="Entrez la catégorie du cours"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="level">Niveau</Label>
+                <Select
+                  value={courseData.level}
+                  onValueChange={(value) => handleInputChange('level', value as 'Débutant' | 'Intermédiaire' | 'Avancé')}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une catégorie" />
+                    <SelectValue placeholder="Sélectionnez le niveau" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="beginner">Débutant</SelectItem>
+                    <SelectItem value="intermediate">Intermédiaire</SelectItem>
+                    <SelectItem value="advanced">Avancé</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="level">Niveau *</Label>
-                <Select 
-                  value={formData.level} 
-                  onValueChange={(value: 'Débutant' | 'Intermédiaire' | 'Avancé') => 
-                    setFormData({ ...formData, level: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un niveau" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Débutant">Débutant</SelectItem>
-                    <SelectItem value="Intermédiaire">Intermédiaire</SelectItem>
-                    <SelectItem value="Avancé">Avancé</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="duration">Durée approximative *</Label>
+              <div>
+                <Label htmlFor="duration">Durée totale</Label>
                 <Input
                   id="duration"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  placeholder="Ex: 3h 30min"
-                  required
+                  value={courseData.duration}
+                  onChange={(e) => handleInputChange('duration', e.target.value)}
+                  placeholder="Ex: 2h30"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lessons">Nombre de leçons *</Label>
+              <div>
+                <Label htmlFor="lessons">Nombre de leçons</Label>
                 <Input
                   id="lessons"
                   type="number"
-                  value={formData.lessons}
-                  onChange={(e) => setFormData({ ...formData, lessons: parseInt(e.target.value) })}
-                  min={1}
-                  required
+                  value={courseData.lessons}
+                  onChange={(e) => handleInputChange('lessons', parseInt(e.target.value))}
+                  placeholder="Entrez le nombre de leçons"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="image">Image du cours ou URL vidéo</Label>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="video_url" className="text-sm text-muted-foreground">URL vidéo YouTube/Vimeo (recommandé)</Label>
-                    <Input
-                      id="video_url"
-                      type="url"
-                      value={formData.video_url}
-                      onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                      placeholder="https://www.youtube.com/watch?v=..."
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Une vidéo sera utilisée comme prévisualisation dans la liste des cours et sur la page détaillée.
-                    </p>
-                  </div>
-
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-gray-300" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-muted-foreground">Ou</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="image" className="text-sm text-muted-foreground">Upload d'image (alternative)</Label>
-                    <Input
-                      id="image"
-                      type="file"
-                      onChange={handleImageChange}
-                      accept="image/*"
-                    />
-                  </div>
-                </div>
-                {editingCourse?.image_url && !formData.image && !formData.video_url && (
-                  <div className="mt-2 flex items-center space-x-2">
-                    <div className="relative h-10 w-16 rounded overflow-hidden">
-                      <Image 
-                        src={editingCourse.image_url} 
-                        alt="Image actuelle" 
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <span className="text-sm text-muted-foreground">Image/vidéo actuelle</span>
-                  </div>
+              <div>
+                <Label htmlFor="image">Image du cours</Label>
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+                {courseData.image && (
+                  <img
+                    src={URL.createObjectURL(courseData.image)}
+                    alt="Preview"
+                    className="mt-2 max-w-xs rounded"
+                  />
                 )}
               </div>
 
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="description">Description *</Label>
+              <div>
+                <Label htmlFor="video">Vidéo de présentation (optionnel)</Label>
+                <Input
+                  id="video"
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => handleInputChange('video_url', e.target.files![0]?.name)}
+                />
+                {courseData.video_url && (
+                  <video
+                    src={courseData.video_url}
+                    controls
+                    className="mt-2 max-w-xs rounded"
+                  />
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  required
+                  value={courseData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Décrivez le contenu du cours"
+                  className="h-32"
                 />
               </div>
 
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="tags">Tags (mots-clés)</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    id="tags"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    placeholder="Ajouter un tag"
-                  />
-                  <Button type="button" onClick={handleAddTag}>
-                    Ajouter
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="flex items-center space-x-1">
-                      <Tag className="h-3 w-3" />
-                      <span>{tag}</span>
-                      <button
-                        type="button"
+              <div>
+                <Label>Tags</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {courseData.tags.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      {tag}
+                      <X
+                        className="h-3 w-3 cursor-pointer"
                         onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 text-gray-500 hover:text-gray-700"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                      />
                     </Badge>
                   ))}
                 </div>
-              </div>
-
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="objectives">Objectifs d'apprentissage</Label>
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <Input
-                    id="objectives"
-                    value={formData.objectiveInput}
-                    onChange={(e) => setFormData({ ...formData, objectiveInput: e.target.value })}
-                    placeholder="Ajouter un objectif"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    placeholder="Ajouter un tag"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddTag();
+                      }
+                    }}
                   />
-                  <Button type="button" onClick={handleAddObjective}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddTag}
+                  >
                     Ajouter
                   </Button>
                 </div>
-                <div className="space-y-2 mt-2">
-                  {formData.objectives.map((objective, index) => (
-                    <div key={index} className="flex items-start space-x-2 bg-gray-50 rounded p-2">
-                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="flex-1">{objective}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveObjective(objective)}
-                        className="text-gray-500 hover:text-gray-700"
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Objectifs d'apprentissage</Label>
+                <div className="flex flex-wrap gap-2">
+                  {courseData.objectives.map((objective: string, index: number) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        value={objective}
+                        onChange={(e) => {
+                          const newObjectives = [...courseData.objectives];
+                          newObjectives[index] = e.target.value;
+                          handleInputChange('objectives', newObjectives);
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newObjectives = courseData.objectives.filter((_: string, i: number) => i !== index);
+                          handleInputChange('objectives', newObjectives);
+                        }}
                       >
                         <X className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleInputChange('objectives', [...courseData.objectives, '']);
+                  }}
+                >
+                  Ajouter un objectif
+                </Button>
               </div>
 
               <div className="flex items-center space-x-2">
                 <Switch
-                  id="is-popular"
-                  checked={formData.is_popular}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_popular: checked })}
+                  id="is_popular"
+                  checked={courseData.is_popular}
+                  onCheckedChange={(checked) => handleInputChange('is_popular', checked)}
                 />
-                <Label htmlFor="is-popular">Marquer comme populaire</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is-new"
-                  checked={formData.is_new}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_new: checked })}
-                />
-                <Label htmlFor="is-new">Marquer comme nouveau</Label>
+                <Label htmlFor="is_popular">Marquer comme populaire</Label>
               </div>
             </div>
 
