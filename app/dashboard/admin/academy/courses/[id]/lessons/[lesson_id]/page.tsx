@@ -1,5 +1,38 @@
+"use client"
+
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useToast } from '@/components/ui/use-toast'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { getLessonById, createCourseLesson, updateCourseLesson } from '@/lib/academy-service'
+import { useAuth } from '@/lib/auth'
+
+// Types
+type LessonType = 'video' | 'text' | 'quiz';
+
+interface LessonFormProps {
+  courseId: string;
+  lesson?: any;
+  moduleId: string;
+}
+
+interface PageProps {
+  params: {
+    id: string;
+    lesson_id: string;
+  }
+}
+
 const LessonForm = ({ courseId, lesson, moduleId }: LessonFormProps) => {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
   // Form
@@ -24,6 +57,7 @@ const LessonForm = ({ courseId, lesson, moduleId }: LessonFormProps) => {
         content: type === 'text' ? content : null,
         video_url: type === 'video' ? videoUrl : null,
         module_id: moduleId,
+        order: lesson?.order || 1,
       };
       
       let response;
@@ -55,7 +89,6 @@ const LessonForm = ({ courseId, lesson, moduleId }: LessonFormProps) => {
     }
   };
   
-  // Rest of the code for form fields
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -161,4 +194,98 @@ const LessonForm = ({ courseId, lesson, moduleId }: LessonFormProps) => {
       </div>
     </form>
   );
-}; 
+};
+
+export default function LessonPage({ params }: PageProps) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [lesson, setLesson] = useState<any>(null);
+  const { id: courseId, lesson_id } = params;
+  const isNewLesson = lesson_id === 'new';
+  const moduleId = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('moduleId') || '';
+  
+  useEffect(() => {
+    // Si on crée une nouvelle leçon, on n'a pas besoin de charger de données
+    if (isNewLesson) {
+      setLoading(false);
+      return;
+    }
+    
+    // Sinon, on charge les données de la leçon existante
+    const fetchLessonData = async () => {
+      try {
+        const lessonData = await getLessonById(lesson_id);
+        if (!lessonData) {
+          toast({
+            title: "Erreur",
+            description: "Impossible de trouver cette leçon",
+            variant: "destructive",
+          });
+          router.push(`/dashboard/admin/academy/courses/${courseId}`);
+          return;
+        }
+        
+        setLesson(lessonData);
+      } catch (error) {
+        console.error("Erreur lors du chargement de la leçon:", error);
+        toast({
+          title: "Erreur",
+          description: "Une erreur est survenue lors du chargement de la leçon",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchLessonData();
+  }, [courseId, lesson_id, isNewLesson, router, toast]);
+  
+  // Vérifier si l'utilisateur est admin
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+  
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Chargement...</p>
+      </div>
+    );
+  }
+  
+  return (
+    <PageContainer>
+      <PageHeader 
+        title={isNewLesson ? "Ajouter une leçon" : "Modifier une leçon"}
+        description={isNewLesson ? "Créer une nouvelle leçon pour ce cours" : "Modifier les informations de cette leçon"}
+      >
+        <Link href={`/dashboard/admin/academy/courses/${courseId}`}>
+          <Button variant="outline">
+            Retour au cours
+          </Button>
+        </Link>
+      </PageHeader>
+      
+      <PageSection>
+        <ContentCard>
+          {loading ? (
+            <div className="py-8 flex items-center justify-center">
+              <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            </div>
+          ) : (
+            <LessonForm 
+              courseId={courseId}
+              lesson={!isNewLesson ? lesson : undefined}
+              moduleId={moduleId}
+            />
+          )}
+        </ContentCard>
+      </PageSection>
+    </PageContainer>
+  );
+} 
