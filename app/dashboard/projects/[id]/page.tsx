@@ -453,21 +453,46 @@ export default function ProjectPage({
             
               <div className="space-y-4">
                 {getProjectPhases(project).map((phase, index) => {
-                  // Normaliser les clés pour la comparaison
                   const normalizedCurrentPhase = (project.current_phase || '').toLowerCase().replace(/\s+/g, '_');
                   const normalizedPhaseKey = phase.key.toLowerCase().replace(/\s+/g, '_');
                   
-                  const isCurrentPhase = normalizedCurrentPhase === normalizedPhaseKey;
-                  const isPastPhase = getProjectPhases(project).findIndex(p => 
-                    (project.current_phase || '').toLowerCase().replace(/\s+/g, '_') === 
-                    p.key.toLowerCase().replace(/\s+/g, '_')
-                  ) > index;
+                  // Vérifier si c'est la phase actuelle par correspondance exacte ou partielle
+                  let isCurrentPhase = normalizedCurrentPhase === normalizedPhaseKey;
+                  
+                  // Si pas de correspondance exacte, vérifier si le nom de la phase actuelle contient le nom de cette phase
+                  // ou si le label de cette phase est contenu dans la phase actuelle
+                  if (!isCurrentPhase && project.current_phase) {
+                    isCurrentPhase = project.current_phase.toLowerCase().includes(phase.label.toLowerCase()) ||
+                                     phase.label.toLowerCase().includes(project.current_phase.toLowerCase());
+                    
+                    // Log de débogage pour cette vérification spécifique
+                    console.log(`Vérification de correspondance pour "${phase.label}": 
+                                 Phase actuelle: "${project.current_phase}", 
+                                 Est inclus dans phase actuelle: ${project.current_phase.toLowerCase().includes(phase.label.toLowerCase())},
+                                 Phase actuelle est incluse dans le label: ${phase.label.toLowerCase().includes(project.current_phase.toLowerCase())}`);
+                  }
+                  
+                  // Déterminer l'index de la phase actuelle pour gérer les phases passées
+                  const currentPhaseIndex = getProjectPhases(project).findIndex(p => {
+                    const pKey = p.key.toLowerCase().replace(/\s+/g, '_');
+                    const pLabel = p.label.toLowerCase();
+                    const currentPhaseLower = (project.current_phase || '').toLowerCase();
+                    
+                    return pKey === normalizedCurrentPhase || 
+                           (project.current_phase && (currentPhaseLower.includes(pLabel) || pLabel.includes(currentPhaseLower)));
+                  });
+                  
+                  // Une phase est passée si son index est inférieur à celui de la phase actuelle
+                  const isPastPhase = currentPhaseIndex > -1 && index < currentPhaseIndex;
+                  
+                  // Ajouter un log de débogage pour cette phase spécifique
+                  console.log(`Phase ${phase.label} (${phase.key}): isCurrentPhase=${isCurrentPhase}, isPastPhase=${isPastPhase}, index=${index}, currentPhaseIndex=${currentPhaseIndex}`);
                   
                   return (
                     <div 
                       key={phase.key}
                       className={`relative flex items-start p-4 rounded-md border-2 ${
-                        isCurrentPhase ? 'border-blue-600 bg-blue-100' : 
+                        isCurrentPhase ? 'border-blue-600 bg-blue-50' : 
                           isPastPhase ? 'border-green-200 bg-green-50' : 'border-gray-200'
                       }`}
                     >
@@ -559,7 +584,7 @@ export default function ProjectPage({
             </ContentCard>
           </PageSection>
           
-          {/* Déplacé ici - Section des commentaires */}
+          {/* Section des commentaires en dessous de l'avancement */}
           <PageSection 
             title="Commentaires" 
             description="Échanger avec l'équipe du projet"

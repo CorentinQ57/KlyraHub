@@ -16,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Digicode } from '@/components/ui/digicode';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 // Services
 import { Course, Resource, getCourses, getResources } from '@/lib/academy-service';
@@ -27,6 +29,8 @@ export default function AcademyPage() {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
+  const [isAuthorized, setIsAuthorized] = useLocalStorage('academy-access', false);
+  const [showDigicode, setShowDigicode] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,6 +53,22 @@ export default function AcademyPage() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Vérifier si l'utilisateur est déjà autorisé
+    if (isAuthorized) {
+      setShowDigicode(false);
+    }
+  }, [isAuthorized]);
+
+  const handleDigicodeSuccess = () => {
+    setIsAuthorized(true);
+    setShowDigicode(false);
+  };
+
+  if (showDigicode) {
+    return <Digicode onSuccess={handleDigicodeSuccess} />;
+  }
 
   // Composant pour afficher une carte de cours
   const CourseCard = ({ course }: { course: Course }) => (
