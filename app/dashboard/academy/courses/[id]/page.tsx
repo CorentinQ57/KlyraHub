@@ -446,6 +446,28 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   </div>
                 </ContentCard>
                 
+                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Ressources incluses</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      <li className="flex items-center">
+                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Download className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm">Guide de référence PDF</span>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Download className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm">Exercices pratiques</span>
+                      </li>
+                    </ul>
+                  </CardContent>
+                </Card>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Card className="bg-white shadow-sm">
                     <CardHeader className="pb-4">
@@ -539,28 +561,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     </CardContent>
                   </Card>
                 </div>
-                
-                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Ressources incluses</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      <li className="flex items-center">
-                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Download className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm">Guide de référence PDF</span>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Download className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm">Exercices pratiques</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
               </div>
             </TabsContent>
             
