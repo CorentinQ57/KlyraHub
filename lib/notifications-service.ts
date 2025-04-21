@@ -24,6 +24,27 @@ export async function createNotification(
   projectId?: string
 ): Promise<Notification | null> {
   try {
+    console.log(`[DEBUG] Création d'une notification pour l'utilisateur ${userId}`, {
+      title,
+      message,
+      type,
+      projectId: projectId || 'non défini'
+    });
+    
+    // Vérifier si l'utilisateur existe
+    const { data: userExists, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (userError || !userExists) {
+      console.error(`[ERROR] L'utilisateur ${userId} n'existe pas:`, userError);
+      return null;
+    }
+
+    console.log(`[DEBUG] Utilisateur vérifié, insertion de la notification`);
+    
     // Insérer la notification dans la base de données
     const { data, error } = await supabase
       .from('notifications')
@@ -39,13 +60,33 @@ export async function createNotification(
       .single();
 
     if (error) {
-      console.error('Erreur lors de la création de la notification:', error);
+      console.error('[ERROR] Erreur lors de la création de la notification:', error);
+      
+      // Vérifier si la table existe
+      if (error.code === '42P01') {
+        console.error('[ERROR] La table "notifications" n\'existe pas dans la base de données.');
+        console.error('[INFO] Veuillez créer la table avec la structure suivante:');
+        console.error(`
+CREATE TABLE public.notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id),
+  project_id UUID REFERENCES public.projects(id),
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT NOT NULL,
+  read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+        `);
+      }
+      
       return null;
     }
 
+    console.log('[SUCCESS] Notification créée avec succès:', data);
     return data;
   } catch (error) {
-    console.error('Erreur inattendue lors de la création de la notification:', error);
+    console.error('[ERROR] Erreur inattendue lors de la création de la notification:', error);
     return null;
   }
 }
@@ -59,6 +100,8 @@ export async function getUserNotifications(
   offset: number = 0
 ): Promise<Notification[]> {
   try {
+    console.log(`[DEBUG] Récupération des notifications pour l'utilisateur ${userId} (limite: ${limit}, offset: ${offset})`);
+    
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
@@ -67,13 +110,20 @@ export async function getUserNotifications(
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Erreur lors de la récupération des notifications:', error);
+      console.error('[ERROR] Erreur lors de la récupération des notifications:', error);
+      
+      // Vérifier si la table existe
+      if (error.code === '42P01') {
+        console.error('[ERROR] La table "notifications" n\'existe pas dans la base de données.');
+      }
+      
       return [];
     }
 
+    console.log(`[SUCCESS] ${data?.length || 0} notifications récupérées pour l'utilisateur ${userId}`);
     return data || [];
   } catch (error) {
-    console.error('Erreur inattendue lors de la récupération des notifications:', error);
+    console.error('[ERROR] Erreur inattendue lors de la récupération des notifications:', error);
     return [];
   }
 }

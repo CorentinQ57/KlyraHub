@@ -27,6 +27,8 @@ type ProjectWithRelations = Project & {
     } 
   } | null;
   profiles?: { full_name: string | null; email: string | null } | null;
+  // Propriété ajoutée pour le débogage et le suivi de la phase normalisée
+  normalized_phase?: string;
 }
 
 // Composant pour un commentaire
@@ -287,22 +289,43 @@ export default function ProjectPage({
 
   // Fonction pour convertir les phases du service en tableau d'objets structurés
   const getProjectPhases = (project: ProjectWithRelations) => {
+    console.log('Phase actuelle brute:', project.current_phase);
+    
+    // Normaliser la phase actuelle si elle existe
+    if (project.current_phase) {
+      // Stocker la phase actuelle normalisée pour la comparaison ultérieure
+      project.normalized_phase = project.current_phase.toLowerCase().replace(/\s+/g, '_');
+      console.log('Phase actuelle normalisée:', project.normalized_phase);
+    }
+    
     // Si le service a des phases définies, les utiliser
     if (project.services?.phases && Array.isArray(project.services.phases)) {
-      return project.services.phases.map(phase => ({
-        key: phase.toLowerCase().replace(/\s+/g, '_'),
-        label: phase
-      }));
+      console.log('Phases du service brutes:', project.services.phases);
+      
+      const phases = project.services.phases.map(phase => {
+        // Normaliser la clé de la phase 
+        const key = phase.toLowerCase().replace(/\s+/g, '_');
+        return {
+          key,
+          label: phase
+        };
+      });
+      
+      console.log('Phases normalisées:', phases.map(p => p.key));
+      return phases;
     }
 
     // Phases par défaut si non définies dans le service
-    return [
-      { key: 'briefing', label: 'Briefing initial' },
+    const defaultPhases = [
+      { key: 'briefing_initial', label: 'Briefing initial' },
       { key: 'conception', label: 'Conception' },
       { key: 'production', label: 'Production' },
-      { key: 'revision', label: 'Révisions' },
+      { key: 'revisions', label: 'Révisions' },
       { key: 'finalisation', label: 'Finalisation' }
     ];
+    
+    console.log('Utilisation des phases par défaut:', defaultPhases.map(p => p.key));
+    return defaultPhases;
   };
 
   if (isLoading) {
@@ -420,44 +443,62 @@ export default function ProjectPage({
             description="Le déroulement de votre projet étape par étape"
           >
             <ContentCard>
+              {/* Logs de débogage pour identifier la phase actuelle */}
+              {process.env.NODE_ENV !== 'production' && (
+                <div className="bg-yellow-50 p-3 mb-4 border border-yellow-200 rounded text-xs">
+                  <p><strong>Débogage phases:</strong> Phase actuelle = "{project.current_phase || 'non définie'}"</p>
+                  <p>Phases disponibles: {getProjectPhases(project).map(p => `"${p.key}"`).join(', ')}</p>
+                </div>
+              )}
+            
               <div className="space-y-4">
                 {getProjectPhases(project).map((phase, index) => {
-                  const isCurrentPhase = project.current_phase === phase.key;
-                  const isPastPhase = getProjectPhases(project).findIndex(p => p.key === project.current_phase) > index;
+                  // Normaliser les clés pour la comparaison
+                  const normalizedCurrentPhase = (project.current_phase || '').toLowerCase().replace(/\s+/g, '_');
+                  const normalizedPhaseKey = phase.key.toLowerCase().replace(/\s+/g, '_');
+                  
+                  const isCurrentPhase = normalizedCurrentPhase === normalizedPhaseKey;
+                  const isPastPhase = getProjectPhases(project).findIndex(p => 
+                    (project.current_phase || '').toLowerCase().replace(/\s+/g, '_') === 
+                    p.key.toLowerCase().replace(/\s+/g, '_')
+                  ) > index;
                   
                   return (
                     <div 
                       key={phase.key}
-                      className={`relative flex items-start p-4 rounded-md border ${
-                        isCurrentPhase ? 'border-blue-600 bg-blue-50' : 
+                      className={`relative flex items-start p-4 rounded-md border-2 ${
+                        isCurrentPhase ? 'border-blue-600 bg-blue-100' : 
                           isPastPhase ? 'border-green-200 bg-green-50' : 'border-gray-200'
                       }`}
                     >
-                      <div className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full mr-3 
-                        ${isCurrentPhase ? 'bg-blue-600 text-white' : 
+                      <div className={`flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full mr-3 text-lg
+                        ${isCurrentPhase ? 'bg-blue-600 text-white font-bold' : 
                           isPastPhase ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}
                       >
                         {isPastPhase ? '✓' : index + 1}
                       </div>
                       <div className="flex-1">
-                        <h4 className={`text-[16px] font-medium ${
+                        <h4 className={`text-[17px] font-medium ${
                           isCurrentPhase ? 'text-blue-700' : 
                             isPastPhase ? 'text-green-700' : 'text-gray-700'
                         }`}>
                           {phase.label}
                         </h4>
-                        <p className="text-[14px] text-gray-600 mt-1">
+                        <p className={`text-[14px] mt-1 ${
+                          isCurrentPhase ? 'text-blue-600 font-medium' : 
+                            isPastPhase ? 'text-green-600' : 'text-gray-600'
+                        }`}>
                           {isCurrentPhase ? "Phase en cours" : 
                             isPastPhase ? "Phase terminée" : "Phase à venir"}
                         </p>
                       </div>
                       {isCurrentPhase && (
-                        <div className="absolute top-0 right-0 mt-2 mr-2 flex items-center bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
-                          <span className="flex h-2 w-2 mr-1">
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                        <div className="absolute top-0 right-0 mt-2 mr-2 flex items-center bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium shadow-sm">
+                          <span className="flex h-3 w-3 mr-1.5">
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                           </span>
-                          Nous sommes ici
+                          PHASE ACTUELLE
                         </div>
                       )}
                     </div>
