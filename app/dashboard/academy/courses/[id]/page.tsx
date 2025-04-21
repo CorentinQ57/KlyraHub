@@ -424,7 +424,47 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   </Button>
                 </div>
                 
-                <Accordion type="multiple" defaultValue={['module-0']} className="space-y-4">
+                <Accordion type="multiple" defaultValue={['module-0', 'introduction']} className="space-y-4">
+                  {/* Section Introduction */}
+                  {course.video_url && (
+                    <AccordionItem 
+                      value="introduction"
+                      className="border rounded-lg overflow-hidden bg-blue-50/50"
+                    >
+                      <AccordionTrigger className="px-4 py-3 hover:bg-blue-50">
+                        <div className="flex-1 flex items-center">
+                          <Video className="h-5 w-5 mr-2 text-blue-500" />
+                          <span className="text-lg font-medium">Introduction au cours</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-0 pt-2">
+                        <div className="space-y-1 p-1">
+                          <div 
+                            className="flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-blue-50"
+                            onClick={() => {
+                              setSelectedLesson(null);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-100">
+                                <Play className="h-4 w-4 text-blue-500" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-sm">Présentation du cours</h4>
+                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                  <Clock className="h-3 w-3" />
+                                  <span>5 min</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+
+                  {/* Modules du cours */}
                   {modules.map((module, moduleIndex) => (
                     <AccordionItem 
                       key={module.id} 

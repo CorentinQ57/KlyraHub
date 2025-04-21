@@ -65,6 +65,7 @@ interface CourseFormData {
   description: string;
   objectives: string[];
   is_popular: boolean;
+  is_new: boolean;
 }
 
 export default function CoursesManagementPage() {
@@ -521,7 +522,7 @@ export default function CoursesManagementPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingCourse ? 'Modifier le cours' : 'Ajouter un nouveau cours'}
@@ -532,196 +533,220 @@ export default function CoursesManagementPage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 mt-4">
-              <div>
-                <Label htmlFor="title">Titre du cours</Label>
-                <Input
-                  id="title"
-                  value={courseData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="Entrez le titre du cours"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="category">Catégorie</Label>
-                <Input
-                  id="category"
-                  value={courseData.category_id}
-                  onChange={(e) => handleInputChange('category_id', e.target.value)}
-                  placeholder="Entrez la catégorie du cours"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="level">Niveau</Label>
-                <Select
-                  value={courseData.level}
-                  onValueChange={(value) => handleInputChange('level', value as 'Débutant' | 'Intermédiaire' | 'Avancé')}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez le niveau" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">Débutant</SelectItem>
-                    <SelectItem value="intermediate">Intermédiaire</SelectItem>
-                    <SelectItem value="advanced">Avancé</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="duration">Durée totale</Label>
-                <Input
-                  id="duration"
-                  value={courseData.duration}
-                  onChange={(e) => handleInputChange('duration', e.target.value)}
-                  placeholder="Ex: 2h30"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="lessons">Nombre de leçons</Label>
-                <Input
-                  id="lessons"
-                  type="number"
-                  value={courseData.lessons}
-                  onChange={(e) => handleInputChange('lessons', parseInt(e.target.value))}
-                  placeholder="Entrez le nombre de leçons"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="image">Image du cours</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-                {courseData.image && (
-                  <img
-                    src={URL.createObjectURL(courseData.image)}
-                    alt="Preview"
-                    className="mt-2 max-w-xs rounded"
-                  />
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="video">Vidéo de présentation (optionnel)</Label>
-                <Input
-                  id="video"
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => handleInputChange('video_url', e.target.files![0]?.name)}
-                />
-                {courseData.video_url && (
-                  <video
-                    src={courseData.video_url}
-                    controls
-                    className="mt-2 max-w-xs rounded"
-                  />
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={courseData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Décrivez le contenu du cours"
-                  className="h-32"
-                />
-              </div>
-
-              <div>
-                <Label>Tags</Label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {courseData.tags.map((tag, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      {tag}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
-                        onClick={() => handleRemoveTag(tag)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Colonne gauche */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Titre du cours *</Label>
                   <Input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    placeholder="Ajouter un tag"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddTag();
-                      }
-                    }}
+                    id="title"
+                    value={courseData.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    placeholder="Entrez le titre du cours"
+                    required
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddTag}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category">Catégorie *</Label>
+                  <Select
+                    value={courseData.category_id}
+                    onValueChange={(value) => handleInputChange('category_id', value)}
                   >
-                    Ajouter
-                  </Button>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez une catégorie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="level">Niveau *</Label>
+                  <Select
+                    value={courseData.level}
+                    onValueChange={(value) => handleInputChange('level', value as 'Débutant' | 'Intermédiaire' | 'Avancé')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez le niveau" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Débutant">Débutant</SelectItem>
+                      <SelectItem value="Intermédiaire">Intermédiaire</SelectItem>
+                      <SelectItem value="Avancé">Avancé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Durée totale *</Label>
+                    <Input
+                      id="duration"
+                      value={courseData.duration}
+                      onChange={(e) => handleInputChange('duration', e.target.value)}
+                      placeholder="Ex: 2h30"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lessons">Nombre de leçons *</Label>
+                    <Input
+                      id="lessons"
+                      type="number"
+                      value={courseData.lessons}
+                      onChange={(e) => handleInputChange('lessons', parseInt(e.target.value))}
+                      placeholder="Ex: 12"
+                      required
+                      min={1}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description *</Label>
+                  <Textarea
+                    id="description"
+                    value={courseData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="Décrivez le contenu du cours"
+                    className="h-32"
+                    required
+                  />
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Label>Objectifs d'apprentissage</Label>
-                <div className="flex flex-wrap gap-2">
-                  {courseData.objectives.map((objective: string, index: number) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input
-                        value={objective}
-                        onChange={(e) => {
-                          const newObjectives = [...courseData.objectives];
-                          newObjectives[index] = e.target.value;
-                          handleInputChange('objectives', newObjectives);
-                        }}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const newObjectives = courseData.objectives.filter((_: string, i: number) => i !== index);
-                          handleInputChange('objectives', newObjectives);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+              {/* Colonne droite */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="image">Image du cours {editingCourse ? '(optionnel)' : '*'}</Label>
+                  <div className="grid gap-4">
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="cursor-pointer"
+                      required={!editingCourse}
+                    />
+                    {(courseData.image || editingCourse?.image_url) && (
+                      <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+                        <Image
+                          src={courseData.image ? URL.createObjectURL(courseData.image) : editingCourse?.image_url || ''}
+                          alt="Aperçu"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    handleInputChange('objectives', [...courseData.objectives, '']);
-                  }}
-                >
-                  Ajouter un objectif
-                </Button>
-              </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_popular"
-                  checked={courseData.is_popular}
-                  onCheckedChange={(checked) => handleInputChange('is_popular', checked)}
-                />
-                <Label htmlFor="is_popular">Marquer comme populaire</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="video">URL de la vidéo de présentation</Label>
+                  <Input
+                    id="video"
+                    type="url"
+                    value={courseData.video_url}
+                    onChange={(e) => handleInputChange('video_url', e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Ajoutez l'URL d'une vidéo YouTube ou Vimeo
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tags</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {courseData.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                        {tag}
+                        <X
+                          className="h-3 w-3 cursor-pointer hover:text-destructive"
+                          onClick={() => handleRemoveTag(tag)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      placeholder="Ajouter un tag"
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                    />
+                    <Button type="button" onClick={handleAddTag} variant="outline">
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Objectifs d'apprentissage</Label>
+                  <div className="space-y-2">
+                    {courseData.objectives.map((objective, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={objective}
+                          onChange={(e) => {
+                            const newObjectives = [...courseData.objectives];
+                            newObjectives[index] = e.target.value;
+                            handleInputChange('objectives', newObjectives);
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const newObjectives = courseData.objectives.filter((_, i) => i !== index);
+                            handleInputChange('objectives', newObjectives);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleInputChange('objectives', [...courseData.objectives, ''])}
+                      className="w-full"
+                    >
+                      Ajouter un objectif
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="is_popular"
+                      checked={courseData.is_popular}
+                      onCheckedChange={(checked) => handleInputChange('is_popular', checked)}
+                    />
+                    <Label htmlFor="is_popular">Marquer comme populaire</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="is_new"
+                      checked={courseData.is_new}
+                      onCheckedChange={(checked) => handleInputChange('is_new', checked)}
+                    />
+                    <Label htmlFor="is_new">Marquer comme nouveau</Label>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <DialogFooter className="flex space-x-2 justify-end">
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Annuler
               </Button>
