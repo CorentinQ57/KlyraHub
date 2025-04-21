@@ -110,8 +110,12 @@ export default function LessonPage() {
           content: lessonData.content,
           video_url: lessonData.video_url,
           order: lessonData.order,
-          module_id: lessonData.module_id,
-          ...(lessonData.is_free !== undefined && { is_free: lessonData.is_free })
+          module_id: lessonData.module_id
+        }
+
+        // Ajouter is_free seulement s'il est défini
+        if (typeof lessonData.is_free === 'boolean') {
+          lessonInfo.is_free = lessonData.is_free
         }
         
         // Extraire les informations du cours
