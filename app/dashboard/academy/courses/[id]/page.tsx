@@ -1,194 +1,191 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { notFound } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Clock, Play, CheckCircle, Lock, Award, Users, Download, Video, FileText, MessageSquare, ExternalLink } from 'lucide-react'
+import { ArrowLeft, BookOpen, Clock, Play, CheckCircle, Lock, Award, Download, Video, FileText, MessageSquare, ExternalLink, Calendar, Layers, ChevronLeft, ChevronRight, AlertTriangle, Bookmark, Shield, Info, Check } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import { AspectRatio } from '@/components/ui/aspect-ratio'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { ContentCard } from '@/components/ui/content-card'
+import { getCoursesById, getCourseById } from '@/lib/academy-service'
+import { CourseLesson, CourseModule } from '@/types/academy-types'
+import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/hooks/useAuth'
+import { formatDuration } from '@/lib/utils'
 
 // Components
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { PageContainer, PageHeader, PageSection } from '@/components/ui/page-container'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { Separator } from '@/components/ui/separator'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Skeleton } from '@/components/ui/skeleton'
 
 // Services
-import { useAuth } from '@/lib/auth'
-import { Course, CourseModule, CourseLesson, getCourseById, getCourseModules } from '@/lib/academy-service'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export default function CoursePage({ params }: { params: { id: string } }) {
+  const router = useRouter()
   const { user } = useAuth()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(true)
-  const [course, setCourse] = useState<Course | null>(null)
-  const [modules, setModules] = useState<CourseModule[]>([])
+  const [course, setCourse] = useState<any>({})
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedLesson, setSelectedLesson] = useState<CourseLesson | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [previousLesson, setPreviousLesson] = useState<CourseLesson | null>(null)
+  const [nextLesson, setNextLesson] = useState<CourseLesson | null>(null)
 
-  // Récupérer les données du cours et des modules
+  // Obtenir les ressources du cours
+  const courseResources = course.resources || [];
+  
+  // Naviguer entre les leçons
+  const handleLessonNavigate = (lesson: CourseLesson) => {
+    setSelectedLesson(lesson);
+    setActiveTab('lesson');
+  };
+  
+  // Mettre à jour les leçons précédentes et suivantes quand une leçon est sélectionnée
   useEffect(() => {
-    const fetchCourseData = async () => {
-      setLoading(true)
-      try {
-        const courseData = await getCourseById(params.id)
+    if (!selectedLesson || !course.modules) return;
+    
+    let foundPrevious = null;
+    let foundNext = null;
+    let foundCurrent = false;
+    
+    // Parcourir tous les modules et leçons pour trouver la précédente et la suivante
+    for (const module of course.modules) {
+      for (let i = 0; i < module.lessons.length; i++) {
+        const lesson = module.lessons[i];
         
-        if (!courseData) {
-          return notFound()
+        if (foundCurrent && !foundNext) {
+          foundNext = lesson;
+          break;
         }
         
-        setCourse(courseData)
-        
-        // Récupérer les modules et leçons
-        const modulesData = await getCourseModules(params.id)
-        setModules(modulesData)
-        
-        // Définir la première leçon comme sélectionnée par défaut
-        if (modulesData.length > 0 && modulesData[0].lessons.length > 0) {
-          setSelectedLesson(modulesData[0].lessons[0])
+        if (lesson.id === selectedLesson.id) {
+          foundCurrent = true;
+        } else if (!foundCurrent) {
+          foundPrevious = lesson;
         }
-      } catch (error) {
-        console.error("Erreur lors du chargement du cours:", error)
-      } finally {
-        setLoading(false)
       }
+      
+      if (foundNext) break;
     }
     
+    setPreviousLesson(foundPrevious);
+    setNextLesson(foundNext);
+  }, [selectedLesson, course.modules]);
+
+  // Récupérer les données du cours
+  const fetchCourseData = async () => {
+    setLoading(true)
+    try {
+      const data = await getCourseById(params.id)
+      if (data) {
+        setCourse(data)
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les informations du cours",
+          variant: "destructive",
+        })
+        router.push('/dashboard/academy/courses')
+      }
+    } catch (error) {
+      console.error("Error fetching course:", error)
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors du chargement du cours",
+        variant: "destructive",
+      })
+      router.push('/dashboard/academy/courses')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchCourseData()
   }, [params.id])
 
-  // Fonction pour détecter si l'URL est une vidéo (YouTube ou Vimeo)
   const isVideoUrl = (url?: string) => {
     if (!url) return false
     return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')
   }
 
-  // Fonction pour convertir les URLs YouTube/Vimeo en URLs d'intégration
   const getEmbedUrl = (url: string | undefined) => {
     if (!url) return ''
     
-    try {
-      // Conversion des URLs YouTube standard (watch?v=...)
-      if (url.includes('youtube.com/watch')) {
-        const videoId = new URL(url).searchParams.get('v')
-        if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`
-        }
-      }
-      
-      // Conversion des URLs YouTube courtes (youtu.be/...)
-      if (url.includes('youtu.be/')) {
-        const videoId = url.split('youtu.be/')[1]?.split('?')[0]
-        if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`
-        }
-      }
-      
-      // Conversion des URLs Vimeo
-      if (url.includes('vimeo.com/')) {
-        const videoId = url.split('vimeo.com/')[1]?.split('?')[0]
-        if (videoId) {
-          return `https://player.vimeo.com/video/${videoId}`
-        }
-      }
-      
-      return url
-    } catch (error) {
-      console.error('Erreur lors de la conversion de l\'URL:', error)
-      return url
+    // YouTube
+    if (url.includes('youtube.com/watch')) {
+      const videoId = new URL(url).searchParams.get('v')
+      return `https://www.youtube.com/embed/${videoId}`
     }
+    
+    if (url.includes('youtu.be')) {
+      const videoId = url.split('/').pop()
+      return `https://www.youtube.com/embed/${videoId}`
+    }
+    
+    // Vimeo
+    if (url.includes('vimeo.com')) {
+      const videoId = url.split('/').pop()
+      return `https://player.vimeo.com/video/${videoId}`
+    }
+    
+    return url
   }
 
-  // Fonction pour formater la durée totale
   const formatTotalDuration = () => {
-    // Calculer la durée totale des leçons (en supposant un format comme "15-20 min")
-    let totalMinutes = 0
+    if (!course.modules) return "0 min"
     
-    modules.forEach(module => {
-      module.lessons.forEach(lesson => {
-        // Extraire les minutes du format "XX-YY min" ou "XX min"
-        const durationText = lesson.duration
-        const minutes = durationText.includes('-')
-          ? parseInt(durationText.split('-')[1])
-          : parseInt(durationText)
-          
-        if (!isNaN(minutes)) {
-          totalMinutes += minutes
-        }
+    let totalMinutes = 0
+    course.modules.forEach((module: CourseModule) => {
+      module.lessons.forEach((lesson: CourseLesson) => {
+        totalMinutes += Number(lesson.duration) || 0
       })
     })
     
-    // Formater en heures et minutes
-    if (totalMinutes >= 60) {
-      const hours = Math.floor(totalMinutes / 60)
-      const minutes = totalMinutes % 60
-      return `${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`
-    } else {
+    if (totalMinutes < 60) {
       return `${totalMinutes} min`
     }
+    
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    
+    if (minutes === 0) {
+      return `${hours} h`
+    }
+    
+    return `${hours} h ${minutes} min`
   }
 
-  // Composant pour afficher une leçon
   const LessonItem = ({ lesson, moduleId }: { lesson: CourseLesson, moduleId: string }) => {
-    const isActive = selectedLesson?.id === lesson.id
-    const canAccess = lesson.is_free || user !== null
-    
     const handleLessonClick = () => {
-      if (!canAccess) return;
-      
-      // Sélectionner la leçon pour l'affichage dans l'onglet
-      setSelectedLesson(lesson);
-      
-      // Activer l'onglet leçon
-      setActiveTab('lesson');
-      
-      // Réinitialiser l'état de lecture pour la nouvelle leçon
-      setIsPlaying(false);
+      setSelectedLesson(lesson)
+      setActiveTab('lesson')
     }
     
     return (
       <div 
-        className={`
-          flex items-center justify-between p-3 rounded-md cursor-pointer
-          ${isActive ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'}
-          ${!canAccess ? 'opacity-70' : ''}
-        `}
         onClick={handleLessonClick}
+        className="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
       >
-        <div className="flex items-center space-x-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isActive ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}>
-            {lesson.type === 'video' && <Video className="h-4 w-4" />}
-            {lesson.type === 'text' && <FileText className="h-4 w-4" />}
-            {lesson.type === 'quiz' && <MessageSquare className="h-4 w-4" />}
-          </div>
-          <div>
-            <h4 className="font-medium text-sm">{lesson.title}</h4>
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
-              <Clock className="h-3 w-3" />
-              <span>{lesson.duration}</span>
-              
-              {lesson.is_free && (
-                <>
-                  <span>•</span>
-                  <span className="text-green-600">Gratuit</span>
-                </>
-              )}
-            </div>
-          </div>
+        <div className="flex items-center space-x-2">
+          {lesson.type === 'video' && <Video className="h-4 w-4 text-blue-500" />}
+          {lesson.type === 'text' && <FileText className="h-4 w-4 text-green-500" />}
+          {lesson.type === 'quiz' && <MessageSquare className="h-4 w-4 text-purple-500" />}
+          <span className="line-clamp-1">{lesson.title}</span>
         </div>
-        
-        <div className="flex items-center gap-2">
-          {canAccess ? (
-            <CheckCircle className={`h-5 w-5 ${isActive ? 'text-blue-500' : 'text-gray-300'}`} />
-          ) : (
-            <Lock className="h-5 w-5 text-gray-400" />
-          )}
+        <div className="text-sm text-gray-500">
+          {formatDuration(Number(lesson.duration) || 0)}
         </div>
       </div>
     )
@@ -196,487 +193,246 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
   if (loading) {
     return (
-      <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
-        <PageContainer>
-          <PageHeader title="Chargement du cours...">
-            <Skeleton className="h-10 w-28" />
-          </PageHeader>
-          
-          <PageSection>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <Skeleton className="h-80 w-full" />
-                <div className="space-y-4">
-                  <Skeleton className="h-8 w-1/3" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-2/3" />
-                </div>
-              </div>
-              
-              <div className="space-y-6">
-                <Skeleton className="h-60 w-full" />
-                <Skeleton className="h-40 w-full" />
-              </div>
-            </div>
-          </PageSection>
-        </PageContainer>
-      </AuroraBackground>
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
     )
   }
 
-  if (!course) {
-    return notFound()
-  }
-
-  // Debug - Afficher les informations sur la vidéo sélectionnée
-  console.log('Leçon sélectionnée:', selectedLesson);
-  if (selectedLesson?.video_url) {
-    console.log('URL vidéo originale:', selectedLesson.video_url);
-    console.log('URL vidéo transformée:', getEmbedUrl(selectedLesson.video_url));
-  }
-
   return (
-    <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
-      <PageContainer>
-        <PageHeader title={course.title}>
-          <Link href="/dashboard/academy/courses">
-            <Button variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour aux cours
-            </Button>
-          </Link>
-        </PageHeader>
-
-        {/* En-tête du cours */}
-        <PageSection className="pb-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="col-span-1 lg:col-span-2">
-              <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative">
-                {course.video_url ? (
-                  <iframe 
-                    className="w-full h-full border-0"
-                    src={getEmbedUrl(course.video_url)}
-                    title={course.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                  />
-                ) : course.image_url ? (
-                  <>
-                    <Image
-                      src={course.image_url}
-                      alt={course.title}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 flex items-center justify-center">
-                      <Button 
-                        onClick={() => setIsPlaying(!isPlaying)} 
-                        size="lg" 
-                        className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-                      >
-                        <Play className="h-8 w-8 text-white" fill="white" />
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <BookOpen className="h-20 w-20 text-gray-400" />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-4 mb-6">
-                <Badge className={
-                  course.level === 'Débutant' ? 'bg-green-500' :
-                  course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
-                }>
-                  {course.level}
-                </Badge>
-                <Badge variant="outline">{course.category}</Badge>
-                {course.tags?.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="bg-gray-100">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center">
-                    <Clock className="mr-1 h-4 w-4" />
-                    <span>{course.duration}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <BookOpen className="mr-1 h-4 w-4" />
-                    <span>{course.lessons} leçons</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <div className="container mx-auto py-8 px-4">
+      <div className="mb-8">
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => router.back()}
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Retour aux cours
+        </Button>
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold">{course.title}</h1>
+          
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">{course.level}</Badge>
+            <Badge variant="outline">{course.category}</Badge>
+            {course.tags?.map((tag) => (
+              <Badge key={tag} variant="outline" className="bg-blue-50">{tag}</Badge>
+            ))}
             
-            {/* Colonne de droite avec le contenu du cours */}
-            <div className="col-span-1">
-              <ContentCard className="h-full overflow-auto">
-                <h2 className="text-xl font-bold mb-6">Contenu du cours</h2>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-gray-500">
-                      {modules.length} modules • {course.lessons} leçons • {formatTotalDuration()}
-                    </p>
-                  </div>
-                  
-                  <Button variant="ghost" size="sm">
-                    {modules.every(m => m.id === 'expanded') ? 'Réduire tout' : 'Développer tout'}
-                  </Button>
-                </div>
-                
-                <Accordion type="multiple" defaultValue={['module-0']} className="space-y-4">
-                  {modules.map((module, moduleIndex) => (
-                    <AccordionItem 
-                      key={module.id} 
-                      value={`module-${moduleIndex}`}
-                      className="border rounded-lg overflow-hidden"
-                    >
-                      <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
-                        <div className="flex-1 flex items-center">
-                          <span className="text-lg font-medium">{module.title}</span>
-                          <span className="ml-2 text-sm text-gray-500">
-                            • {module.lessons.length} leçons
-                          </span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-0 pt-2">
-                        <div className="space-y-1 p-1">
-                          {module.lessons.map((lesson) => (
-                            <LessonItem 
-                              key={lesson.id} 
-                              lesson={lesson} 
-                              moduleId={module.id} 
-                            />
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </ContentCard>
-            </div>
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {formatTotalDuration()}
+            </Badge>
+            
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <BookOpen className="h-3 w-3" />
+              {course.lessons} leçons
+            </Badge>
           </div>
-        </PageSection>
-
-        {/* Contenu du cours en onglets */}
-        <PageSection>
-          <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Colonne principale - Informations sur le cours */}
+        <div className="lg:col-span-8 space-y-6">
+          <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
               {selectedLesson && (
                 <TabsTrigger value="lesson">Leçon en cours</TabsTrigger>
               )}
             </TabsList>
             
-            <TabsContent value="overview" className="mt-0">
-              <div className="grid grid-cols-1 gap-8">
-                <ContentCard>
-                  <h2 className="text-2xl font-bold mb-4">À propos de ce cours</h2>
-                  <p className="text-gray-700 mb-6">{course.description}</p>
-                  
-                  <h3 className="text-xl font-bold mb-3">Ce que vous apprendrez</h3>
-                  <ul className="space-y-2 mb-6">
-                    {course.objectives ? course.objectives.map((objective, index) => (
-                      <li key={index} className="flex items-start">
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                        <span>{objective}</span>
-                      </li>
-                    )) : (
-                      <>
-                        <li className="flex items-start">
-                          <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>Maîtriser les concepts fondamentaux du design</span>
-                        </li>
-                        <li className="flex items-start">
-                          <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>Créer une identité de marque cohérente et professionnelle</span>
-                        </li>
-                        <li className="flex items-start">
-                          <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>Développer une stratégie de communication efficace</span>
-                        </li>
-                      </>
-                    )}
-                  </ul>
-                  
-                  <h3 className="text-xl font-bold mb-3">Prérequis</h3>
-                  <p className="text-gray-700 mb-6">Aucun prérequis spécifique. Ce cours est accessible aux débutants.</p>
-                  
-                  <h3 className="text-xl font-bold mb-3">Public cible</h3>
-                  <ul className="space-y-2">
-                    <li className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>Entrepreneurs souhaitant développer leur propre marque</span>
-                    </li>
-                    <li className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>Étudiants en design ou marketing</span>
-                    </li>
-                    <li className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>Professionnels cherchant à améliorer leurs compétences</span>
-                    </li>
-                  </ul>
-                </ContentCard>
+            <TabsContent value="overview" className="space-y-6">
+              <ContentCard>
+                {/* Vidéo ou image du cours */}
+                <div className="relative w-full overflow-hidden rounded-lg">
+                  {course.video_url ? (
+                    <AspectRatio ratio={16 / 9}>
+                      <iframe
+                        src={getEmbedUrl(course.video_url)}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </AspectRatio>
+                  ) : (
+                    course.image_url && (
+                      <AspectRatio ratio={16 / 9}>
+                        <Image
+                          src={course.image_url}
+                          alt={course.title}
+                          className="object-cover rounded-lg"
+                          fill
+                        />
+                      </AspectRatio>
+                    )
+                  )}
+                </div>
                 
-                <ContentCard>
-                  <h2 className="text-2xl font-bold mb-4">Instructeur</h2>
-                  <div className="flex items-start space-x-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src="/images/avatars/instructor.jpg" alt="Sophie Martin" />
-                      <AvatarFallback>SM</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-lg font-bold">Sophie Martin</h3>
-                      <p className="text-gray-500 mb-2">Directrice Créative chez Klyra</p>
-                      <p className="text-sm text-gray-700">
-                        Designer avec plus de 10 ans d'expérience, spécialisée dans l'identité de marque et le design d'interfaces. 
-                        Sophie a travaillé avec des startups et des entreprises internationales.
-                      </p>
+                <div className="space-y-4 mt-6">
+                  {/* Description */}
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold">À propos de ce cours</h2>
+                    <div className="prose prose-blue max-w-none">
+                      {course.description && <p>{course.description}</p>}
                     </div>
                   </div>
-                </ContentCard>
-                
-                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Ressources incluses</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      <li className="flex items-center">
-                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Download className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm">Guide de référence PDF</span>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="mr-3 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Download className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm">Exercices pratiques</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="bg-white shadow-sm">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-xl">Détails du cours</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Durée totale</h3>
-                          <p className="font-medium">{formatTotalDuration()}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Leçons</h3>
-                          <p className="font-medium">{course.lessons} leçons</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Niveau</h3>
-                          <p className="font-medium">{course.level}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Catégorie</h3>
-                          <p className="font-medium">{course.category}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Dernière mise à jour</h3>
-                          <p className="font-medium">{new Date(course.updated_at).toLocaleDateString('fr-FR', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6">
-                        <div className="flex items-center space-x-3 mb-4">
-                          <Award className="h-10 w-10 text-amber-500" />
+
+                  {/* Objectifs */}
+                  {course.objectives && course.objectives.length > 0 && (
+                    <div className="space-y-4">
+                      <h2 className="text-xl font-bold">Ce que vous allez apprendre</h2>
+                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {course.objectives.map((objective, index) => (
+                          <li key={index} className="flex items-start">
+                            <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mr-2 mt-0.5" />
+                            <span>{objective}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {/* Pré-requis */}
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold">Pré-requis</h2>
+                    {course.prerequisites && course.prerequisites.length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1">
+                        {course.prerequisites.map((prerequisite, index) => (
+                          <li key={index}>{prerequisite}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        Aucun pré-requis spécifique n'est nécessaire pour ce cours.
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Public cible */}
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold">Pour qui est ce cours</h2>
+                    {course.targetAudience && course.targetAudience.length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1">
+                        {course.targetAudience.map((audience, index) => (
+                          <li key={index}>{audience}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        Ce cours s'adresse à toute personne intéressée par {course.category}.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </ContentCard>
+
+              {/* Ressources du cours (déplacé en bas) */}
+              {courseResources.length > 0 && (
+                <ContentCard>
+                  <h2 className="text-xl font-bold mb-4">Ressources incluses</h2>
+                  <div className="space-y-3">
+                    {courseResources.map((resource, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center">
+                          <Bookmark className="h-5 w-5 text-blue-500 mr-3" />
                           <div>
-                            <h3 className="font-bold">Certificat d'achèvement</h3>
-                            <p className="text-sm text-gray-500">Après avoir terminé le cours</p>
+                            <p className="font-medium">{resource.title}</p>
+                            <p className="text-sm text-gray-500">{resource.description}</p>
                           </div>
                         </div>
-                        <Button variant="outline" className="w-full" disabled={!user}>
-                          {user ? 'Voir le certificat' : 'Connectez-vous pour obtenir'}
+                        <Button size="sm" variant="outline">
+                          Télécharger
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-white shadow-sm">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-xl">Inscrivez-vous au cours</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                      <ul className="space-y-2 mb-6">
-                        <li className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                          <span className="text-sm">{course.lessons} leçons</span>
-                        </li>
-                        <li className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                          <span className="text-sm">Accès à vie au contenu</span>
-                        </li>
-                        <li className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                          <span className="text-sm">Certificat d'achèvement</span>
-                        </li>
-                        <li className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                          <span className="text-sm">Ressources téléchargeables</span>
-                        </li>
-                      </ul>
-                      
-                      {user ? (
-                        <Button className="w-full" onClick={() => {
-                          if (modules.length > 0 && modules[0].lessons.length > 0) {
-                            // Rediriger vers la première leçon
-                            window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
-                          } else {
-                            // Activer l'onglet leçon si pas de leçon disponible
-                            setActiveTab('lesson');
-                          }
-                        }}>Commencer le cours</Button>
-                      ) : (
-                        <div className="space-y-3">
-                          <Button className="w-full">S'inscrire pour commencer</Button>
-                          <Link href="/auth" className="block text-center text-sm text-blue-600 hover:text-blue-800">
-                            Déjà inscrit? Connectez-vous
-                          </Link>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    ))}
+                  </div>
+                </ContentCard>
+              )}
+
+              {/* Inscription au cours (déplacé en bas) */}
+              <ContentCard>
+                <h2 className="text-xl font-bold mb-4">Commencer le cours</h2>
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-5 w-5 text-blue-500" />
+                    <span>Accès complet au contenu du cours</span>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      if (course.modules?.length > 0 && course.modules[0].lessons.length > 0) {
+                        handleLessonNavigate(course.modules[0].lessons[0]);
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    Commencer le cours
+                  </Button>
                 </div>
-              </div>
+              </ContentCard>
             </TabsContent>
             
             {selectedLesson && (
-              <TabsContent value="lesson" className="mt-0">
-                <div className="grid grid-cols-1 gap-6">
+              <TabsContent value="lesson">
+                <div className="space-y-6">
                   <ContentCard>
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold">{selectedLesson.title}</h2>
-                      
-                      <div className="flex items-center gap-4">
-                        <Link href={`/dashboard/academy/lessons/${selectedLesson.id}`}>
-                          <Button variant="outline" size="sm">
-                            Voir en plein écran
-                            <ExternalLink className="ml-2 h-4 w-4" />
-                          </Button>
-                        </Link>
-                        
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <Clock className="h-4 w-4" />
-                          <span>{selectedLesson.duration}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <h1 className="text-2xl font-bold mb-4">{selectedLesson.title}</h1>
                     
-                    {selectedLesson && selectedLesson.type === 'video' && (
-                      <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative mb-6">
-                        {/* Afficher toujours l'iframe pour la vidéo, sans condition sur isPlaying */}
-                        <iframe 
-                          className="w-full h-full border-0"
-                          src={getEmbedUrl(selectedLesson.video_url)}
-                          title={selectedLesson.title || "Vidéo du cours"}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                        />
+                    {selectedLesson.type === 'video' && selectedLesson.video_url && (
+                      <div className="mb-6">
+                        <AspectRatio ratio={16 / 9}>
+                          <iframe
+                            src={getEmbedUrl(selectedLesson.video_url)}
+                            className="w-full h-full rounded-lg"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </AspectRatio>
                       </div>
                     )}
                     
-                    <div className="prose max-w-none">
-                      <p>
-                        {selectedLesson.description || 'Contenu de la leçon en cours de développement.'}
-                      </p>
-                      
-                      {selectedLesson.content ? (
-                        <div dangerouslySetInnerHTML={{ __html: selectedLesson.content }} />
-                      ) : (
-                        <>
-                          <p>
-                            Dans cette leçon, nous allons explorer les concepts fondamentaux et les principes clés
-                            qui vous permettront de maîtriser ce sujet important. Vous apprendrez des techniques
-                            pratiques et des approches méthodiques pour résoudre les problèmes courants.
-                          </p>
-                          <h3>Points clés de cette leçon</h3>
-                          <ul>
-                            <li>Comprendre les principes fondamentaux et leur application</li>
-                            <li>Développer une approche méthodique pour résoudre les problèmes</li>
-                            <li>Appliquer les techniques dans des situations réelles</li>
-                            <li>Éviter les erreurs communes et les pièges</li>
-                          </ul>
-                          <p>
-                            Cette leçon contient des exercices pratiques et des exemples concrets pour vous aider
-                            à mieux comprendre et appliquer les concepts présentés.
-                          </p>
-                        </>
-                      )}
-                    </div>
+                    {selectedLesson.type === 'text' && selectedLesson.content && (
+                      <div className="prose prose-blue max-w-none mb-6">
+                        <ReactMarkdown>{selectedLesson.content}</ReactMarkdown>
+                      </div>
+                    )}
                     
-                    <div className="mt-8 pt-6 border-t flex items-center justify-between">
-                      <Button 
-                        variant="outline" 
-                        disabled={
-                          modules[0].lessons[0].id === selectedLesson.id
-                        }
-                        onClick={() => {
-                          // Trouver la leçon précédente
-                          let found = false
-                          
-                          for (const module of modules) {
-                            for (let i = 0; i < module.lessons.length; i++) {
-                              if (module.lessons[i].id === selectedLesson.id && i > 0) {
-                                setSelectedLesson(module.lessons[i - 1])
-                                found = true
-                                break
-                              }
-                            }
-                            if (found) break
-                          }
-                        }}
+                    {selectedLesson.type === 'quiz' && (
+                      <div className="p-6 border rounded-lg bg-yellow-50 text-yellow-800 mb-6">
+                        <div className="flex items-center mb-4">
+                          <AlertTriangle className="h-5 w-5 mr-2" />
+                          <h3 className="font-semibold">Quiz en construction</h3>
+                        </div>
+                        <p>
+                          Cette fonctionnalité sera bientôt disponible. Vous pourrez tester
+                          vos connaissances avec des quiz interactifs.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Navigation entre les leçons */}
+                    <div className="flex items-center justify-between mt-8 pt-6 border-t">
+                      <Button
+                        variant="outline"
+                        className="flex items-center space-x-2"
+                        disabled={!previousLesson}
+                        onClick={() => previousLesson && handleLessonNavigate(previousLesson)}
                       >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Leçon précédente
+                        <ChevronLeft className="h-4 w-4" />
+                        <span>Leçon précédente</span>
                       </Button>
                       
-                      <Button 
-                        disabled={
-                          modules[modules.length - 1].lessons[modules[modules.length - 1].lessons.length - 1].id === selectedLesson.id
-                        }
-                        onClick={() => {
-                          // Trouver la leçon suivante
-                          let found = false
-                          
-                          for (const module of modules) {
-                            for (let i = 0; i < module.lessons.length; i++) {
-                              if (module.lessons[i].id === selectedLesson.id && i < module.lessons.length - 1) {
-                                setSelectedLesson(module.lessons[i + 1])
-                                found = true
-                                break
-                              }
-                            }
-                            if (found) break
-                          }
-                        }}
+                      <Button
+                        variant="outline"
+                        className="flex items-center space-x-2"
+                        disabled={!nextLesson}
+                        onClick={() => nextLesson && handleLessonNavigate(nextLesson)}
                       >
-                        Leçon suivante
-                        <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                        <span>Leçon suivante</span>
+                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
                   </ContentCard>
@@ -684,8 +440,69 @@ export default function CoursePage({ params }: { params: { id: string } }) {
               </TabsContent>
             )}
           </Tabs>
-        </PageSection>
-      </PageContainer>
-    </AuroraBackground>
+        </div>
+        
+        {/* Colonne de droite - Contenu du cours */}
+        <div className="lg:col-span-4 space-y-6">
+          <ContentCard>
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold">Contenu du cours</h2>
+              
+              <div className="flex items-center justify-between pb-4 border-b">
+                <div className="flex items-center">
+                  <Layers className="h-5 w-5 mr-2 text-muted-foreground" />
+                  <span className="font-medium">{course.modules?.length || 0} modules</span>
+                </div>
+                
+                <div className="flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2 text-muted-foreground" />
+                  <span className="font-medium">{course.lessons} leçons</span>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {course.modules?.map((module, index) => (
+                  <div key={module.id} className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center shrink-0">
+                        {index + 1}
+                      </div>
+                      <h3 className="font-medium">{module.title}</h3>
+                    </div>
+                    
+                    <ul className="pl-8 space-y-1">
+                      {module.lessons.map((lesson) => (
+                        <li 
+                          key={lesson.id}
+                          className="flex items-center space-x-2 text-sm cursor-pointer hover:text-blue-600"
+                          onClick={() => {
+                            setSelectedLesson(lesson);
+                            setActiveTab('lesson');
+                          }}
+                        >
+                          {lesson.type === 'video' && <Video className="h-3 w-3" />}
+                          {lesson.type === 'text' && <FileText className="h-3 w-3" />}
+                          {lesson.type === 'quiz' && <MessageSquare className="h-3 w-3" />}
+                          <span className="line-clamp-1">{lesson.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ContentCard>
+        </div>
+      </div>
+    </div>
   )
-} 
+}
+
+const formatDate = (dateString: string): string => {
+  if (!dateString) return 'Non spécifié';
+  return new Date(dateString).toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};

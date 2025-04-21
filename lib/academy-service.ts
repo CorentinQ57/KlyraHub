@@ -49,7 +49,6 @@ export type CourseLesson = {
   video_url?: string;
   order: number;
   module_id: string;
-  is_free: boolean;
 };
 
 export type Resource = {
@@ -338,7 +337,6 @@ export async function getCourseModules(courseId: string): Promise<CourseModule[]
           duration: '15-20 min',
           type: 'video' as 'video' | 'text' | 'quiz',
           order: i + 1,
-          is_free: i === 0, // La première leçon est gratuite
           module_id: moduleId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -478,7 +476,6 @@ export async function createCourseLesson(lessonData: {
   content?: string;
   video_url?: string;
   order: number;
-  is_free: boolean;
   module_id: string;
 }): Promise<CourseLesson | null> {
   const { data, error } = await supabase
@@ -545,7 +542,6 @@ export async function updateCourseLesson(
     content?: string;
     video_url?: string;
     order?: number;
-    is_free?: boolean;
   }
 ): Promise<boolean> {
   const { error } = await supabase
