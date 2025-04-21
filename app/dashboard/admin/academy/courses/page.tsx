@@ -157,14 +157,15 @@ export default function CoursesManagementPage() {
     e.preventDefault()
     try {
       let imageUrl = editingCourse?.image_url
-      let isVideo = editingCourse?.image_url?.includes('youtube.com') || 
-                   editingCourse?.image_url?.includes('youtu.be') || 
-                   editingCourse?.image_url?.includes('vimeo.com') || false
+      let videoUrl = editingCourse?.video_url
 
+      // Gérer l'URL vidéo si fournie
       if (formData.video_url) {
-        imageUrl = formData.video_url
-        isVideo = true
-      } else if (formData.image) {
+        videoUrl = formData.video_url
+      }
+
+      // Gérer l'image si fournie
+      if (formData.image) {
         const fileExt = formData.image.name.split('.').pop()
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
         const filePath = fileName
@@ -180,7 +181,6 @@ export default function CoursesManagementPage() {
           .getPublicUrl(filePath)
 
         imageUrl = urlData.publicUrl
-        isVideo = false
       }
 
       const courseData = {
@@ -191,7 +191,7 @@ export default function CoursesManagementPage() {
         duration: formData.duration,
         lessons: formData.lessons,
         image_url: imageUrl,
-        is_video: isVideo,
+        video_url: videoUrl,
         is_popular: formData.is_popular,
         is_new: formData.is_new,
         tags: formData.tags,
@@ -311,7 +311,7 @@ export default function CoursesManagementPage() {
       objectives: course.objectives || [],
       objectiveInput: '',
       image: null,
-      video_url: course.is_video ? course.image_url : ''
+      video_url: course.video_url || ''
     })
     setIsDialogOpen(true)
   }
