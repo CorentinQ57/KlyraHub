@@ -19,7 +19,7 @@ import VideoWalkthrough from '@/components/VideoWalkthrough';
 import Image from 'next/image';
 import { AuroraBackground } from '@/components/ui/aurora-background';
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
-import { getUserNotifications, markNotificationAsRead } from '@/lib/notifications-service';
+import { getUserNotifications, markNotificationAsRead, getUnreadNotificationsCount } from '@/lib/notifications-service';
 import type { Notification as ServerNotification } from '@/lib/notifications-service';
 
 // Type étendu pour inclure les relations
@@ -496,6 +496,7 @@ export default function DashboardPage() {
   });
   const [notifications, setNotifications] = useState<ServerNotification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   
   // Fonction pour charger les projets
   const loadProjects = async () => {
@@ -744,6 +745,10 @@ export default function DashboardPage() {
       try {
         const notificationsData = await getUserNotifications(user.id, 10);
         setNotifications(notificationsData);
+        
+        // Calculer le nombre de notifications non lues
+        const unread = notificationsData.filter(n => !n.read).length;
+        setUnreadCount(unread);
       } catch (error) {
         console.error('Erreur lors du chargement des notifications:', error);
       } finally {
@@ -751,7 +756,22 @@ export default function DashboardPage() {
       }
     };
     
+    const loadUnreadCount = async () => {
+      if (!user) return;
+      
+      try {
+        const count = await getUnreadNotificationsCount(user.id);
+        setUnreadCount(count);
+      } catch (error) {
+        console.error('Erreur lors du chargement du nombre de notifications non lues:', error);
+      }
+    };
+    
     loadNotifications();
+    // Rafraîchir le nombre de notifications non lues toutes les 60 secondes
+    const intervalId = setInterval(loadUnreadCount, 60000);
+    
+    return () => clearInterval(intervalId);
   }, [user]);
 
   // Marquer une notification comme lue
@@ -761,6 +781,9 @@ export default function DashboardPage() {
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
+      
+      // Mettre à jour le compteur de notifications non lues
+      setUnreadCount(prev => Math.max(0, prev - 1));
       
       // Mettre à jour en base de données
       await markNotificationAsRead(notificationId);
@@ -890,7 +913,14 @@ export default function DashboardPage() {
               >
                 Projets
               </TabsTrigger>
-              <TabsTrigger value="activity">Activité</TabsTrigger>
+              <TabsTrigger value="activity" className="relative">
+                Activité
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="projects" className="mt-0">
               {projects.length > 0 ? (
