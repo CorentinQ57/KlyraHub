@@ -111,7 +111,7 @@ export default function LessonPage() {
           video_url: lessonData.video_url,
           order: lessonData.order,
           module_id: lessonData.module_id,
-          is_free: lessonData.is_free
+          ...(lessonData.is_free !== undefined && { is_free: lessonData.is_free })
         }
         
         // Extraire les informations du cours

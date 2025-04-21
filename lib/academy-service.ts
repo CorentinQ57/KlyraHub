@@ -49,6 +49,7 @@ export type CourseLesson = {
   video_url?: string;
   order: number;
   module_id: string;
+  is_free?: boolean;
 };
 
 export type Resource = {
