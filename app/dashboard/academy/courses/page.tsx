@@ -1,129 +1,129 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, BookOpen, Clock, Filter, FileText, PlayCircle, Search, Trophy, Users, Play } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { ArrowLeft, ArrowRight, BookOpen, Clock, Filter, FileText, PlayCircle, Search, Trophy, Users, Play } from 'lucide-react';
 
 // Components
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { AuroraBackground } from '@/components/ui/aurora-background'
-import { Separator } from '@/components/ui/separator'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/ui/tabs'
-import { Skeleton } from '@/components/ui/skeleton'
+} from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Services
-import { Course, getCourses, getCoursesByCategory } from '@/lib/academy-service'
+import { Course, getCourses, getCoursesByCategory } from '@/lib/academy-service';
 
 export default function CoursesPage() {
-  const searchParams = useSearchParams()
-  const categoryParam = searchParams.get('category')
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get('category');
   
-  const [activeTab, setActiveTab] = useState(categoryParam?.toLowerCase() || 'all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedLevel, setSelectedLevel] = useState<string>('all')
-  const [courses, setCourses] = useState<Course[]>([])
-  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState(categoryParam?.toLowerCase() || 'all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState<string>('all');
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourses = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         let coursesData;
         
         if (categoryParam) {
-          coursesData = await getCoursesByCategory(categoryParam)
+          coursesData = await getCoursesByCategory(categoryParam);
         } else {
-          coursesData = await getCourses()
+          coursesData = await getCourses();
         }
         
-        setCourses(coursesData)
+        setCourses(coursesData);
       } catch (error) {
-        console.error('Erreur lors du chargement des cours:', error)
+        console.error('Erreur lors du chargement des cours:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchCourses()
-  }, [categoryParam])
+    fetchCourses();
+  }, [categoryParam]);
 
   // Filtrer les cours en fonction des critères
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         (course.description && course.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                         (course.description && course.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesLevel = selectedLevel === 'all' || course.level.toLowerCase() === selectedLevel.toLowerCase()
+    const matchesLevel = selectedLevel === 'all' || course.level.toLowerCase() === selectedLevel.toLowerCase();
     
-    const matchesCategory = activeTab === 'all' || (course.category && course.category.toLowerCase() === activeTab.toLowerCase())
+    const matchesCategory = activeTab === 'all' || (course.category && course.category.toLowerCase() === activeTab.toLowerCase());
     
-    return matchesSearch && matchesLevel && matchesCategory
-  })
+    return matchesSearch && matchesLevel && matchesCategory;
+  });
 
   // Composant pour la carte de cours
   const CourseCard = ({ course }: { course: Course }) => {
-    const isVideo = course.image_url?.includes('youtube.com') || course.image_url?.includes('vimeo.com')
-    const [isHovered, setIsHovered] = useState(false)
+    const isVideo = course.image_url?.includes('youtube.com') || course.image_url?.includes('vimeo.com');
+    const [isHovered, setIsHovered] = useState(false);
     
     // Fonction pour convertir les URLs YouTube/Vimeo en URLs d'aperçu d'image
     const getVideoThumbnail = (url: string) => {
       try {
         // YouTube
         if (url.includes('youtube.com/watch')) {
-          const videoId = new URL(url).searchParams.get('v')
+          const videoId = new URL(url).searchParams.get('v');
           if (videoId) {
-            return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+            return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
           }
         }
         
         // YouTube format court
         if (url.includes('youtu.be/')) {
-          const videoId = url.split('youtu.be/')[1]?.split('?')[0]
+          const videoId = url.split('youtu.be/')[1]?.split('?')[0];
           if (videoId) {
-            return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+            return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
           }
         }
         
         // Vimeo (note: l'implémentation complète nécessiterait l'API Vimeo)
         if (url.includes('vimeo.com/')) {
           // Simplification - dans un cas réel, il faudrait utiliser l'API Vimeo
-          const videoId = url.split('vimeo.com/')[1]?.split('?')[0]
+          const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
           if (videoId) {
             // Utiliser une image générique pour Vimeo
-            return '/images/academy/vimeo-placeholder.jpg'
+            return '/images/academy/vimeo-placeholder.jpg';
           }
         }
         
         // Par défaut, retourner l'URL telle quelle (peut-être déjà une image)
-        return url
+        return url;
       } catch (error) {
-        console.error('Erreur lors de la conversion de l\'URL en miniature:', error)
-        return url
+        console.error('Erreur lors de la conversion de l\'URL en miniature:', error);
+        return url;
       }
-    }
+    };
 
     return (
       <Link href={`/dashboard/academy/courses/${course.id}`}>
@@ -159,7 +159,7 @@ export default function CoursesPage() {
               <div className="flex gap-2">
                 <Badge className={
                   course.level === 'Débutant' ? 'bg-green-500' :
-                  course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
+                    course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
                 }>
                   {course.level}
                 </Badge>
@@ -196,8 +196,8 @@ export default function CoursesPage() {
           </div>
         </div>
       </Link>
-    )
-  }
+    );
+  };
 
   // Composant pour le squelette de chargement
   const CourseCardSkeleton = () => (
@@ -220,7 +220,7 @@ export default function CoursesPage() {
         <Skeleton className="h-10 w-full" />
       </CardFooter>
     </Card>
-  )
+  );
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
@@ -442,5 +442,5 @@ export default function CoursesPage() {
         </div>
       </div>
     </AuroraBackground>
-  )
+  );
 } 

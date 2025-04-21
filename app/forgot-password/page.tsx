@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { motion } from "framer-motion"
-import { Logo } from "@/components/Logo"
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Logo } from '@/components/Logo';
 
 // Background Mesh Component
 const BackgroundMesh = () => {
@@ -23,55 +23,55 @@ const BackgroundMesh = () => {
       </div>
       <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px]" />
     </div>
-  )
-}
+  );
+};
 
 export default function ForgotPasswordPage() {
-  const { resetPassword } = useAuth()
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [mounted, setMounted] = useState(false)
-  const router = useRouter()
+  const { resetPassword } = useAuth();
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   // Set mounted state to true on client-side
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setMessage('')
-    setError('')
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage('');
+    setError('');
 
     if (!email) {
-      setError('Veuillez entrer votre adresse email')
-      setIsLoading(false)
-      return
+      setError('Veuillez entrer votre adresse email');
+      setIsLoading(false);
+      return;
     }
 
     try {
-      const { data, error } = await resetPassword(email)
+      const { data, error } = await resetPassword(email);
       
       if (error) {
-        setError(error.message || 'Une erreur est survenue lors de la demande de réinitialisation du mot de passe')
+        setError(error.message || 'Une erreur est survenue lors de la demande de réinitialisation du mot de passe');
       } else {
-        setMessage('Un email de réinitialisation a été envoyé à votre adresse email')
-        setEmail('')
+        setMessage('Un email de réinitialisation a été envoyé à votre adresse email');
+        setEmail('');
         // Redirect after a short delay
         setTimeout(() => {
-          router.push('/login')
-        }, 3000)
+          router.push('/login');
+        }, 3000);
       }
     } catch (err) {
-      setError('Une erreur inattendue s\'est produite')
-      console.error('Password reset error:', err)
+      setError('Une erreur inattendue s\'est produite');
+      console.error('Password reset error:', err);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // If not mounted yet (server-side), don't show content to prevent hydration errors
   if (!mounted) {
@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -156,5 +156,5 @@ export default function ForgotPasswordPage() {
         </motion.div>
       </main>
     </div>
-  )
+  );
 } 

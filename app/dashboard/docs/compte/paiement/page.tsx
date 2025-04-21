@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import { 
   FileText, 
   CreditCard, 
@@ -22,24 +22,24 @@ import {
   RefreshCw,
   PlusCircle,
   MinusCircle,
-  HelpCircle
-} from "lucide-react";
+  HelpCircle,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Gestion de compte",
-    href: "/dashboard/docs/compte/gestion",
+    title: 'Gestion de compte',
+    href: '/dashboard/docs/compte/gestion',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Facturation",
-    href: "/dashboard/docs/compte/facturation",
+    title: 'Facturation',
+    href: '/dashboard/docs/compte/facturation',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Commissions et paiements",
-    href: "/dashboard/docs/projets/commissions",
+    title: 'Commissions et paiements',
+    href: '/dashboard/docs/projets/commissions',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
@@ -59,80 +59,80 @@ type PaymentMethod = {
 
 const paymentMethods: PaymentMethod[] = [
   {
-    id: "credit-card",
-    title: "Carte bancaire",
-    description: "Payez directement avec votre carte de crédit ou de débit.",
+    id: 'credit-card',
+    title: 'Carte bancaire',
+    description: 'Payez directement avec votre carte de crédit ou de débit.',
     icon: <CreditCard className="h-6 w-6 text-primary" />,
-    processingTime: "Instantané",
-    limits: "Selon votre plafond bancaire",
+    processingTime: 'Instantané',
+    limits: 'Selon votre plafond bancaire',
     advantages: [
-      "Paiement immédiat",
-      "Procédure simple et rapide",
-      "Reçus automatiques par email",
-      "Option de sauvegarde sécurisée pour futurs achats"
+      'Paiement immédiat',
+      'Procédure simple et rapide',
+      'Reçus automatiques par email',
+      'Option de sauvegarde sécurisée pour futurs achats',
     ],
     disadvantages: [
-      "Limité par le plafond de votre carte",
-      "Certaines banques peuvent bloquer les transactions importantes"
+      'Limité par le plafond de votre carte',
+      'Certaines banques peuvent bloquer les transactions importantes',
     ],
-    recommended: true
+    recommended: true,
   },
   {
-    id: "bank-transfer",
-    title: "Virement bancaire",
-    description: "Effectuez un virement depuis votre compte bancaire vers le nôtre.",
+    id: 'bank-transfer',
+    title: 'Virement bancaire',
+    description: 'Effectuez un virement depuis votre compte bancaire vers le nôtre.',
     icon: <Building className="h-6 w-6 text-primary" />,
-    processingTime: "1-3 jours ouvrés",
-    limits: "Aucune limite supérieure",
+    processingTime: '1-3 jours ouvrés',
+    limits: 'Aucune limite supérieure',
     advantages: [
-      "Pas de frais supplémentaires",
-      "Idéal pour les montants importants",
-      "Aucun plafond de paiement",
-      "Sécurité élevée"
+      'Pas de frais supplémentaires',
+      'Idéal pour les montants importants',
+      'Aucun plafond de paiement',
+      'Sécurité élevée',
     ],
     disadvantages: [
-      "Délai de traitement plus long",
-      "Nécessite des actions manuelles",
-      "Le projet ne démarre qu'après réception du paiement"
-    ]
+      'Délai de traitement plus long',
+      'Nécessite des actions manuelles',
+      'Le projet ne démarre qu\'après réception du paiement',
+    ],
   },
   {
-    id: "paypal",
-    title: "PayPal",
-    description: "Utilisez votre compte PayPal pour un paiement sécurisé.",
+    id: 'paypal',
+    title: 'PayPal',
+    description: 'Utilisez votre compte PayPal pour un paiement sécurisé.',
     icon: <Wallet className="h-6 w-6 text-primary" />,
-    processingTime: "Instantané",
-    limits: "Selon votre compte PayPal",
+    processingTime: 'Instantané',
+    limits: 'Selon votre compte PayPal',
     advantages: [
-      "Paiement rapide sans saisie de carte",
-      "Protection acheteur",
-      "Familier pour de nombreux utilisateurs",
-      "Reçus automatiques"
+      'Paiement rapide sans saisie de carte',
+      'Protection acheteur',
+      'Familier pour de nombreux utilisateurs',
+      'Reçus automatiques',
     ],
     disadvantages: [
-      "Frais potentiels selon votre pays",
-      "Nécessite un compte PayPal"
-    ]
+      'Frais potentiels selon votre pays',
+      'Nécessite un compte PayPal',
+    ],
   },
   {
-    id: "direct-debit",
-    title: "Prélèvement SEPA",
-    description: "Pour les paiements récurrents ou échelonnés (Europe uniquement).",
+    id: 'direct-debit',
+    title: 'Prélèvement SEPA',
+    description: 'Pour les paiements récurrents ou échelonnés (Europe uniquement).',
     icon: <RefreshCw className="h-6 w-6 text-primary" />,
-    processingTime: "Configuration initiale: 3-5 jours",
-    limits: "Selon accord",
+    processingTime: 'Configuration initiale: 3-5 jours',
+    limits: 'Selon accord',
     advantages: [
-      "Idéal pour les paiements échelonnés",
-      "Automatisé une fois configuré",
-      "Pas besoin d'action pour chaque échéance",
-      "Notifications avant chaque prélèvement"
+      'Idéal pour les paiements échelonnés',
+      'Automatisé une fois configuré',
+      'Pas besoin d\'action pour chaque échéance',
+      'Notifications avant chaque prélèvement',
     ],
     disadvantages: [
-      "Configuration initiale plus longue",
-      "Limité aux pays de la zone SEPA",
-      "Nécessite un mandat signé"
-    ]
-  }
+      'Configuration initiale plus longue',
+      'Limité aux pays de la zone SEPA',
+      'Nécessite un mandat signé',
+    ],
+  },
 ];
 
 // FAQ sur les paiements
@@ -143,25 +143,25 @@ type PaymentFAQ = {
 
 const paymentFAQs: PaymentFAQ[] = [
   {
-    question: "Comment modifier mon mode de paiement par défaut ?",
-    answer: "Vous pouvez modifier votre mode de paiement par défaut dans les paramètres de votre compte, section 'Modes de paiement'. Sélectionnez la carte ou méthode souhaitée et cliquez sur 'Définir par défaut'."
+    question: 'Comment modifier mon mode de paiement par défaut ?',
+    answer: 'Vous pouvez modifier votre mode de paiement par défaut dans les paramètres de votre compte, section \'Modes de paiement\'. Sélectionnez la carte ou méthode souhaitée et cliquez sur \'Définir par défaut\'.',
   },
   {
-    question: "Mes informations de paiement sont-elles sécurisées ?",
-    answer: "Oui, toutes vos informations de paiement sont cryptées et sécurisées. Nous ne stockons jamais vos données de carte complètes sur nos serveurs - nous utilisons un prestataire de paiement certifié PCI DSS qui garantit les plus hauts standards de sécurité."
+    question: 'Mes informations de paiement sont-elles sécurisées ?',
+    answer: 'Oui, toutes vos informations de paiement sont cryptées et sécurisées. Nous ne stockons jamais vos données de carte complètes sur nos serveurs - nous utilisons un prestataire de paiement certifié PCI DSS qui garantit les plus hauts standards de sécurité.',
   },
   {
-    question: "Puis-je avoir une facture au nom de mon entreprise ?",
-    answer: "Oui, vous pouvez configurer les informations de facturation de votre entreprise dans les paramètres de votre compte. Toutes les factures futures seront automatiquement émises avec ces coordonnées."
+    question: 'Puis-je avoir une facture au nom de mon entreprise ?',
+    answer: 'Oui, vous pouvez configurer les informations de facturation de votre entreprise dans les paramètres de votre compte. Toutes les factures futures seront automatiquement émises avec ces coordonnées.',
   },
   {
-    question: "Que faire si mon paiement est refusé ?",
-    answer: "Si votre paiement est refusé, vérifiez d'abord les informations saisies et votre solde disponible. Si le problème persiste, contactez votre banque pour vous assurer qu'il n'y a pas de restrictions sur votre compte. Vous pouvez également essayer un autre mode de paiement ou contacter notre support."
+    question: 'Que faire si mon paiement est refusé ?',
+    answer: 'Si votre paiement est refusé, vérifiez d\'abord les informations saisies et votre solde disponible. Si le problème persiste, contactez votre banque pour vous assurer qu\'il n\'y a pas de restrictions sur votre compte. Vous pouvez également essayer un autre mode de paiement ou contacter notre support.',
   },
   {
-    question: "Est-il possible de demander un remboursement ?",
-    answer: "Les conditions de remboursement dépendent du stade de votre projet. Pour une demande avant le démarrage du projet, un remboursement intégral est possible. Pour les projets en cours, veuillez consulter nos conditions générales ou contacter notre service client."
-  }
+    question: 'Est-il possible de demander un remboursement ?',
+    answer: 'Les conditions de remboursement dépendent du stade de votre projet. Pour une demande avant le démarrage du projet, un remboursement intégral est possible. Pour les projets en cours, veuillez consulter nos conditions générales ou contacter notre service client.',
+  },
 ];
 
 export default function PaymentMethodsPage() {
@@ -170,16 +170,16 @@ export default function PaymentMethodsPage() {
   // Générer la table des matières
   useEffect(() => {
     const items: TocItem[] = [
-      { id: "introduction", title: "Introduction", level: 2 },
-      { id: "methods", title: "Modes de paiement acceptés", level: 2 },
+      { id: 'introduction', title: 'Introduction', level: 2 },
+      { id: 'methods', title: 'Modes de paiement acceptés', level: 2 },
       ...paymentMethods.map((method) => ({
         id: method.id,
         title: method.title,
         level: 3,
       })),
-      { id: "managing", title: "Gérer vos moyens de paiement", level: 2 },
-    { id: "security", title: "Sécurité des paiements", level: 2 },
-      { id: "faq", title: "Questions fréquentes", level: 2 },
+      { id: 'managing', title: 'Gérer vos moyens de paiement', level: 2 },
+      { id: 'security', title: 'Sécurité des paiements', level: 2 },
+      { id: 'faq', title: 'Questions fréquentes', level: 2 },
     ];
     setTocItems(items);
   }, []);
@@ -217,7 +217,7 @@ export default function PaymentMethodsPage() {
                 <Shield className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-medium mb-2">Sécurité garantie</h3>
-                <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Tous les paiements sont traités via des plateformes sécurisées et cryptées. Vos informations financières ne sont jamais stockées directement sur nos serveurs.
                   </p>
                 </div>
@@ -235,19 +235,19 @@ export default function PaymentMethodsPage() {
 
             <div className="grid grid-cols-1 gap-6 mt-6">
               {paymentMethods.map((method) => (
-                <Card key={method.id} id={method.id} className={method.recommended ? "border-primary/30 bg-primary/5" : ""}>
-                  <CardHeader className={method.recommended ? "pb-2 border-b border-primary/20" : "pb-2 border-b"}>
+                <Card key={method.id} id={method.id} className={method.recommended ? 'border-primary/30 bg-primary/5' : ''}>
+                  <CardHeader className={method.recommended ? 'pb-2 border-b border-primary/20' : 'pb-2 border-b'}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className={method.recommended ? "bg-primary/20 p-2 rounded-lg" : "bg-muted p-2 rounded-lg"}>
+                        <div className={method.recommended ? 'bg-primary/20 p-2 rounded-lg' : 'bg-muted p-2 rounded-lg'}>
                           {method.icon}
                         </div>
                         <CardTitle className="text-xl">{method.title}</CardTitle>
-                  </div>
+                      </div>
                       {method.recommended && (
                         <Badge className="bg-primary text-white">Recommandé</Badge>
                       )}
-                  </div>
+                    </div>
                     <CardDescription className="mt-2">
                       {method.description}
                     </CardDescription>
@@ -257,12 +257,12 @@ export default function PaymentMethodsPage() {
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Délai de traitement</h4>
                         <p className="font-medium">{method.processingTime}</p>
-                  </div>
+                      </div>
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Limites</h4>
                         <p className="font-medium">{method.limits}</p>
-                </div>
-              </div>
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
@@ -275,7 +275,7 @@ export default function PaymentMethodsPage() {
                             </li>
                           ))}
                         </ul>
-                </div>
+                      </div>
                       <div>
                         <h4 className="text-sm font-medium text-primary mb-3">Limitations</h4>
                         <ul className="space-y-2">
@@ -285,9 +285,9 @@ export default function PaymentMethodsPage() {
                               <span className="text-sm">{disadvantage}</span>
                             </li>
                           ))}
-                      </ul>
-                </div>
-              </div>
+                        </ul>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -336,8 +336,8 @@ export default function PaymentMethodsPage() {
                   <p className="text-sm text-muted-foreground">
                     Sélectionnez le mode de paiement que vous souhaitez utiliser par défaut et cliquez sur "Définir par défaut".
                   </p>
+                </div>
               </div>
-            </div>
 
               <div className="flex items-start space-x-4 p-4 border rounded-lg">
                 <div className="bg-primary/10 h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -378,8 +378,8 @@ export default function PaymentMethodsPage() {
                     <h3 className="font-medium mb-2">Cryptage SSL</h3>
                     <p className="text-sm text-muted-foreground">
                       Toutes les transactions sont protégées par un cryptage SSL 256 bits de bout en bout.
-                </p>
-              </div>
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -390,8 +390,8 @@ export default function PaymentMethodsPage() {
                     <h3 className="font-medium mb-2">Conformité PCI DSS</h3>
                     <p className="text-sm text-muted-foreground">
                       Notre plateforme respecte les normes de sécurité les plus strictes de l'industrie bancaire.
-                </p>
-              </div>
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -402,8 +402,8 @@ export default function PaymentMethodsPage() {
                     <h3 className="font-medium mb-2">Détection de fraude</h3>
                     <p className="text-sm text-muted-foreground">
                       Système automatisé de détection des activités suspectes pour protéger votre compte.
-                </p>
-              </div>
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -415,8 +415,8 @@ export default function PaymentMethodsPage() {
                   <h3 className="font-medium text-amber-800 mb-2">Restez vigilant</h3>
                   <p className="text-sm text-amber-700">
                     Klyra Design ne vous demandera jamais vos informations de paiement par email ou téléphone. Toutes les transactions doivent être effectuées uniquement via notre plateforme sécurisée.
-              </p>
-            </div>
+                  </p>
+                </div>
               </div>
             </div>
           </section>
@@ -445,7 +445,7 @@ export default function PaymentMethodsPage() {
                   </CardContent>
                 </Card>
               ))}
-                </div>
+            </div>
 
             <div className="border-t border-dashed pt-6 mt-8">
               <div className="flex items-center justify-between">
@@ -485,7 +485,7 @@ export default function PaymentMethodsPage() {
 
       {/* Barre latérale */}
       <div className="w-full lg:w-72 lg:flex-none space-y-10">
-          <TableOfContents items={tocItems} />
+        <TableOfContents items={tocItems} />
         <LinkCard links={relatedLinks} title="Ressources utiles" />
       </div>
     </div>

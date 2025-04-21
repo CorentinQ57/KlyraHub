@@ -1,84 +1,84 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { notFound } from 'next/navigation'
-import Image from 'next/image'
-import Link from 'next/link'
-import { ArrowLeft, BookOpen, Download, FileText, Video, CheckCircle, Users, Clock, PlayCircle, Share2 } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft, BookOpen, Download, FileText, Video, CheckCircle, Users, Clock, PlayCircle, Share2 } from 'lucide-react';
 
 // Components
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { AuroraBackground } from '@/components/ui/aurora-background'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Services
-import { useAuth } from '@/lib/auth'
-import { Resource, getResourceById } from '@/lib/academy-service'
+import { useAuth } from '@/lib/auth';
+import { Resource, getResourceById } from '@/lib/academy-service';
 
 export default function ResourcePage({ params }: { params: { id: string } }) {
-  const { user } = useAuth()
-  const [loading, setLoading] = useState(true)
-  const [resource, setResource] = useState<Resource | null>(null)
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [resource, setResource] = useState<Resource | null>(null);
 
   // Récupérer les données de la ressource
   useEffect(() => {
     const fetchResourceData = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
-        const resourceData = await getResourceById(params.id)
+        const resourceData = await getResourceById(params.id);
         
         if (!resourceData) {
-          return notFound()
+          return notFound();
         }
         
-        setResource(resourceData)
+        setResource(resourceData);
       } catch (error) {
-        console.error("Erreur lors du chargement de la ressource:", error)
+        console.error('Erreur lors du chargement de la ressource:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
     
-    fetchResourceData()
-  }, [params.id])
+    fetchResourceData();
+  }, [params.id]);
 
   // Fonction pour obtenir l'icône en fonction du type
   const getResourceTypeIcon = () => {
     switch (resource?.type) {
-      case 'eBook':
-        return <BookOpen className="h-8 w-8 text-purple-500" />
-      case 'Vidéo':
-        return <Video className="h-8 w-8 text-red-500" />
-      case 'Template':
-        return <FileText className="h-8 w-8 text-green-500" />
-      case 'Checklist':
-        return <CheckCircle className="h-8 w-8 text-blue-500" />
-      default:
-        return <FileText className="h-8 w-8 text-gray-500" />
+    case 'eBook':
+      return <BookOpen className="h-8 w-8 text-purple-500" />;
+    case 'Vidéo':
+      return <Video className="h-8 w-8 text-red-500" />;
+    case 'Template':
+      return <FileText className="h-8 w-8 text-green-500" />;
+    case 'Checklist':
+      return <CheckCircle className="h-8 w-8 text-blue-500" />;
+    default:
+      return <FileText className="h-8 w-8 text-gray-500" />;
     }
-  }
+  };
 
   // Fonction pour obtenir une couleur en fonction du type
   const getResourceTypeColor = () => {
     switch (resource?.type) {
-      case 'eBook':
-        return 'bg-purple-500'
-      case 'Vidéo':
-        return 'bg-red-500'
-      case 'Template':
-        return 'bg-green-500'
-      case 'Checklist':
-        return 'bg-blue-500'
-      default:
-        return 'bg-gray-500'
+    case 'eBook':
+      return 'bg-purple-500';
+    case 'Vidéo':
+      return 'bg-red-500';
+    case 'Template':
+      return 'bg-green-500';
+    case 'Checklist':
+      return 'bg-blue-500';
+    default:
+      return 'bg-gray-500';
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -108,11 +108,11 @@ export default function ResourcePage({ params }: { params: { id: string } }) {
           </PageSection>
         </PageContainer>
       </AuroraBackground>
-    )
+    );
   }
 
   if (!resource) {
-    return notFound()
+    return notFound();
   }
 
   return (
@@ -164,7 +164,7 @@ export default function ResourcePage({ params }: { params: { id: string } }) {
                   <h2 className="text-2xl font-bold mb-4">Description</h2>
                   <p className="text-gray-700 mb-6">
                     {resource.description || 
-                      "Cette ressource vous offre des informations précieuses et des outils pratiques pour améliorer vos compétences et développer des projets plus efficacement. Explorez le contenu détaillé pour découvrir comment l'utiliser au mieux dans votre contexte professionnel."}
+                      'Cette ressource vous offre des informations précieuses et des outils pratiques pour améliorer vos compétences et développer des projets plus efficacement. Explorez le contenu détaillé pour découvrir comment l\'utiliser au mieux dans votre contexte professionnel.'}
                   </p>
 
                   <h3 className="text-xl font-bold mb-3">Ce que vous obtiendrez</h3>
@@ -406,5 +406,5 @@ export default function ResourcePage({ params }: { params: { id: string } }) {
         </PageSection>
       </PageContainer>
     </AuroraBackground>
-  )
+  );
 } 

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
-import { ChevronRight } from "lucide-react";
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { ChevronRight } from 'lucide-react';
 
 export type LinkItem = {
   title: string;
@@ -21,7 +21,7 @@ type LinkCardProps = {
 
 export function LinkCard({ title, links, className }: LinkCardProps) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn('overflow-hidden', className)}>
       <CardContent className="p-0">
         <div className="px-4 py-3 border-b bg-muted/50">
           <h3 className="text-sm font-medium">{title}</h3>

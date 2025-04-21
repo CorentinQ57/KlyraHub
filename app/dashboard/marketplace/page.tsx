@@ -1,44 +1,44 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { getAllServices, createStripeSession, type Service } from '@/lib/supabase'
-import { Input } from '@/components/ui/input'
-import { Home, Building2, ImageIcon, Code2, Edit3, Sparkles, ScanLine, BarChart3, ChevronRight, X, Search, ShoppingCart } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Slider } from '@/components/ui/slider'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import ServiceIcon from '@/components/ServiceIcon'
-import { motion } from 'framer-motion'
-import IconHoverEffect from '@/components/IconHoverEffect'
-import { ServiceIconAnimation } from '@/components/ServiceIconAnimation'
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { getAllServices, createStripeSession, type Service } from '@/lib/supabase';
+import { Input } from '@/components/ui/input';
+import { Home, Building2, ImageIcon, Code2, Edit3, Sparkles, ScanLine, BarChart3, ChevronRight, X, Search, ShoppingCart } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ServiceIcon from '@/components/ServiceIcon';
+import { motion } from 'framer-motion';
+import IconHoverEffect from '@/components/IconHoverEffect';
+import { ServiceIconAnimation } from '@/components/ServiceIconAnimation';
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
 
 // Make slug from title
-const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
+const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-');
 
 // Get icon for category
 const getCategoryIcon = (category: string) => {
   switch (category) {
-    case 'Site web':
-      return <Code2 className="h-4 w-4" />
-    case 'Design':
-      return <Sparkles className="h-4 w-4" />
-    case 'Branding':
-      return <ImageIcon className="h-4 w-4" />
-    case 'Marketing':
-      return <BarChart3 className="h-4 w-4" />
-    case 'Consulting':
-      return <ScanLine className="h-4 w-4" />
-    default:
-      return <Building2 className="h-4 w-4" />
+  case 'Site web':
+    return <Code2 className="h-4 w-4" />;
+  case 'Design':
+    return <Sparkles className="h-4 w-4" />;
+  case 'Branding':
+    return <ImageIcon className="h-4 w-4" />;
+  case 'Marketing':
+    return <BarChart3 className="h-4 w-4" />;
+  case 'Consulting':
+    return <ScanLine className="h-4 w-4" />;
+  default:
+    return <Building2 className="h-4 w-4" />;
   }
-}
+};
 
 // Extend Service type to include timeline
 interface ExtendedService extends Service {
@@ -51,65 +51,65 @@ const serviceItemVariants = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.3 } },
   hover: { 
     scale: 1.02, 
-    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-    transition: { duration: 0.2 }
-  }
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    transition: { duration: 0.2 },
+  },
 };
 
 export default function MarketplacePage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { user, isLoading } = useAuth()
-  const { toast } = useToast()
-  const [services, setServices] = useState<ExtendedService[]>([])
-  const [isLoadingServices, setIsLoadingServices] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState('Tous')
-  const [selectedPrice, setSelectedPrice] = useState([0, 5000])
-  const [processingPayment, setProcessingPayment] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedService, setSelectedService] = useState<ExtendedService | null>(null)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, isLoading } = useAuth();
+  const { toast } = useToast();
+  const [services, setServices] = useState<ExtendedService[]>([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('Tous');
+  const [selectedPrice, setSelectedPrice] = useState([0, 5000]);
+  const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedService, setSelectedService] = useState<ExtendedService | null>(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/login')
+      router.push('/login');
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     const loadServices = async () => {
-      const data = await getAllServices()
+      const data = await getAllServices();
       // Only show active services in the marketplace
-      const activeServices = data.filter(service => service.active)
-      setServices(activeServices)
+      const activeServices = data.filter(service => service.active);
+      setServices(activeServices);
       
       // Set initial selected service from URL or first service
-      const serviceIdFromUrl = searchParams.get('service')
+      const serviceIdFromUrl = searchParams.get('service');
       if (serviceIdFromUrl) {
-        const serviceFromUrl = activeServices.find(s => s.id === serviceIdFromUrl)
+        const serviceFromUrl = activeServices.find(s => s.id === serviceIdFromUrl);
         if (serviceFromUrl) {
-          setSelectedService(serviceFromUrl)
+          setSelectedService(serviceFromUrl);
         } else if (activeServices.length > 0) {
-          setSelectedService(activeServices[0])
+          setSelectedService(activeServices[0]);
         }
       } else if (activeServices.length > 0) {
-        setSelectedService(activeServices[0])
+        setSelectedService(activeServices[0]);
       }
       
-      setIsLoadingServices(false)
-    }
-    loadServices()
-  }, [searchParams])
+      setIsLoadingServices(false);
+    };
+    loadServices();
+  }, [searchParams]);
 
   // Filtrer les services en fonction des catégories, prix et recherche
   const filteredServices = services.filter(service => {
-    const categoryMatch = selectedCategory === 'Tous' || service.category === selectedCategory
-    const priceMatch = service.price >= selectedPrice[0] && service.price <= selectedPrice[1]
+    const categoryMatch = selectedCategory === 'Tous' || service.category === selectedCategory;
+    const priceMatch = service.price >= selectedPrice[0] && service.price <= selectedPrice[1];
     const searchMatch = searchQuery === '' || 
       service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (service.description && service.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      (service.description && service.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    return categoryMatch && priceMatch && searchMatch
-  })
+    return categoryMatch && priceMatch && searchMatch;
+  });
 
   // Extraire les catégories uniques des services
   const uniqueCategories = Array.from(
@@ -124,20 +124,20 @@ export default function MarketplacePage() {
   const categories = ['Tous', ...uniqueCategories];
 
   const handleBuyNow = async (service: ExtendedService, event: React.MouseEvent) => {
-    event.preventDefault()
+    event.preventDefault();
     
     if (!user) {
       toast({
-        title: "Connectez-vous",
-        description: "Vous devez être connecté pour acheter un service.",
-        variant: "destructive"
-      })
-      router.push('/login')
-      return
+        title: 'Connectez-vous',
+        description: 'Vous devez être connecté pour acheter un service.',
+        variant: 'destructive',
+      });
+      router.push('/login');
+      return;
     }
     
     try {
-      setProcessingPayment(service.id)
+      setProcessingPayment(service.id);
       
       // Créer une session de paiement Stripe
       const stripeSession = await createStripeSession(
@@ -145,36 +145,36 @@ export default function MarketplacePage() {
         service.id,
         service.name,
         service.price
-      )
+      );
       
       if (stripeSession && stripeSession.url) {
         // Rediriger vers la page de paiement Stripe
-        window.location.href = stripeSession.url
+        window.location.href = stripeSession.url;
       } else {
-        throw new Error('Impossible de créer une session de paiement')
+        throw new Error('Impossible de créer une session de paiement');
       }
 
     } catch (error: any) {
-      console.error('Erreur:', error)
-      const errorMessage = error?.message || 'Une erreur est survenue lors de la création de la session de paiement.'
+      console.error('Erreur:', error);
+      const errorMessage = error?.message || 'Une erreur est survenue lors de la création de la session de paiement.';
       toast({
-        title: "Erreur",
+        title: 'Erreur',
         description: errorMessage,
         duration: 5000,
-        variant: "destructive"
-      })
+        variant: 'destructive',
+      });
     } finally {
-      setProcessingPayment(null)
+      setProcessingPayment(null);
     }
-  }
+  };
 
   const handleSelectService = (service: ExtendedService) => {
-    setSelectedService(service)
+    setSelectedService(service);
     // Update URL without reloading the page
-    const newUrl = new URL(window.location.href)
-    newUrl.searchParams.set('service', service.id)
-    window.history.pushState({}, '', newUrl.toString())
-  }
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('service', service.id);
+    window.history.pushState({}, '', newUrl.toString());
+  };
 
   if (isLoading || isLoadingServices) {
     return (
@@ -186,7 +186,7 @@ export default function MarketplacePage() {
           </div>
         </div>
       </PageContainer>
-    )
+    );
   }
 
   return (
@@ -432,5 +432,5 @@ export default function MarketplacePage() {
         </div>
       </div>
     </PageContainer>
-  )
+  );
 } 

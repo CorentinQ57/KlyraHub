@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { Session, User } from '@supabase/supabase-js'
-import { enforceTokenStorage } from '@/lib/supabase'
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { Session, User } from '@supabase/supabase-js';
+import { enforceTokenStorage } from '@/lib/supabase';
 
 type AuthContextType = {
   user: User | null
@@ -19,72 +19,72 @@ type AuthContextType = {
   reloadAuthState: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const router = useRouter()
-  const [initialized, setInitialized] = useState(false)
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
+  const [initialized, setInitialized] = useState(false);
 
   // Fonction sécurisée pour définir l'utilisateur
   const safeSetUser = (userData: any) => {
     try {
       // Vérifie si userData est un objet valide avec un ID
       if (userData && typeof userData === 'object' && userData.id) {
-        console.log("Setting user object:", userData.email);
+        console.log('Setting user object:', userData.email);
         setUser(userData);
       } else if (typeof userData === 'string') {
         // Si c'est une chaîne, c'est probablement une erreur
-        console.error("ERREUR: Tentative de définir user comme une chaîne:", userData);
+        console.error('ERREUR: Tentative de définir user comme une chaîne:', userData);
         // Ne pas définir l'utilisateur
       } else if (userData === null) {
         // Réinitialisation normale
         setUser(null);
       } else {
         // Autre cas invalide
-        console.error("ERREUR: Tentative de définir user avec une valeur invalide:", userData);
+        console.error('ERREUR: Tentative de définir user avec une valeur invalide:', userData);
         // Ne pas définir l'utilisateur
       }
     } catch (error) {
-      console.error("Exception dans safeSetUser:", error);
+      console.error('Exception dans safeSetUser:', error);
       // Ne pas définir l'utilisateur en cas d'erreur
     }
-  }
+  };
 
   // Log d'état pour debugging
   useEffect(() => {
     try {
-      console.log("Auth state:", { 
+      console.log('Auth state:', { 
         isLoading, 
         user: user?.email, 
         userType: user ? typeof user : 'null',
         userHasId: user && typeof user === 'object' ? Boolean(user.id) : false,
         isAdmin,
-        initialized
-      })
+        initialized,
+      });
     } catch (error) {
-      console.error("Erreur lors du log d'état:", error);
+      console.error('Erreur lors du log d\'état:', error);
     }
-  }, [isLoading, user, isAdmin, initialized])
+  }, [isLoading, user, isAdmin, initialized]);
 
   // Check user role function
   const checkUserRole = async (userId: string): Promise<string | null> => {
     if (!userId) {
-      console.error("checkUserRole appelé avec un userId invalide:", userId);
+      console.error('checkUserRole appelé avec un userId invalide:', userId);
       return null;
     }
 
     try {
-      console.log("Checking user role for:", userId);
+      console.log('Checking user role for:', userId);
       
       // Vérifier si le rôle est déjà en cache dans localStorage
       if (typeof window !== 'undefined') {
         const cachedRole = localStorage.getItem(`user_role_${userId}`);
         if (cachedRole) {
-          console.log("Using cached role from localStorage:", cachedRole);
+          console.log('Using cached role from localStorage:', cachedRole);
           return cachedRole;
         }
       }
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const role = data?.role || null;
-      console.log("User role data:", data);
+      console.log('User role data:', data);
       
       // Sauvegarder le rôle dans localStorage pour les futures vérifications
       if (typeof window !== 'undefined' && role) {
@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error in checkUserRole:', error);
       return null;
     }
-  }
+  };
 
   // Initialisation plus légère et moins bloquante
   useEffect(() => {
@@ -124,7 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Ne pas bloquer l'interface pendant la vérification
         const { data, error } = await supabase.auth.getSession();
         
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
         
         if (error) {
           console.error('Error getting initial session:', error);
@@ -163,9 +165,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Mettre en place l'écouteur d'événements
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
+      if (!isMounted) {
+        return;
+      }
       
-      console.log(`Auth event: ${event}`, session ? `User: ${session.user?.email}` : "No session");
+      console.log(`Auth event: ${event}`, session ? `User: ${session.user?.email}` : 'No session');
       
       try {
         if (session) {
@@ -203,7 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sign up function
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      console.log('Signing up user:', email)
+      console.log('Signing up user:', email);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -211,27 +215,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             full_name: fullName,
-            role: 'client'
-          }
-        }
-      })
+            role: 'client',
+          },
+        },
+      });
 
       if (error) {
-        console.error('Error signing up:', error)
-        return { data: null, error }
+        console.error('Error signing up:', error);
+        return { data: null, error };
       }
 
-      return { data, error: null }
+      return { data, error: null };
     } catch (error) {
-      console.error('Exception in signUp:', error)
-      return { data: null, error: error as Error }
+      console.error('Exception in signUp:', error);
+      return { data: null, error: error as Error };
     }
-  }
+  };
 
   // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Signing in user:', email)
+      console.log('Signing in user:', email);
       
       // Nettoyer d'abord les jetons existants pour éviter les conflits
       localStorage.removeItem('sb-access-token');
@@ -239,8 +243,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`);
       
       // Cookies
-      document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       
       // Réinitialiser l'état de Supabase au cas où
       await supabase.auth.signOut({ scope: 'local' });
@@ -250,29 +254,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
-      })
+        password,
+      });
 
       if (error) {
-        console.error('Error signing in:', error)
-        return { data: null, error }
+        console.error('Error signing in:', error);
+        return { data: null, error };
       }
 
       // If successful, update local state immediately
       if (data?.user) {
         // Vérification supplémentaire pour s'assurer que user est un objet valide
         if (typeof data.user === 'object' && data.user.id) {
-          console.log("SignIn success, setting user:", data.user.email)
-          setSession(data.session)
-          safeSetUser(data.user)
+          console.log('SignIn success, setting user:', data.user.email);
+          setSession(data.session);
+          safeSetUser(data.user);
           
           // Check user role
-          const role = await checkUserRole(data.user.id)
-          setIsAdmin(role === 'admin')
+          const role = await checkUserRole(data.user.id);
+          setIsAdmin(role === 'admin');
           
           // Forcer explicitement la persistance du token
           if (data.session?.access_token) {
-            console.log("Persisting authentication tokens explicitly");
+            console.log('Persisting authentication tokens explicitly');
             
             // Stocker le nouveau jeton dans plusieurs emplacements
             localStorage.setItem('sb-access-token', data.session.access_token);
@@ -309,34 +313,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Vérifier que le token est bien persisté
             const storedToken = localStorage.getItem('sb-access-token');
             if (!storedToken) {
-              console.error("⚠️ Token not persisted in localStorage after explicit attempt");
+              console.error('⚠️ Token not persisted in localStorage after explicit attempt');
               
               // Dernier essai avec localStorage direct
               try {
                 window.localStorage.setItem('sb-access-token', data.session.access_token);
-                console.log("Direct localStorage access successful");
+                console.log('Direct localStorage access successful');
               } catch (storageError) {
-                console.error("⚠️ Direct localStorage access failed:", storageError);
+                console.error('⚠️ Direct localStorage access failed:', storageError);
               }
             } else {
-              console.log("✅ Token successfully persisted in localStorage");
+              console.log('✅ Token successfully persisted in localStorage');
             }
             
             // Vérifier que la session est bien active
             try {
               const { data: sessionCheck } = await supabase.auth.getSession();
               if (sessionCheck?.session) {
-                console.log("✅ Session check successful after login");
+                console.log('✅ Session check successful after login');
               } else {
-                console.error("⚠️ Session check failed after login - attempting recovery");
+                console.error('⚠️ Session check failed after login - attempting recovery');
                 // Essayer de récupérer la session en la définissant manuellement
                 await supabase.auth.setSession({
                   access_token: data.session.access_token,
-                  refresh_token: data.session.refresh_token || ''
+                  refresh_token: data.session.refresh_token || '',
                 });
               }
             } catch (sessionCheckError) {
-              console.error("⚠️ Error checking session after login:", sessionCheckError);
+              console.error('⚠️ Error checking session after login:', sessionCheckError);
             }
           }
           
@@ -345,64 +349,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await supabase
               .from('profiles')
               .update({ last_sign_in_at: new Date().toISOString() })
-              .eq('id', data.user.id)
+              .eq('id', data.user.id);
           } catch (updateError) {
-            console.error('Error updating last sign in time:', updateError)
+            console.error('Error updating last sign in time:', updateError);
             // Non-critical error, don't return it
           }
         } else {
-          console.error("ERREUR: data.user n'est pas un objet valide dans signIn:", data.user)
+          console.error('ERREUR: data.user n\'est pas un objet valide dans signIn:', data.user);
         }
       } else {
-        console.error("No user data returned from signInWithPassword")
+        console.error('No user data returned from signInWithPassword');
       }
 
-      return { data, error: null }
+      return { data, error: null };
     } catch (error) {
-      console.error('Exception in signIn:', error)
-      return { data: null, error: error as Error }
+      console.error('Exception in signIn:', error);
+      return { data: null, error: error as Error };
     }
-  }
+  };
 
   // Sign out function
   const signOut = async () => {
     try {
-      console.log("Signing out user")
-      await supabase.auth.signOut()
-      setUser(null)
-      setSession(null)
-      setIsAdmin(false)
-      router.push('/')
+      console.log('Signing out user');
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+      router.push('/');
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('Error signing out:', error);
     }
-  }
+  };
 
   // Reset password function
   const resetPassword = async (email: string) => {
     try {
-      console.log("Requesting password reset for:", email)
+      console.log('Requesting password reset for:', email);
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
-      })
+      });
 
-      return { data, error }
+      return { data, error };
     } catch (error) {
-      console.error('Error resetting password:', error)
-      return { data: null, error: error as Error }
+      console.error('Error resetting password:', error);
+      return { data: null, error: error as Error };
     }
-  }
+  };
 
   // Reload auth state function
   const reloadAuthState = async (): Promise<void> => {
     try {
-      console.log("Manually reloading auth state")
-      setIsLoading(true)
+      console.log('Manually reloading auth state');
+      setIsLoading(true);
       
       // Timeout de sécurité plus long avec annulation propre
       const timeoutPromise = new Promise((_, reject) => {
         const id = setTimeout(() => {
-          console.log("reloadAuthState safety timeout triggered")
+          console.log('reloadAuthState safety timeout triggered');
           reject(new Error('Auth state reload timeout'));
         }, 10000); // 10 secondes
         
@@ -415,7 +419,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const refreshToken = localStorage.getItem('sb-refresh-token');
       
       if (!accessToken && !refreshToken) {
-        console.log("No valid tokens found, clearing auth state");
+        console.log('No valid tokens found, clearing auth state');
         setUser(null);
         setSession(null);
         setIsAdmin(false);
@@ -430,11 +434,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const refreshed = await refreshSession();
         
         if (!refreshed) {
-          console.log("Token refresh failed, falling back to enforceTokenStorage");
+          console.log('Token refresh failed, falling back to enforceTokenStorage');
           // Fallback à l'ancienne méthode
           const tokenUpdated = enforceTokenStorage();
           if (!tokenUpdated) {
-            console.log("No valid token found, clearing auth state");
+            console.log('No valid token found, clearing auth state');
             setUser(null);
             setSession(null);
             setIsAdmin(false);
@@ -443,18 +447,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } catch (refreshError) {
-        console.error("Error refreshing session:", refreshError);
+        console.error('Error refreshing session:', refreshError);
       }
       
       // Rafraîchir la session avec timeout
       try {
         await Promise.race([
           supabase.auth.refreshSession(),
-          timeoutPromise
+          timeoutPromise,
         ]);
       } catch (error: any) {
         if (error?.message === 'Auth state reload timeout') {
-          console.error("Session refresh timed out");
+          console.error('Session refresh timed out');
           throw error;
         }
       }
@@ -462,14 +466,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Récupérer l'état actuel
       const [
         { data: { user: currentUser }, error: userError },
-        { data: { session: currentSession }, error: sessionError }
+        { data: { session: currentSession }, error: sessionError },
       ] = await Promise.all([
         supabase.auth.getUser(),
-        supabase.auth.getSession()
+        supabase.auth.getSession(),
       ]);
       
       if (userError || sessionError) {
-        console.error("Error reloading auth state:", userError || sessionError);
+        console.error('Error reloading auth state:', userError || sessionError);
         setUser(null);
         setSession(null);
         setIsAdmin(false);
@@ -477,7 +481,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (currentUser && currentSession) {
-        console.log("Auth reloaded successfully:", currentUser.email);
+        console.log('Auth reloaded successfully:', currentUser.email);
         safeSetUser(currentUser);
         setSession(currentSession);
         
@@ -487,17 +491,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const role = await Promise.race([rolePromise, timeoutPromise]);
           setIsAdmin(role === 'admin');
         } catch (error) {
-          console.error("Role check timed out or failed:", error);
+          console.error('Role check timed out or failed:', error);
           // Ne pas modifier le statut admin en cas d'erreur
         }
       } else {
-        console.log("No active user session found during reload");
+        console.log('No active user session found during reload');
         setUser(null);
         setSession(null);
         setIsAdmin(false);
       }
     } catch (error) {
-      console.error("Exception in reloadAuthState:", error);
+      console.error('Exception in reloadAuthState:', error);
       setUser(null);
       setSession(null);
       setIsAdmin(false);
@@ -518,19 +522,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resetPassword,
     checkUserRole,
     reloadAuthState,
-  }
+  };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
 // Custom hook to use the auth context
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
-}
+  return context;
+};
 
 // Export the provider
-export default AuthProvider 
+export default AuthProvider; 

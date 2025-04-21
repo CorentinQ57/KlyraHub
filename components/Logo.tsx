@@ -8,7 +8,7 @@ interface LogoProps {
   small?: boolean;
 }
 
-export function Logo({ className = "", showText = false, small = false }: LogoProps) {
+export function Logo({ className = '', showText = false, small = false }: LogoProps) {
   const [imageError, setImageError] = useState(false);
 
   return (
@@ -16,7 +16,7 @@ export function Logo({ className = "", showText = false, small = false }: LogoPr
       {!imageError ? (
         <div className={`relative ${small ? 'h-6 w-6 min-w-[24px]' : 'h-8 w-auto min-w-[120px]'}`}>
           <Image 
-            src={small ? "/images/klyra-icon.png" : "/images/klyra-logo.png"}
+            src={small ? '/images/klyra-icon.png' : '/images/klyra-logo.png'}
             alt="Klyra Logo"
             width={small ? 24 : 120} 
             height={small ? 24 : 32}

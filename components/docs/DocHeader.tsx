@@ -1,9 +1,9 @@
-import React from "react";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { TableOfContents, TocItem } from "./TableOfContents";
-import { LinkCard, LinkItem } from "./LinkCard";
+import React from 'react';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { TableOfContents, TocItem } from './TableOfContents';
+import { LinkCard, LinkItem } from './LinkCard';
 
 interface DocHeaderProps {
   title: string;
@@ -24,7 +24,7 @@ export default function DocHeader({
   relatedLinks,
 }: DocHeaderProps) {
   return (
-    <div className={cn("flex flex-col lg:flex-row gap-10 mb-10", className)}>
+    <div className={cn('flex flex-col lg:flex-row gap-10 mb-10', className)}>
       {/* Contenu principal */}
       <div className="flex-1">
         <div className="space-y-6">
@@ -57,7 +57,7 @@ export default function DocHeader({
                 links={relatedLinks.map(link => ({
                   title: link.label,
                   href: link.href,
-                  icon: null
+                  icon: null,
                 }))}
               />
             </div>

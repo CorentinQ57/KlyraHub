@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
 import { 
   Users, 
   ShoppingBag, 
   Star, 
   Clock, 
   Award,
-  FileCheck
-} from 'lucide-react'
-import IconHoverEffect from './IconHoverEffect'
+  FileCheck,
+} from 'lucide-react';
+import IconHoverEffect from './IconHoverEffect';
 
 interface StatProps {
   icon: React.ReactNode
@@ -22,55 +22,55 @@ interface StatProps {
   delay?: number
 }
 
-function Stat({ icon, value, label, suffix = "", color = "primary", delay = 0 }: StatProps) {
-  const [displayValue, setDisplayValue] = useState(0)
+function Stat({ icon, value, label, suffix = '', color = 'primary', delay = 0 }: StatProps) {
+  const [displayValue, setDisplayValue] = useState(0);
   const { ref, inView } = useInView({
     triggerOnce: true,
-    threshold: 0.1
-  })
+    threshold: 0.1,
+  });
   
   useEffect(() => {
     if (inView) {
       const timer = setTimeout(() => {
-        const duration = 1500
-        const step = Math.ceil(value / (duration / 16))
+        const duration = 1500;
+        const step = Math.ceil(value / (duration / 16));
         
-        let current = 0
+        let current = 0;
         const interval = setInterval(() => {
-          current += step
+          current += step;
           if (current >= value) {
-            current = value
-            clearInterval(interval)
+            current = value;
+            clearInterval(interval);
           }
-          setDisplayValue(current)
-        }, 16)
+          setDisplayValue(current);
+        }, 16);
         
-        return () => clearInterval(interval)
-      }, delay)
+        return () => clearInterval(interval);
+      }, delay);
       
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer);
     }
-  }, [inView, value, delay])
+  }, [inView, value, delay]);
   
   const iconColors = {
-    primary: "text-primary",
-    secondary: "text-secondary",
-    accent: "text-accent",
-    success: "text-green-500",
-    warning: "text-yellow-500",
-    error: "text-red-500",
-    info: "text-blue-500"
-  }
+    primary: 'text-primary',
+    secondary: 'text-secondary',
+    accent: 'text-accent',
+    success: 'text-green-500',
+    warning: 'text-yellow-500',
+    error: 'text-red-500',
+    info: 'text-blue-500',
+  };
   
   const bgColors = {
-    primary: "bg-primary/10",
-    secondary: "bg-secondary/10",
-    accent: "bg-accent/10",
-    success: "bg-green-500/10",
-    warning: "bg-yellow-500/10",
-    error: "bg-red-500/10",
-    info: "bg-blue-500/10"
-  }
+    primary: 'bg-primary/10',
+    secondary: 'bg-secondary/10',
+    accent: 'bg-accent/10',
+    success: 'bg-green-500/10',
+    warning: 'bg-yellow-500/10',
+    error: 'bg-red-500/10',
+    info: 'bg-blue-500/10',
+  };
   
   return (
     <motion.div 
@@ -92,7 +92,7 @@ function Stat({ icon, value, label, suffix = "", color = "primary", delay = 0 }:
       </div>
       <div className="text-gray-500 mt-1 text-center">{label}</div>
     </motion.div>
-  )
+  );
 }
 
 export function MarketplaceStats() {
@@ -100,48 +100,48 @@ export function MarketplaceStats() {
     { 
       icon: <Users size={24} />, 
       value: 18500, 
-      label: "Utilisateurs", 
-      color: "primary", 
-      delay: 0 
+      label: 'Utilisateurs', 
+      color: 'primary', 
+      delay: 0, 
     },
     { 
       icon: <ShoppingBag size={24} />, 
       value: 245, 
-      label: "Services disponibles", 
-      color: "success", 
-      delay: 100 
+      label: 'Services disponibles', 
+      color: 'success', 
+      delay: 100, 
     },
     { 
       icon: <Star size={24} />, 
       value: 4.8, 
-      label: "Note moyenne", 
-      suffix: "/5", 
-      color: "warning", 
-      delay: 200 
+      label: 'Note moyenne', 
+      suffix: '/5', 
+      color: 'warning', 
+      delay: 200, 
     },
     { 
       icon: <Clock size={24} />, 
       value: 24, 
-      label: "Délai moyen (heures)", 
-      color: "info", 
-      delay: 300 
+      label: 'Délai moyen (heures)', 
+      color: 'info', 
+      delay: 300, 
     },
     { 
       icon: <Award size={24} />, 
       value: 96, 
-      label: "Satisfaction client (%)", 
-      suffix: "%", 
-      color: "accent", 
-      delay: 400 
+      label: 'Satisfaction client (%)', 
+      suffix: '%', 
+      color: 'accent', 
+      delay: 400, 
     },
     { 
       icon: <FileCheck size={24} />, 
       value: 3500, 
-      label: "Livrables complétés", 
-      color: "secondary", 
-      delay: 500 
-    }
-  ]
+      label: 'Livrables complétés', 
+      color: 'secondary', 
+      delay: 500, 
+    },
+  ];
   
   return (
     <div className="w-full py-12">
@@ -164,7 +164,7 @@ export function MarketplaceStats() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default MarketplaceStats 
+export default MarketplaceStats; 

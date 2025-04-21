@@ -1,11 +1,11 @@
-import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { HelpCircle } from 'lucide-react'
-import { useState } from 'react'
-import { useAuth } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
-import { Logo } from '@/components/Logo'
+import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { HelpCircle } from 'lucide-react';
+import { useState } from 'react';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import { Logo } from '@/components/Logo';
 import { 
   LayoutDashboard, 
   User, 
@@ -17,8 +17,8 @@ import {
   X,
   RefreshCw,
   BookOpen,
-  LogIn
-} from 'lucide-react'
+  LogIn,
+} from 'lucide-react';
 
 // Interface pour les liens de navigation
 interface NavLink {
@@ -29,31 +29,31 @@ interface NavLink {
 }
 
 export function HeaderNav() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const router = useRouter()
-  const pathname = usePathname()
-  const { user, isAdmin, reloadAuthState } = useAuth()
+  const [isOpen, setIsOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, isAdmin, reloadAuthState } = useAuth();
   
   // Vérifier si le chemin actuel est dans la section documentation
-  const isDocsRoute = pathname.startsWith('/dashboard/docs')
+  const isDocsRoute = pathname.startsWith('/dashboard/docs');
   
   // Détermine si un lien est actif
   const isActive = (path: string) => {
-    return pathname === path || pathname?.startsWith(`${path}/`)
-  }
+    return pathname === path || pathname?.startsWith(`${path}/`);
+  };
   
   // Fonction pour recharger l'état d'authentification
   const handleReloadAuth = async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      await reloadAuthState()
+      await reloadAuthState();
     } catch (error) {
-      console.error("Erreur lors du rechargement de l'authentification:", error)
+      console.error('Erreur lors du rechargement de l\'authentification:', error);
     } finally {
-      setIsRefreshing(false)
+      setIsRefreshing(false);
     }
-  }
+  };
   
   // Liens de navigation pour tous les utilisateurs
   const userNavLinks: NavLink[] = [
@@ -61,48 +61,48 @@ export function HeaderNav() {
       href: '/dashboard',
       label: 'Dashboard',
       icon: <LayoutDashboard className="h-4 w-4 mr-1" />,
-      exact: true
+      exact: true,
     },
     {
       href: '/dashboard/profile',
       label: 'Profil',
-      icon: <User className="h-4 w-4 mr-1" />
+      icon: <User className="h-4 w-4 mr-1" />,
     },
     {
       href: '/dashboard/purchases',
       label: 'Mes achats',
-      icon: <ShoppingCart className="h-4 w-4 mr-1" />
+      icon: <ShoppingCart className="h-4 w-4 mr-1" />,
     },
     {
       href: '/dashboard/marketplace',
       label: 'Marketplace',
-      icon: <Store className="h-4 w-4 mr-1" />
+      icon: <Store className="h-4 w-4 mr-1" />,
     },
     {
       href: '/dashboard/docs',
       label: 'Documentation',
-      icon: <BookOpen className="h-4 w-4 mr-1" />
-    }
-  ]
+      icon: <BookOpen className="h-4 w-4 mr-1" />,
+    },
+  ];
   
   // Liens de navigation pour les visiteurs de la documentation sans compte
   const docsVisitorLinks: NavLink[] = [
     {
       href: '/dashboard/docs',
       label: 'Documentation',
-      icon: <BookOpen className="h-4 w-4 mr-1" />
-    }
-  ]
+      icon: <BookOpen className="h-4 w-4 mr-1" />,
+    },
+  ];
   
   // Lien admin supplémentaire
   const adminLink: NavLink = {
     href: '/dashboard/admin',
     label: 'Admin',
-    icon: <Settings className="h-4 w-4 mr-1" />
-  }
+    icon: <Settings className="h-4 w-4 mr-1" />,
+  };
   
   // Détermine les liens à afficher selon l'authentification
-  const navLinks = user || !isDocsRoute ? userNavLinks : docsVisitorLinks
+  const navLinks = user || !isDocsRoute ? userNavLinks : docsVisitorLinks;
   
   return (
     <header className="sticky top-0 z-[60] border-b bg-white shadow-sm">
@@ -116,8 +116,8 @@ export function HeaderNav() {
                 href={link.href}
                 className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive(link.href) && (link.exact ? pathname === link.href : true)
-                    ? "bg-primary/10 text-primary" 
-                    : "text-gray-600 hover:text-primary hover:bg-primary/5"
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-gray-600 hover:text-primary hover:bg-primary/5'
                 }`}
               >
                 {link.icon}
@@ -130,8 +130,8 @@ export function HeaderNav() {
                 href={adminLink.href}
                 className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive(adminLink.href) 
-                    ? "bg-primary/10 text-primary" 
-                    : "text-gray-600 hover:text-primary hover:bg-primary/5"
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-gray-600 hover:text-primary hover:bg-primary/5'
                 }`}
               >
                 {adminLink.icon}
@@ -161,8 +161,8 @@ export function HeaderNav() {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  await supabase.auth.signOut()
-                  router.push('/')
+                  await supabase.auth.signOut();
+                  router.push('/');
                 }}
                 className="flex items-center"
               >
@@ -193,8 +193,8 @@ export function HeaderNav() {
               href={link.href}
               className={`flex flex-col items-center text-xs font-medium p-1 ${
                 isActive(link.href) && (link.exact ? pathname === link.href : true)
-                  ? "text-primary" 
-                  : "text-gray-600"
+                  ? 'text-primary' 
+                  : 'text-gray-600'
               }`}
             >
               {link.icon}
@@ -207,8 +207,8 @@ export function HeaderNav() {
               href={adminLink.href}
               className={`flex flex-col items-center text-xs font-medium p-1 ${
                 isActive(adminLink.href) 
-                  ? "text-primary" 
-                  : "text-gray-600"
+                  ? 'text-primary' 
+                  : 'text-gray-600'
               }`}
             >
               {adminLink.icon}
@@ -247,5 +247,5 @@ export function HeaderNav() {
         </div>
       </div>
     </header>
-  )
+  );
 } 

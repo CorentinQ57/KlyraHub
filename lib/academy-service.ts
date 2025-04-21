@@ -164,7 +164,9 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
     return null;
   }
 
-  if (!data) return null;
+  if (!data) {
+    return null;
+  }
 
   return {
     ...data,
@@ -275,7 +277,9 @@ export async function getResourceById(resourceId: string): Promise<Resource | nu
     return null;
   }
 
-  if (!data) return null;
+  if (!data) {
+    return null;
+  }
 
   return {
     ...data,
@@ -304,7 +308,9 @@ export async function getCourseModules(courseId: string): Promise<CourseModule[]
   if (!data || data.length === 0) {
     // Si aucun module n'est trouvé, on crée un vrai module dans la base de données
     const course = await getCourseById(courseId);
-    if (!course) return [];
+    if (!course) {
+      return [];
+    }
     
     try {
       // Créer un vrai module dans la base de données
@@ -316,7 +322,7 @@ export async function getCourseModules(courseId: string): Promise<CourseModule[]
           order: 1,
           course_id: courseId,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -340,7 +346,7 @@ export async function getCourseModules(courseId: string): Promise<CourseModule[]
           order: i + 1,
           module_id: moduleId,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
         
         const { data: lessonResult, error: lessonError } = await supabase
@@ -388,7 +394,7 @@ export async function createCourseModule(moduleData: {
     .insert({
       ...moduleData,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .select()
     .single();
@@ -400,7 +406,7 @@ export async function createCourseModule(moduleData: {
 
   return {
     ...data,
-    lessons: []
+    lessons: [],
   };
 }
 
@@ -419,7 +425,7 @@ export async function updateCourseModule(
     .from('course_modules')
     .update({
       ...moduleData,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq('id', moduleId);
 
@@ -484,7 +490,7 @@ export async function createCourseLesson(lessonData: {
     .insert({
       ...lessonData,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .select()
     .single();
@@ -518,7 +524,7 @@ export async function createCourseLesson(lessonData: {
           .from('courses')
           .update({ 
             lessons: count,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('id', courseId);
       }
@@ -549,7 +555,7 @@ export async function updateCourseLesson(
     .from('course_lessons')
     .update({
       ...lessonData,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq('id', lessonId);
 
@@ -624,7 +630,7 @@ export async function deleteCourseLesson(lessonId: string): Promise<boolean> {
               .from('courses')
               .update({ 
                 lessons: count,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
               })
               .eq('id', courseId);
           }

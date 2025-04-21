@@ -1,24 +1,24 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
-import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/supabase'
-import { motion } from 'framer-motion'
-import { useToast } from '@/components/ui/use-toast'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus, LayoutDashboard, GraduationCap, BookOpen, HelpCircle } from 'lucide-react'
-import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { EmptyState } from "@/components/ui/empty-state"
-import VideoWalkthrough from '@/components/VideoWalkthrough'
-import Image from 'next/image'
-import { AuroraBackground } from "@/components/ui/aurora-background"
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import { Project, fetchProjects, fetchAllProjects, createProject } from '@/lib/supabase';
+import { motion } from 'framer-motion';
+import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, Calendar, CheckCircle, Clock, X, Store, ShoppingCart, Bell, Activity, Award, CreditCard, MessageSquare, Package, PenTool, Layout, Code, LineChart, FileText, FolderPlus, LayoutDashboard, GraduationCap, BookOpen, HelpCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EmptyState } from '@/components/ui/empty-state';
+import VideoWalkthrough from '@/components/VideoWalkthrough';
+import Image from 'next/image';
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -63,16 +63,16 @@ const categoryIcons: Record<string, JSX.Element> = {
   web_design: <Layout className="h-6 w-6" />,
   development: <Code className="h-6 w-6" />,
   strategy: <LineChart className="h-6 w-6" />,
-  default: <Store className="h-6 w-6" />
+  default: <Store className="h-6 w-6" />,
 };
 
 // Mapping des images par catégorie
 const categoryImages: Record<string, string> = {
-  branding: "/images/categories/branding.jpg",
-  web_design: "/images/categories/web-design.jpg",
-  development: "/images/categories/development.jpg",
-  strategy: "/images/categories/strategy.jpg",
-  default: "/images/categories/default.jpg"
+  branding: '/images/categories/branding.jpg',
+  web_design: '/images/categories/web-design.jpg',
+  development: '/images/categories/development.jpg',
+  strategy: '/images/categories/strategy.jpg',
+  default: '/images/categories/default.jpg',
 };
 
 // Dynamic import with preload functionality 
@@ -80,26 +80,26 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
   // Status labels
   const statusLabels = {
     pending: {
-      label: "En attente",
-      color: "bg-yellow-100 text-yellow-800"
+      label: 'En attente',
+      color: 'bg-yellow-100 text-yellow-800',
     },
     validated: {
-      label: "Validé",
-      color: "bg-blue-100 text-blue-800"
+      label: 'Validé',
+      color: 'bg-blue-100 text-blue-800',
     },
     in_progress: {
-      label: "En cours",
-      color: "bg-purple-100 text-purple-800"
+      label: 'En cours',
+      color: 'bg-purple-100 text-purple-800',
     },
     delivered: {
-      label: "Livré",
-      color: "bg-green-100 text-green-800"
+      label: 'Livré',
+      color: 'bg-green-100 text-green-800',
     },
     completed: {
-      label: "Terminé",
-      color: "bg-gray-100 text-gray-800"
+      label: 'Terminé',
+      color: 'bg-gray-100 text-gray-800',
     },
-  }
+  };
 
   // Utiliser l'image du service ou de la catégorie
   const serviceImage = project.services?.image_url;
@@ -121,11 +121,11 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     if (project.services?.category_id) {
       const categoryKey = project.services.category_id.toLowerCase();
       // Map des IDs connus vers des noms plus descriptifs
-      return categoryKey === "1b041ce2-1f9b-466f-8aa4-b94fec7d94ab" ? "Développement Web" :
-             categoryKey === "ba8f9878-d327-4b2d-8be5-ae95df23e1a0" ? "Branding" :
-             categoryKey === "7227a841-69e8-48bb-85fd-d65d49618245" ? "UI UX Design" :
-             categoryKey === "53b49d36-18c7-467f-89fc-cd78331dc0d7" ? "Social Media" : 
-             "Catégorie";
+      return categoryKey === '1b041ce2-1f9b-466f-8aa4-b94fec7d94ab' ? 'Développement Web' :
+        categoryKey === 'ba8f9878-d327-4b2d-8be5-ae95df23e1a0' ? 'Branding' :
+          categoryKey === '7227a841-69e8-48bb-85fd-d65d49618245' ? 'UI UX Design' :
+            categoryKey === '53b49d36-18c7-467f-89fc-cd78331dc0d7' ? 'Social Media' : 
+              'Catégorie';
     }
     
     // Cas 3: Si on a le nom du service, l'utiliser comme fallback
@@ -134,7 +134,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
     }
     
     // Cas par défaut
-    return "Catégorie";
+    return 'Catégorie';
   };
 
   // Récupérer le nom de la catégorie une seule fois
@@ -151,7 +151,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
         <div className="relative w-full h-full rounded-lg overflow-hidden">
           <Image
             src={displayImage}
-            alt={project.services?.name || "Image du projet"}
+            alt={project.services?.name || 'Image du projet'}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -177,7 +177,7 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
       <div className="p-6 flex-1 flex flex-col">
         <h3 className="text-[16px] font-semibold mb-1 line-clamp-1">{project.title}</h3>
         <p className="text-[13px] text-[#64748B] mb-4 line-clamp-2">
-          {project.description || "Description du projet"}
+          {project.description || 'Description du projet'}
         </p>
 
         <div className="mt-auto pt-4 border-t border-[#E2E8F0] flex justify-between items-center">
@@ -193,8 +193,8 @@ const ProjectCard = ({ project }: { project: ProjectWithRelations }) => {
         </div>
       </div>
     </motion.div>
-  )
-}
+  );
+};
 
 // Composant pour une étape du tutoriel
 const TutorialStep = ({ 
@@ -204,7 +204,7 @@ const TutorialStep = ({
   onNext, 
   onClose,
   isLast,
-  icon
+  icon,
 }: { 
   step: number; 
   title: string; 
@@ -225,7 +225,7 @@ const TutorialStep = ({
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        transition={{ type: "spring", damping: 25, stiffness: 350 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 350 }}
         className="w-full max-w-md mx-4"
       >
         <Card className="border-0 shadow-xl overflow-hidden">
@@ -273,24 +273,24 @@ const TutorialStep = ({
                 className="flex flex-col items-center justify-center mb-6"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               >
                 <motion.div
                   className="relative mb-4"
                   initial={{ y: -20 }}
                   animate={{ y: 0 }}
-                  transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+                  transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
                 >
                   <motion.div
                     className="absolute inset-0 bg-blue-500 rounded-full opacity-20"
                     animate={{ 
                       scale: [1, 1.8, 1],
-                      opacity: [0.2, 0, 0.2] 
+                      opacity: [0.2, 0, 0.2], 
                     }}
                     transition={{ 
                       repeat: Infinity,
                       duration: 2,
-                      ease: "easeInOut"
+                      ease: 'easeInOut',
                     }}
                   />
                   <div className="bg-gradient-to-tr from-blue-600 to-blue-400 w-24 h-24 rounded-full flex items-center justify-center shadow-lg relative z-10">
@@ -334,7 +334,7 @@ const TutorialStep = ({
               whileTap={{ scale: 0.98 }}
             >
               <Button onClick={onNext} className="font-medium bg-blue-600 hover:bg-blue-700" size="sm">
-                {isLast ? "Terminer" : "Suivant"} <ArrowRight className="ml-2 h-4 w-4" />
+                {isLast ? 'Terminer' : 'Suivant'} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>
           </CardFooter>
@@ -395,8 +395,8 @@ const StatsOverview = ({ stats }: { stats: ProjectStats }) => {
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
 // Nouveau composant pour les notifications
 const NotificationsPanel = ({ notifications }: { notifications: Notification[] }) => {
@@ -412,13 +412,13 @@ const NotificationsPanel = ({ notifications }: { notifications: Notification[] }
             <div key={notif.id} className="flex items-start space-x-4 mb-4 p-3 rounded-lg hover:bg-accent">
               <div className={`rounded-full p-2 ${
                 notif.type === 'comment' ? 'bg-blue-100' :
-                notif.type === 'deliverable' ? 'bg-green-100' :
-                notif.type === 'validation' ? 'bg-yellow-100' : 'bg-gray-100'
+                  notif.type === 'deliverable' ? 'bg-green-100' :
+                    notif.type === 'validation' ? 'bg-yellow-100' : 'bg-gray-100'
               }`}>
                 {notif.type === 'comment' ? <MessageSquare className="h-4 w-4" /> :
-                 notif.type === 'deliverable' ? <Package className="h-4 w-4" /> :
-                 notif.type === 'validation' ? <CheckCircle className="h-4 w-4" /> :
-                 <Bell className="h-4 w-4" />}
+                  notif.type === 'deliverable' ? <Package className="h-4 w-4" /> :
+                    notif.type === 'validation' ? <CheckCircle className="h-4 w-4" /> :
+                      <Bell className="h-4 w-4" />}
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-medium">{notif.title}</h4>
@@ -435,64 +435,64 @@ const NotificationsPanel = ({ notifications }: { notifications: Notification[] }
         </ScrollArea>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [projects, setProjects] = useState<ProjectWithRelations[]>([])
-  const { user, isAdmin } = useAuth()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [projects, setProjects] = useState<ProjectWithRelations[]>([]);
+  const { user, isAdmin } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
   
   // État pour le tutoriel
-  const [showTutorial, setShowTutorial] = useState<boolean>(false)
-  const [tutorialStep, setTutorialStep] = useState<number>(1)
+  const [showTutorial, setShowTutorial] = useState<boolean>(false);
+  const [tutorialStep, setTutorialStep] = useState<number>(1);
   // Ref pour l'animation de focus
-  const [focusElement, setFocusElement] = useState<string>("")
+  const [focusElement, setFocusElement] = useState<string>('');
   
   // Paramètres de paiement réussi
-  const paymentSuccess = searchParams.get('payment_success')
-  const sessionId = searchParams.get('session_id')
-  const serviceId = searchParams.get('service_id')
-  const title = searchParams.get('title')
-  const price = searchParams.get('price')
+  const paymentSuccess = searchParams.get('payment_success');
+  const sessionId = searchParams.get('session_id');
+  const serviceId = searchParams.get('service_id');
+  const title = searchParams.get('title');
+  const price = searchParams.get('price');
   
   // Vérifier si le tutoriel doit être affiché depuis l'URL (bouton Aide)
-  const showTutorialParam = searchParams.get('showTutorial')
+  const showTutorialParam = searchParams.get('showTutorial');
   
   // Status labels
   const statusLabels = {
     pending: {
-      label: "En attente",
-      color: "bg-yellow-100 text-yellow-800"
+      label: 'En attente',
+      color: 'bg-yellow-100 text-yellow-800',
     },
     validated: {
-      label: "Validé",
-      color: "bg-blue-100 text-blue-800"
+      label: 'Validé',
+      color: 'bg-blue-100 text-blue-800',
     },
     in_progress: {
-      label: "En cours",
-      color: "bg-purple-100 text-purple-800"
+      label: 'En cours',
+      color: 'bg-purple-100 text-purple-800',
     },
     delivered: {
-      label: "Livré",
-      color: "bg-green-100 text-green-800"
+      label: 'Livré',
+      color: 'bg-green-100 text-green-800',
     },
     completed: {
-      label: "Terminé",
-      color: "bg-gray-100 text-gray-800"
+      label: 'Terminé',
+      color: 'bg-gray-100 text-gray-800',
     },
-  }
+  };
   
   const [stats, setStats] = useState<ProjectStats>({
     totalProjects: 0,
     completedProjects: 0,
     activeProjects: 0,
-    totalInvestment: 0
-  })
-  const [notifications, setNotifications] = useState<Notification[]>([])
+    totalInvestment: 0,
+  });
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   
   // Fonction pour charger les projets
   const loadProjects = async () => {
@@ -521,7 +521,7 @@ export default function DashboardPage() {
           
           // Si c'est la première connexion, afficher le tutoriel
           if (isFirstLogin) {
-            console.log("Première connexion détectée, affichage du tutoriel d'onboarding");
+            console.log('Première connexion détectée, affichage du tutoriel d\'onboarding');
             setShowTutorial(true);
             // Nous ne marquons pas encore le tutoriel comme terminé ici,
             // cela sera fait lorsque l'utilisateur termine le tutoriel
@@ -530,9 +530,9 @@ export default function DashboardPage() {
       } catch (error) {
         console.error('Erreur lors du chargement des projets:', error);
         toast({
-          title: "Erreur",
-          description: "Impossible de charger vos projets.",
-          variant: "destructive",
+          title: 'Erreur',
+          description: 'Impossible de charger vos projets.',
+          variant: 'destructive',
         });
       } finally {
         setIsLoading(false);
@@ -543,83 +543,83 @@ export default function DashboardPage() {
   // Fonction pour passer à l'étape suivante du tutoriel
   const nextTutorialStep = () => {
     if (tutorialStep < 7) {
-      setTutorialStep(tutorialStep + 1)
+      setTutorialStep(tutorialStep + 1);
       // Mettre à jour l'élément à mettre en évidence
-      updateFocusElement(tutorialStep + 1)
+      updateFocusElement(tutorialStep + 1);
     } else {
-      setShowTutorial(false)
-      setFocusElement("")
+      setShowTutorial(false);
+      setFocusElement('');
       // Marquer le tutoriel comme terminé dans localStorage
       if (typeof window !== 'undefined') {
-        localStorage.setItem('hasCompletedOnboarding', 'true')
+        localStorage.setItem('hasCompletedOnboarding', 'true');
       }
       // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
       if (showTutorialParam) {
-        const newUrl = window.location.pathname
-        window.history.replaceState({}, document.title, newUrl)
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
       }
     }
-  }
+  };
   
   // Fonction pour fermer le tutoriel
   const closeTutorial = () => {
-    setShowTutorial(false)
-    setFocusElement("")
+    setShowTutorial(false);
+    setFocusElement('');
     // Marquer le tutoriel comme terminé même si fermé prématurément
     if (typeof window !== 'undefined') {
-      localStorage.setItem('hasCompletedOnboarding', 'true')
+      localStorage.setItem('hasCompletedOnboarding', 'true');
     }
     // Nettoyer l'URL si le tutoriel a été ouvert depuis l'URL
     if (showTutorialParam) {
-      const newUrl = window.location.pathname
-      window.history.replaceState({}, document.title, newUrl)
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
     }
-  }
+  };
   
   // Fonction pour déterminer quel élément mettre en évidence en fonction de l'étape
   const updateFocusElement = (step: number) => {
-    switch(step) {
-      case 1: // Bienvenue
-        setFocusElement("");
-        break;
-      case 2: // Dashboard
-        setFocusElement("dashboard-stats");
-        break;
-      case 3: // Marketplace
-        setFocusElement("marketplace-link");
-        break;
-      case 4: // Projets
-        setFocusElement("projects-tab");
-        break;
-      case 5: // Academy
-        setFocusElement("academy-link");
-        break;
-      case 6: // Documentation
-        setFocusElement("docs-link");
-        break;
-      case 7: // Support
-        setFocusElement("help-link");
-        break;
-      default:
-        setFocusElement("");
+    switch (step) {
+    case 1: // Bienvenue
+      setFocusElement('');
+      break;
+    case 2: // Dashboard
+      setFocusElement('dashboard-stats');
+      break;
+    case 3: // Marketplace
+      setFocusElement('marketplace-link');
+      break;
+    case 4: // Projets
+      setFocusElement('projects-tab');
+      break;
+    case 5: // Academy
+      setFocusElement('academy-link');
+      break;
+    case 6: // Documentation
+      setFocusElement('docs-link');
+      break;
+    case 7: // Support
+      setFocusElement('help-link');
+      break;
+    default:
+      setFocusElement('');
     }
-  }
+  };
   
   // Effet pour charger les projets
   useEffect(() => {
     if (user) {
-      loadProjects()
+      loadProjects();
     }
-  }, [user])
+  }, [user]);
   
   // Effet pour afficher le tutoriel si le paramètre est présent dans l'URL
   useEffect(() => {
     if (showTutorialParam === 'true') {
-      setTutorialStep(1)
-      setShowTutorial(true)
-      updateFocusElement(1)
+      setTutorialStep(1);
+      setShowTutorial(true);
+      updateFocusElement(1);
     }
-  }, [showTutorialParam])
+  }, [showTutorialParam]);
   
   // Effet pour gérer la création de projet après un paiement réussi
   useEffect(() => {
@@ -631,106 +631,106 @@ export default function DashboardPage() {
             serviceId,
             title,
             parseInt(price)
-          )
+          );
           
           if (project) {
             // Afficher un toast de confirmation
             toast({
-              title: "Paiement réussi !",
+              title: 'Paiement réussi !',
               description: `Votre projet "${title}" a été créé avec succès.`,
               duration: 5000,
-            })
+            });
             
             // Recharger les projets
-            loadProjects()
+            loadProjects();
             
             // Nettoyer l'URL pour éviter de recréer le projet en cas de refresh
-            const newUrl = window.location.pathname
-            window.history.replaceState({}, document.title, newUrl)
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
           }
         } catch (err) {
-          console.error('Erreur lors de la création du projet après paiement:', err)
+          console.error('Erreur lors de la création du projet après paiement:', err);
           toast({
-            title: "Erreur",
-            description: "Une erreur est survenue lors de la création de votre projet.",
-            variant: "destructive",
+            title: 'Erreur',
+            description: 'Une erreur est survenue lors de la création de votre projet.',
+            variant: 'destructive',
             duration: 5000,
-          })
+          });
         }
       }
-    }
+    };
     
-    handlePaymentSuccess()
-  }, [paymentSuccess, sessionId, serviceId, title, price, user, isLoading])
+    handlePaymentSuccess();
+  }, [paymentSuccess, sessionId, serviceId, title, price, user, isLoading]);
 
   // Les étapes du tutoriel
   const tutorialSteps = [
     {
-      title: "Hey ! Bienvenue sur Klyra Hub 👋",
-      description: "Super content de te voir ici ! Je suis là pour te guider dans tes premiers pas sur la plateforme Klyra. Prêt(e) pour un petit tour ? C'est parti !",
+      title: 'Hey ! Bienvenue sur Klyra Hub 👋',
+      description: 'Super content de te voir ici ! Je suis là pour te guider dans tes premiers pas sur la plateforme Klyra. Prêt(e) pour un petit tour ? C\'est parti !',
       icon: <motion.div 
-              animate={{ 
-                rotate: [0, 10, 0, -10, 0],
-              }}
-              transition={{ repeat: Infinity, duration: 2 }}
-            >
+        animate={{ 
+          rotate: [0, 10, 0, -10, 0],
+        }}
+        transition={{ repeat: Infinity, duration: 2 }}
+      >
               👋
-            </motion.div>
+      </motion.div>,
     },
     {
-      title: "Ton tableau de bord 📊",
-      description: "Voici ton dashboard ! C'est ici que tu retrouveras une vue d'ensemble de tous tes projets, tes statistiques personnelles et tes dernières activités. Un vrai centre de contrôle !",
-      icon: <LayoutDashboard className="h-6 w-6" />
+      title: 'Ton tableau de bord 📊',
+      description: 'Voici ton dashboard ! C\'est ici que tu retrouveras une vue d\'ensemble de tous tes projets, tes statistiques personnelles et tes dernières activités. Un vrai centre de contrôle !',
+      icon: <LayoutDashboard className="h-6 w-6" />,
     },
     {
-      title: "Découvre notre marketplace 🛍️",
-      description: "Notre marketplace regroupe tous nos services design et web. Trouve ce dont tu as besoin en filtrant par catégorie ou budget, puis commande en quelques clics !",
-      icon: <Store className="h-6 w-6" />
+      title: 'Découvre notre marketplace 🛍️',
+      description: 'Notre marketplace regroupe tous nos services design et web. Trouve ce dont tu as besoin en filtrant par catégorie ou budget, puis commande en quelques clics !',
+      icon: <Store className="h-6 w-6" />,
     },
     {
-      title: "Gère tes projets efficacement 🚀",
-      description: "Suis l'avancement de tes projets, échange avec notre équipe, consulte les livrables et valide les étapes clés. Tout est centralisé pour faciliter ta vie !",
+      title: 'Gère tes projets efficacement 🚀',
+      description: 'Suis l\'avancement de tes projets, échange avec notre équipe, consulte les livrables et valide les étapes clés. Tout est centralisé pour faciliter ta vie !',
       icon: <motion.div
-              animate={{ y: [0, -5, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            >
+        animate={{ y: [0, -5, 0] }}
+        transition={{ repeat: Infinity, duration: 1.5 }}
+      >
               🚀
-            </motion.div>
+      </motion.div>,
     },
     {
-      title: "Explore notre Academy 🎓",
-      description: "Notre Academy te propose des cours, tutoriels et ressources pour approfondir tes connaissances en design et développement. Apprends à ton rythme !",
-      icon: <GraduationCap className="h-6 w-6" />
+      title: 'Explore notre Academy 🎓',
+      description: 'Notre Academy te propose des cours, tutoriels et ressources pour approfondir tes connaissances en design et développement. Apprends à ton rythme !',
+      icon: <GraduationCap className="h-6 w-6" />,
     },
     {
-      title: "Consulte la documentation 📚",
-      description: "Besoin d'aide ? Notre documentation complète te guide pas à pas dans l'utilisation de Klyra Hub. Tu y trouveras des réponses à toutes tes questions !",
-      icon: <BookOpen className="h-6 w-6" />
+      title: 'Consulte la documentation 📚',
+      description: 'Besoin d\'aide ? Notre documentation complète te guide pas à pas dans l\'utilisation de Klyra Hub. Tu y trouveras des réponses à toutes tes questions !',
+      icon: <BookOpen className="h-6 w-6" />,
     },
     {
-      title: "Notre support est là pour toi 💬",
-      description: "Une question ? Un problème ? Notre équipe support est disponible pour t'aider. Clique sur le bouton Aide en bas de la sidebar pour nous contacter à tout moment !",
+      title: 'Notre support est là pour toi 💬',
+      description: 'Une question ? Un problème ? Notre équipe support est disponible pour t\'aider. Clique sur le bouton Aide en bas de la sidebar pour nous contacter à tout moment !',
       icon: <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-            >
-              <HelpCircle className="h-6 w-6" />
-            </motion.div>
-    }
-  ]
+        animate={{ scale: [1, 1.2, 1] }}
+        transition={{ repeat: Infinity, duration: 2 }}
+      >
+        <HelpCircle className="h-6 w-6" />
+      </motion.div>,
+    },
+  ];
 
   // Fonction pour calculer les statistiques
   const calculateStats = (projects: ProjectWithRelations[]) => {
-    const completed = projects.filter(p => p.status === 'completed').length
-    const active = projects.filter(p => p.status !== 'completed').length
+    const completed = projects.filter(p => p.status === 'completed').length;
+    const active = projects.filter(p => p.status !== 'completed').length;
     // TODO: Calculer l'investissement total depuis les services
     setStats({
       totalProjects: projects.length,
       completedProjects: completed,
       activeProjects: active,
-      totalInvestment: 0 // À implémenter
-    })
-  }
+      totalInvestment: 0, // À implémenter
+    });
+  };
 
   // Charger les notifications
   const loadNotifications = async () => {
@@ -743,18 +743,18 @@ export default function DashboardPage() {
         message: 'L\'équipe a commenté sur votre projet',
         type: 'comment',
         createdAt: new Date(),
-        read: false
+        read: false,
       },
       // Ajouter d'autres notifications de test...
-    ])
-  }
+    ]);
+  };
 
   useEffect(() => {
     if (projects.length > 0) {
-      calculateStats(projects)
+      calculateStats(projects);
     }
-    loadNotifications()
-  }, [projects])
+    loadNotifications();
+  }, [projects]);
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
@@ -765,7 +765,7 @@ export default function DashboardPage() {
         >
           <Link 
             href="/dashboard/marketplace"
-            className={`${focusElement === "marketplace-link" ? "relative animate-pulse" : ""}`}
+            className={`${focusElement === 'marketplace-link' ? 'relative animate-pulse' : ''}`}
             id="marketplace-link"
           >
             <Button>
@@ -776,7 +776,7 @@ export default function DashboardPage() {
 
         <PageSection>
           <div 
-            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${focusElement === "dashboard-stats" ? "relative animate-pulse" : ""}`}
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${focusElement === 'dashboard-stats' ? 'relative animate-pulse' : ''}`}
             id="dashboard-stats"
           >
             <ContentCard>
@@ -836,7 +836,7 @@ export default function DashboardPage() {
             <TabsList className="mb-6">
               <TabsTrigger 
                 value="projects" 
-                className={`${focusElement === "projects-tab" ? "relative animate-pulse" : ""}`}
+                className={`${focusElement === 'projects-tab' ? 'relative animate-pulse' : ''}`}
                 id="projects-tab"
               >
                 Projets
@@ -857,8 +857,8 @@ export default function DashboardPage() {
                     description="Vous n'avez pas encore de projets. Explorez notre marketplace pour découvrir nos services et créer votre premier projet."
                     icons={[FolderPlus, FileText, PenTool]}
                     action={{
-                      label: "Créer un projet",
-                      onClick: () => router.push('/dashboard/marketplace')
+                      label: 'Créer un projet',
+                      onClick: () => router.push('/dashboard/marketplace'),
                     }}
                   />
                 </div>
@@ -876,13 +876,13 @@ export default function DashboardPage() {
                         <div key={notif.id} className="flex items-start space-x-4 mb-4 p-3 rounded-lg hover:bg-[#F8FAFC]">
                           <div className={`rounded-full p-2 ${
                             notif.type === 'comment' ? 'bg-blue-100' :
-                            notif.type === 'deliverable' ? 'bg-green-100' :
-                            notif.type === 'validation' ? 'bg-yellow-100' : 'bg-gray-100'
+                              notif.type === 'deliverable' ? 'bg-green-100' :
+                                notif.type === 'validation' ? 'bg-yellow-100' : 'bg-gray-100'
                           }`}>
                             {notif.type === 'comment' ? <MessageSquare className="h-4 w-4" /> :
-                            notif.type === 'deliverable' ? <Package className="h-4 w-4" /> :
-                            notif.type === 'validation' ? <CheckCircle className="h-4 w-4" /> :
-                            <Bell className="h-4 w-4" />}
+                              notif.type === 'deliverable' ? <Package className="h-4 w-4" /> :
+                                notif.type === 'validation' ? <CheckCircle className="h-4 w-4" /> :
+                                  <Bell className="h-4 w-4" />}
                           </div>
                           <div className="flex-1">
                             <h4 className="text-[14px] font-medium">{notif.title}</h4>
@@ -912,7 +912,7 @@ export default function DashboardPage() {
         </PageSection>
 
         {/* Overlay d'animation pour les éléments de la sidebar */}
-        {focusElement === "academy-link" && (
+        {focusElement === 'academy-link' && (
           <div className="fixed left-[200px] top-[320px] z-[140] animate-pulse">
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
@@ -929,7 +929,7 @@ export default function DashboardPage() {
           </div>
         )}
         
-        {focusElement === "docs-link" && (
+        {focusElement === 'docs-link' && (
           <div className="fixed left-[200px] top-[360px] z-[140] animate-pulse">
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
@@ -946,7 +946,7 @@ export default function DashboardPage() {
           </div>
         )}
         
-        {focusElement === "help-link" && (
+        {focusElement === 'help-link' && (
           <div className="fixed left-[200px] top-[680px] z-[140] animate-pulse">
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
@@ -982,5 +982,5 @@ export default function DashboardPage() {
         videoTitle="Découvrir Klyra Hub en 2 minutes"
       />
     </AuroraBackground>
-  )
+  );
 } 

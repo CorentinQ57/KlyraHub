@@ -59,10 +59,18 @@ export async function POST(request: Request) {
       
       // Vérifier toutes les données nécessaires
       const missingData = [];
-      if (!userId) missingData.push('userId');
-      if (!serviceId) missingData.push('serviceId');
-      if (!serviceTitle) missingData.push('serviceTitle');
-      if (!price) missingData.push('price');
+      if (!userId) {
+        missingData.push('userId');
+      }
+      if (!serviceId) {
+        missingData.push('serviceId');
+      }
+      if (!serviceTitle) {
+        missingData.push('serviceTitle');
+      }
+      if (!price) {
+        missingData.push('price');
+      }
 
       if (missingData.length > 0) {
         console.error('Webhook - Données manquantes:', {

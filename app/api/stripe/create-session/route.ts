@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   if (request.method === 'OPTIONS') {
     return new NextResponse(null, {
       status: 200,
-      headers: responseHeaders
+      headers: responseHeaders,
     });
   }
   
@@ -106,20 +106,20 @@ export async function POST(request: Request) {
 
       console.log('Stripe session created successfully:', {
         sessionId: session.id,
-        sessionUrl: session.url
+        sessionUrl: session.url,
       });
 
       // Retourner l'ID de la session et l'URL de paiement avec les headers CORS
       return NextResponse.json({ 
         sessionId: session.id,
-        url: session.url 
+        url: session.url, 
       }, { headers: responseHeaders });
     } catch (stripeError: any) {
       console.error('Erreur lors de la création de la session Stripe:', stripeError);
       return NextResponse.json(
         { 
           error: 'Erreur Stripe',
-          message: stripeError.message
+          message: stripeError.message,
         },
         { status: 500, headers: responseHeaders }
       );
@@ -129,13 +129,13 @@ export async function POST(request: Request) {
     console.error('Erreur Stripe détaillée:', {
       message: error.message,
       type: error.type,
-      stack: error.stack
+      stack: error.stack,
     });
     
     return NextResponse.json(
       { 
         error: 'Impossible de créer une session de paiement',
-        message: error.message || 'Erreur inconnue'
+        message: error.message || 'Erreur inconnue',
       },
       { status: 500, headers: responseHeaders }
     );

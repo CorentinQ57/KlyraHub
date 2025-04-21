@@ -1,17 +1,17 @@
-"use client"
+'use client';
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import CardSelector from '@/components/onboarding/CardSelector'
+} from '@/components/ui/select';
+import CardSelector from '@/components/onboarding/CardSelector';
 
 interface StepStyleProps {
   data: any
@@ -23,65 +23,65 @@ const visualStyles = [
     id: 'minimal',
     name: 'Minimaliste',
     icon: '⚪',
-    description: 'Épuré, moderne, efficace'
+    description: 'Épuré, moderne, efficace',
   },
   {
     id: 'bold',
     name: 'Audacieux',
     icon: '🎨',
-    description: 'Coloré, expressif, unique'
+    description: 'Coloré, expressif, unique',
   },
   {
     id: 'classic',
     name: 'Classique',
     icon: '✨',
-    description: 'Élégant, professionnel, intemporel'
+    description: 'Élégant, professionnel, intemporel',
   },
   {
     id: 'playful',
     name: 'Ludique',
     icon: '🎮',
-    description: 'Fun, dynamique, engageant'
-  }
-]
+    description: 'Fun, dynamique, engageant',
+  },
+];
 
 const communicationStyles = [
   { value: 'direct', label: 'Direct et concis' },
   { value: 'detailed', label: 'Détaillé et explicatif' },
   { value: 'casual', label: 'Décontracté et amical' },
-  { value: 'formal', label: 'Formel et professionnel' }
-]
+  { value: 'formal', label: 'Formel et professionnel' },
+];
 
 const timeManagementStyles = [
   { value: 'flexible', label: 'Flexible et adaptable' },
   { value: 'structured', label: 'Structuré et planifié' },
   { value: 'deadline', label: 'Focalisé sur les deadlines' },
-  { value: 'proactive', label: 'Proactif et anticipatif' }
-]
+  { value: 'proactive', label: 'Proactif et anticipatif' },
+];
 
 export default function StepStyle({ data, onComplete }: StepStyleProps) {
   const [formData, setFormData] = useState({
     visualPreferences: data.visualPreferences || [],
     communicationStyle: data.communicationStyle || '',
-    timeManagement: data.timeManagement || ''
-  })
+    timeManagement: data.timeManagement || '',
+  });
 
   const toggleVisualStyle = (styleId: string) => {
-    const current = formData.visualPreferences as string[]
+    const current = formData.visualPreferences as string[];
     const updated = current.includes(styleId)
       ? current.filter(id => id !== styleId)
-      : [...current, styleId]
+      : [...current, styleId];
     
     // Limit to max 2 selections
     if (updated.length <= 2) {
-      setFormData({ ...formData, visualPreferences: updated })
+      setFormData({ ...formData, visualPreferences: updated });
     }
-  }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onComplete(formData)
-  }
+    e.preventDefault();
+    onComplete(formData);
+  };
 
   return (
     <motion.div
@@ -166,5 +166,5 @@ export default function StepStyle({ data, onComplete }: StepStyleProps) {
         </Button>
       </form>
     </motion.div>
-  )
+  );
 } 

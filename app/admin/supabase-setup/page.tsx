@@ -1,88 +1,88 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/lib/auth'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from "@/components/ui/use-toast"
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function SupabaseSetupPage() {
-  const { user, isAdmin, isLoading } = useAuth()
-  const router = useRouter()
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'error'>('checking')
-  const [databaseTables, setDatabaseTables] = useState<string[]>([])
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
-  const { toast } = useToast()
+  const { user, isAdmin, isLoading } = useAuth();
+  const router = useRouter();
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'error'>('checking');
+  const [databaseTables, setDatabaseTables] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    setMounted(true)
+    setMounted(true);
     
     // Redirect if not admin
     if (mounted && !isLoading && (!user || !isAdmin)) {
       toast({
-        title: "Erreur",
-        description: "Accès non autorisé",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Accès non autorisé',
+        variant: 'destructive',
         duration: 5000,
-      })
-      router.push('/dashboard')
+      });
+      router.push('/dashboard');
     }
-  }, [user, isAdmin, isLoading, router, mounted])
+  }, [user, isAdmin, isLoading, router, mounted]);
 
   useEffect(() => {
     const checkSupabaseConnection = async () => {
       try {
         // Get Supabase URL from environment variable
-        const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-        setSupabaseUrl(url || 'Non configurée')
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        setSupabaseUrl(url || 'Non configurée');
         
         // Test connection
-        const { data, error } = await supabase.from('profiles').select('id').limit(1)
+        const { data, error } = await supabase.from('profiles').select('id').limit(1);
         
         if (error) {
-          console.error('Erreur de connexion à Supabase:', error)
-          setConnectionStatus('error')
-          setErrorMessage(error.message)
-          return
+          console.error('Erreur de connexion à Supabase:', error);
+          setConnectionStatus('error');
+          setErrorMessage(error.message);
+          return;
         }
         
-        setConnectionStatus('success')
+        setConnectionStatus('success');
         
         // Get tables list
         const { data: tablesData, error: tablesError } = await supabase
           .from('pg_catalog.pg_tables')
           .select('tablename')
-          .eq('schemaname', 'public')
+          .eq('schemaname', 'public');
         
         if (tablesError) {
-          console.error('Erreur lors de la récupération des tables:', tablesError)
-          return
+          console.error('Erreur lors de la récupération des tables:', tablesError);
+          return;
         }
         
         if (tablesData) {
-          setDatabaseTables(tablesData.map(t => t.tablename))
+          setDatabaseTables(tablesData.map(t => t.tablename));
         }
       } catch (error) {
-        console.error('Erreur inattendue:', error)
-        setConnectionStatus('error')
-        setErrorMessage('Erreur inattendue lors de la vérification de la connexion')
+        console.error('Erreur inattendue:', error);
+        setConnectionStatus('error');
+        setErrorMessage('Erreur inattendue lors de la vérification de la connexion');
       }
-    }
+    };
     
     if (mounted && user && isAdmin) {
-      checkSupabaseConnection()
+      checkSupabaseConnection();
     }
-  }, [mounted, user, isAdmin])
+  }, [mounted, user, isAdmin]);
 
   // Create a test user for testing
   const createTestUser = async () => {
     try {
-      const testEmail = `test${Date.now()}@example.com`
-      const testPassword = 'password123'
+      const testEmail = `test${Date.now()}@example.com`;
+      const testPassword = 'password123';
       
       const { data, error } = await supabase.auth.signUp({
         email: testEmail,
@@ -90,35 +90,35 @@ export default function SupabaseSetupPage() {
         options: {
           data: {
             full_name: 'Test User',
-            role: 'client'
-          }
-        }
-      })
+            role: 'client',
+          },
+        },
+      });
       
       if (error) {
         toast({
-          title: "Erreur",
+          title: 'Erreur',
           description: `Erreur lors de la création de l'utilisateur: ${error.message}`,
-          variant: "destructive",
+          variant: 'destructive',
           duration: 5000,
-        })
-        return
+        });
+        return;
       }
       
       toast({
-        title: "Succès",
+        title: 'Succès',
         description: `Utilisateur test créé: ${testEmail} (mot de passe: password123)`,
         duration: 5000,
-      })
+      });
     } catch (error) {
       toast({
-        title: "Erreur",
+        title: 'Erreur',
         description: 'Erreur inattendue lors de la création de l\'utilisateur',
-        variant: "destructive",
+        variant: 'destructive',
         duration: 5000,
-      })
+      });
     }
-  }
+  };
 
   if (!mounted || isLoading || !user || !isAdmin) {
     return (
@@ -129,7 +129,7 @@ export default function SupabaseSetupPage() {
           </CardHeader>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -203,5 +203,5 @@ export default function SupabaseSetupPage() {
         </>
       )}
     </div>
-  )
+  );
 } 

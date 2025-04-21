@@ -1,18 +1,18 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { useToast } from '@/components/ui/use-toast'
-import { updateProjectPhase } from '@/lib/supabase'
+} from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+import { updateProjectPhase } from '@/lib/supabase';
 
 type ProjectPhasesProps = {
   project: any
@@ -20,84 +20,86 @@ type ProjectPhasesProps = {
 }
 
 export default function ProjectPhases({ project, onPhaseUpdated }: ProjectPhasesProps) {
-  const [currentPhase, setCurrentPhase] = useState<string>(project.current_phase || '')
-  const [isSaving, setIsSaving] = useState(false)
-  const [phases, setPhases] = useState<string[]>([])
-  const { toast } = useToast()
+  const [currentPhase, setCurrentPhase] = useState<string>(project.current_phase || '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [phases, setPhases] = useState<string[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Définir les phases disponibles
     if (project.service?.phases && Array.isArray(project.service.phases)) {
-      setPhases(project.service.phases)
+      setPhases(project.service.phases);
     } else {
       // Phases par défaut
-      setPhases(["Briefing", "Conception", "Développement", "Tests et validation", "Livraison"])
+      setPhases(['Briefing', 'Conception', 'Développement', 'Tests et validation', 'Livraison']);
     }
-  }, [project.service?.phases])
+  }, [project.service?.phases]);
 
   // Effet séparé pour définir la phase actuelle une fois que nous avons les phases
   useEffect(() => {
     if (phases.length > 0) {
       // S'il n'y a pas de phase actuelle définie, on prend la première
       if (!project.current_phase) {
-        setCurrentPhase(phases[0])
+        setCurrentPhase(phases[0]);
       } else {
         // Vérifier si la phase actuelle existe dans les phases disponibles
         if (phases.includes(project.current_phase)) {
-          setCurrentPhase(project.current_phase)
+          setCurrentPhase(project.current_phase);
         } else {
           // Si la phase n'existe pas, prendre la première
-          setCurrentPhase(phases[0])
+          setCurrentPhase(phases[0]);
         }
       }
     }
-  }, [phases, project.current_phase])
+  }, [phases, project.current_phase]);
 
   const handlePhaseChange = (phase: string) => {
-    setCurrentPhase(phase)
-  }
+    setCurrentPhase(phase);
+  };
 
   const handleSavePhase = async () => {
-    if (!currentPhase) return
+    if (!currentPhase) {
+      return;
+    }
     
-    setIsSaving(true)
+    setIsSaving(true);
     try {
-      const success = await updateProjectPhase(project.id, currentPhase)
+      const success = await updateProjectPhase(project.id, currentPhase);
       
       if (success) {
         toast({
-          title: "Succès",
-          description: "La phase du projet a été mise à jour.",
-        })
-        onPhaseUpdated()
+          title: 'Succès',
+          description: 'La phase du projet a été mise à jour.',
+        });
+        onPhaseUpdated();
       } else {
-        throw new Error('Failed to update project phase')
+        throw new Error('Failed to update project phase');
       }
     } catch (error) {
-      console.error('Error updating project phase:', error)
+      console.error('Error updating project phase:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour la phase du projet.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour la phase du projet.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const getPhaseIndex = (phase: string) => {
-    return phases.findIndex(p => p === phase)
-  }
+    return phases.findIndex(p => p === phase);
+  };
 
   const isCompleted = (phase: string) => {
-    const currentIndex = getPhaseIndex(currentPhase)
-    const phaseIndex = getPhaseIndex(phase)
-    return phaseIndex < currentIndex
-  }
+    const currentIndex = getPhaseIndex(currentPhase);
+    const phaseIndex = getPhaseIndex(phase);
+    return phaseIndex < currentIndex;
+  };
 
   const isCurrent = (phase: string) => {
-    return phase === currentPhase
-  }
+    return phase === currentPhase;
+  };
 
   return (
     <Card>
@@ -116,11 +118,11 @@ export default function ProjectPhases({ project, onPhaseUpdated }: ProjectPhases
                 <div 
                   className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 
                     ${isCompleted(phase) 
-                      ? 'bg-green-100 text-green-700 border border-green-300' 
-                      : isCurrent(phase)
-                        ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                        : 'bg-gray-100 text-gray-500 border border-gray-300'
-                    }`}
+                ? 'bg-green-100 text-green-700 border border-green-300' 
+                : isCurrent(phase)
+                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                  : 'bg-gray-100 text-gray-500 border border-gray-300'
+              }`}
                 >
                   {isCompleted(phase) ? '✓' : index + 1}
                 </div>
@@ -181,5 +183,5 @@ export default function ProjectPhases({ project, onPhaseUpdated }: ProjectPhases
         )}
       </CardFooter>
     </Card>
-  )
+  );
 } 

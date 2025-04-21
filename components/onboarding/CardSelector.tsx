@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { motion } from 'framer-motion'
-import { Card, CardContent } from '@/components/ui/card'
-import { Check } from 'lucide-react'
+import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Check } from 'lucide-react';
 
 interface CardSelectorProps {
   id: string
@@ -21,7 +21,7 @@ export default function CardSelector({
   icon,
   isSelected,
   onClick,
-  className = ''
+  className = '',
 }: CardSelectorProps) {
   return (
     <motion.div
@@ -65,5 +65,5 @@ export default function CardSelector({
         </CardContent>
       </Card>
     </motion.div>
-  )
+  );
 } 

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export type TocItem = {
   id: string;
@@ -14,7 +14,7 @@ type TableOfContentsProps = {
 };
 
 export function TableOfContents({ items }: TableOfContentsProps) {
-  const [activeId, setActiveId] = useState<string>("");
+  const [activeId, setActiveId] = useState<string>('');
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -25,7 +25,7 @@ export function TableOfContents({ items }: TableOfContentsProps) {
           }
         });
       },
-      { rootMargin: "0px 0px -80% 0px", threshold: 0.1 }
+      { rootMargin: '0px 0px -80% 0px', threshold: 0.1 }
     );
 
     // Observer tous les titres avec des IDs
@@ -58,11 +58,11 @@ export function TableOfContents({ items }: TableOfContentsProps) {
           <li
             key={item.id}
             className={cn(
-              "line-clamp-2",
-              item.level === 2 ? "ml-0" : "ml-4",
+              'line-clamp-2',
+              item.level === 2 ? 'ml-0' : 'ml-4',
               activeId === item.id
-                ? "text-primary font-medium"
-                : "text-muted-foreground hover:text-foreground"
+                ? 'text-primary font-medium'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <a
@@ -70,7 +70,7 @@ export function TableOfContents({ items }: TableOfContentsProps) {
               onClick={(e) => {
                 e.preventDefault();
                 document.getElementById(item.id)?.scrollIntoView({
-                  behavior: "smooth",
+                  behavior: 'smooth',
                 });
               }}
             >

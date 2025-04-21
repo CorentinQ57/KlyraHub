@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
@@ -40,7 +40,7 @@ if (typeof window !== 'undefined') {
         const isTokenValid = verifyTokenExpiration();
         
         if (!isTokenValid) {
-          console.log("🔄 Le token est expiré ou près d'expirer, tentative de rafraîchissement...");
+          console.log('🔄 Le token est expiré ou près d\'expirer, tentative de rafraîchissement...');
           try {
             // Tenter de rafraîchir la session
             await refreshSession();
@@ -53,7 +53,7 @@ if (typeof window !== 'undefined') {
               init.headers = headers;
             }
           } catch (refreshError) {
-            console.error("❌ Échec du rafraîchissement du token:", refreshError);
+            console.error('❌ Échec du rafraîchissement du token:', refreshError);
             // Continuer avec la requête originale même en cas d'échec
           }
         }
@@ -82,13 +82,13 @@ if (typeof window !== 'undefined') {
             }
           }
         } catch (refreshError) {
-          console.error("❌ Échec du rafraîchissement après erreur d'auth:", refreshError);
+          console.error('❌ Échec du rafraîchissement après erreur d\'auth:', refreshError);
         }
       }
       
       return response;
     } catch (error) {
-      console.error("❌ Erreur lors de l'interception fetch:", error);
+      console.error('❌ Erreur lors de l\'interception fetch:', error);
       return originalFetch(url, init);
     }
   };
@@ -191,8 +191,8 @@ interface ServiceWithCategory {
 
 // Helper functions
 export async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
 }
 
 export async function getProfileData(userId: string) {
@@ -200,28 +200,28 @@ export async function getProfileData(userId: string) {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
+    .single();
   
   if (error) {
-    console.error('Error fetching profile data:', error)
-    return null
+    console.error('Error fetching profile data:', error);
+    return null;
   }
   
-  return data
+  return data;
 }
 
 export async function updateProfile(userId: string, updates: Partial<User>) {
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
-    .eq('id', userId)
+    .eq('id', userId);
   
   if (error) {
-    console.error('Error updating profile:', error)
-    return null
+    console.error('Error updating profile:', error);
+    return null;
   }
   
-  return data
+  return data;
 }
 
 /**
@@ -242,38 +242,38 @@ export async function saveOnboardingData(userId: string, onboardingData: any) {
         needs: JSON.stringify({
           branding: onboardingData.needsBranding || false,
           website: onboardingData.needsWebsite || false, 
-          marketing: onboardingData.needsMarketing || false
+          marketing: onboardingData.needsMarketing || false,
         }),
         visual_preferences: onboardingData.visualPreferences || [],
         communication_style: onboardingData.communicationStyle,
         time_management: onboardingData.timeManagement,
         onboarded: true,
-        onboarding_completed_at: new Date().toISOString()
+        onboarding_completed_at: new Date().toISOString(),
       })
-      .eq('id', userId)
+      .eq('id', userId);
     
     if (profileError) {
-      console.error('Error updating profile with onboarding data:', profileError)
-      throw profileError
+      console.error('Error updating profile with onboarding data:', profileError);
+      throw profileError;
     }
     
     // Étape 2: Mettre à jour les métadonnées utilisateur
     const { error: metadataError } = await supabase.auth.updateUser({
       data: { 
         onboarded: true,
-        onboardingCompletedAt: new Date().toISOString()
-      }
-    })
+        onboardingCompletedAt: new Date().toISOString(),
+      },
+    });
     
     if (metadataError) {
-      console.error('Error updating user metadata:', metadataError)
-      throw metadataError
+      console.error('Error updating user metadata:', metadataError);
+      throw metadataError;
     }
     
-    return true
+    return true;
   } catch (error) {
-    console.error('Error in saveOnboardingData:', error)
-    throw error
+    console.error('Error in saveOnboardingData:', error);
+    throw error;
   }
 }
 
@@ -304,20 +304,20 @@ export async function fetchProjects(userId: string) {
         )
       `)
       .eq('client_id', userId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching projects:', error)
-      return []
+      console.error('Error fetching projects:', error);
+      return [];
     }
     
     // Normaliser les données des projets
     const normalizedData = data ? normalizeProjectsData(data) : [];
     
-    return normalizedData
+    return normalizedData;
   } catch (error) {
-    console.error('Exception in fetchProjects:', error)
-    return []
+    console.error('Exception in fetchProjects:', error);
+    return [];
   }
 }
 
@@ -347,20 +347,20 @@ export async function fetchAllProjects() {
           email
         )
       `)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching all projects:', error)
-      return []
+      console.error('Error fetching all projects:', error);
+      return [];
     }
     
     // Normaliser les données des projets
     const normalizedData = data ? normalizeProjectsData(data) : [];
     
-    return normalizedData
+    return normalizedData;
   } catch (error) {
-    console.error('Exception in fetchAllProjects:', error)
-    return []
+    console.error('Exception in fetchAllProjects:', error);
+    return [];
   }
 }
 
@@ -371,7 +371,9 @@ export async function fetchAllProjects() {
 function normalizeProjectsData(projects: any[]): any[] {
   return projects.map(project => {
     // Si le projet n'a pas de service, retourner tel quel
-    if (!project.services) return project;
+    if (!project.services) {
+      return project;
+    }
     
     const services = project.services;
     
@@ -382,7 +384,7 @@ function normalizeProjectsData(projects: any[]): any[] {
     
     return {
       ...project,
-      services
+      services,
     };
   });
 }
@@ -478,7 +480,7 @@ export async function addComment(projectId: string, userId: string, content: str
       project_id: projectId,
       user_id: userId,
       content,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
     
     const { data, error } = await supabase
@@ -521,7 +523,7 @@ export async function fetchDeliverables(projectId: string): Promise<Deliverable[
       ...item,
       name: item.title,        // Mapper title -> name pour compatibilité
       url: item.file_url,      // Mapper file_url -> url pour compatibilité
-      type: 'unknown'          // Valeur par défaut
+      type: 'unknown',          // Valeur par défaut
     }));
   } catch (error) {
     console.error('Error fetching deliverables:', error);
@@ -542,7 +544,7 @@ export async function createProject(
     console.log(`Tentative de création d'un projet pour l'utilisateur ${userId}`, {
       serviceId,
       title,
-      price
+      price,
     });
 
     // Vérifier si le projet existe déjà
@@ -608,7 +610,7 @@ export async function createProject(
         status: 'pending',
         category_image_url: categoryImageUrl,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -618,7 +620,7 @@ export async function createProject(
         message: error.message,
         code: error.code,
         details: error.details,
-        hint: error.hint
+        hint: error.hint,
       });
       throw new Error(`Erreur lors de la création: ${error.message}`);
     }
@@ -711,21 +713,21 @@ export async function updateProject(projectId: string, updates: Partial<Project>
       .from('projects')
       .update({
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', projectId)
       .select()
-      .single()
+      .single();
 
     if (error) {
-      console.error('Error updating project:', error)
-      return null
+      console.error('Error updating project:', error);
+      return null;
     }
 
-    return data
+    return data;
   } catch (error) {
-    console.error('Exception in updateProject:', error)
-    return null
+    console.error('Exception in updateProject:', error);
+    return null;
   }
 }
 
@@ -774,7 +776,7 @@ export async function createService(serviceData: Partial<Service>): Promise<Serv
         ...dataToInsert,
         active: dataToInsert.active ?? true,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -815,7 +817,7 @@ export async function updateService(serviceId: string, updates: Partial<Service>
       .from('services')
       .update({
         ...dataToUpdate,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', serviceId)
       .select()
@@ -937,13 +939,13 @@ function formatServiceData(data: any): Service {
       phases = JSON.parse(data.phases);
     } catch (e) {
       console.warn('Échec de parsing des phases, format non JSON:', e);
-      phases = ["Briefing", "Conception", "Développement", "Tests et validation", "Livraison"];
+      phases = ['Briefing', 'Conception', 'Développement', 'Tests et validation', 'Livraison'];
     }
   } else if (Array.isArray(data.phases)) {
     phases = data.phases;
   } else {
     // Phases par défaut
-    phases = ["Briefing", "Conception", "Développement", "Tests et validation", "Livraison"];
+    phases = ['Briefing', 'Conception', 'Développement', 'Tests et validation', 'Livraison'];
   }
   
   return {
@@ -952,7 +954,7 @@ function formatServiceData(data: any): Service {
     icon: data.icon || '📋',
     features: features,
     phases: phases,
-    long_description: data.long_description || data.description
+    long_description: data.long_description || data.description,
   };
 }
 
@@ -968,9 +970,9 @@ export async function addDeliverable(
     const dbDeliverable = {
       project_id: projectId,
       title: name,             // name -> title
-      description: "",         // valeur par défaut
+      description: '',         // valeur par défaut
       file_url: url,           // url -> file_url
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     const { data, error } = await supabase
@@ -990,7 +992,7 @@ export async function addDeliverable(
       name: data.title,        // title -> name
       url: data.file_url,      // file_url -> url
       type,                    // conserver la valeur d'origine
-      created_by: createdBy    // conserver la valeur d'origine
+      created_by: createdBy,    // conserver la valeur d'origine
     };
   } catch (error) {
     console.error('Exception in addDeliverable:', error);
@@ -1037,7 +1039,7 @@ export async function uploadFile(file: File, projectId: string): Promise<string 
       .from('files')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
       });
 
     if (uploadError) {
@@ -1101,7 +1103,7 @@ export async function createUploadRequest(
       description,
       created_by: createdById,
       status: 'pending',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
     
     const { data, error } = await supabase
@@ -1152,7 +1154,7 @@ export async function getUploadRequests(projectId: string): Promise<any[]> {
     // Pour maintenir la compatibilité avec le code existant
     return (data || []).map(item => ({
       ...item,
-      created_by_user: item.creator
+      created_by_user: item.creator,
     }));
   } catch (error) {
     console.error('Exception in getUploadRequests:', error);
@@ -1195,7 +1197,7 @@ export async function updateProjectPhase(
       .from('projects')
       .update({
         current_phase: currentPhase,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', projectId);
 
@@ -1345,7 +1347,7 @@ export async function submitUploadRequest(
         file_url: fileUrl,
         uploaded_by: userId,
         status: 'completed',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', requestId);
     
@@ -1405,15 +1407,21 @@ export async function createStripeSession(
 function verifyTokenExpiration(): boolean {
   try {
     const accessToken = localStorage.getItem('sb-access-token');
-    if (!accessToken) return false;
+    if (!accessToken) {
+      return false;
+    }
     
     // Décoder le token JWT pour obtenir la date d'expiration
     // Format JWT: header.payload.signature
     const parts = accessToken.split('.');
-    if (parts.length !== 3) return false;
+    if (parts.length !== 3) {
+      return false;
+    }
     
     const payload = JSON.parse(atob(parts[1]));
-    if (!payload.exp) return false;
+    if (!payload.exp) {
+      return false;
+    }
     
     // Vérifier si le token expire dans les 5 minutes
     const now = Math.floor(Date.now() / 1000);
@@ -1436,11 +1444,11 @@ function verifyTokenExpiration(): boolean {
  */
 async function refreshSession(): Promise<boolean> {
   try {
-    console.log("🔄 Tentative de rafraîchissement de session...");
+    console.log('🔄 Tentative de rafraîchissement de session...');
     
     // Vérifier si nous sommes côté client
     if (typeof window === 'undefined') {
-      console.log("⚠️ refreshSession appelé côté serveur, ignoré");
+      console.log('⚠️ refreshSession appelé côté serveur, ignoré');
       return false;
     }
     
@@ -1449,12 +1457,12 @@ async function refreshSession(): Promise<boolean> {
     try {
       refreshToken = localStorage.getItem('sb-refresh-token');
     } catch (storageError) {
-      console.error("❌ Erreur d'accès au localStorage:", storageError);
+      console.error('❌ Erreur d\'accès au localStorage:', storageError);
       return false;
     }
     
     if (!refreshToken) {
-      console.log("❌ Pas de refresh token disponible pour le rafraîchissement");
+      console.log('❌ Pas de refresh token disponible pour le rafraîchissement');
       return false;
     }
     
@@ -1468,16 +1476,16 @@ async function refreshSession(): Promise<boolean> {
       const { data, error } = await Promise.race([refreshPromise, timeoutPromise]) as any;
       
       if (error) {
-        console.error("❌ Erreur lors du rafraîchissement de la session:", error);
+        console.error('❌ Erreur lors du rafraîchissement de la session:', error);
         return false;
       }
       
       if (!data?.session) {
-        console.log("❌ Aucune session retournée lors du rafraîchissement");
+        console.log('❌ Aucune session retournée lors du rafraîchissement');
         return false;
       }
       
-      console.log("✅ Session rafraîchie avec succès");
+      console.log('✅ Session rafraîchie avec succès');
       
       // Mettre à jour les tokens dans le stockage de manière sécurisée
       try {
@@ -1496,7 +1504,7 @@ async function refreshSession(): Promise<boolean> {
             document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
             document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
           } catch (cookieError) {
-            console.warn("⚠️ Erreur lors de la mise à jour des cookies:", cookieError);
+            console.warn('⚠️ Erreur lors de la mise à jour des cookies:', cookieError);
             // Continue even if cookie update fails
           }
         }
@@ -1512,38 +1520,38 @@ async function refreshSession(): Promise<boolean> {
             document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
             document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
           } catch (cookieError) {
-            console.warn("⚠️ Erreur lors de la mise à jour des cookies:", cookieError);
+            console.warn('⚠️ Erreur lors de la mise à jour des cookies:', cookieError);
             // Continue even if cookie update fails
           }
         }
         
         localStorage.setItem('sb-token-last-refresh', Date.now().toString());
       } catch (storageError) {
-        console.error("❌ Erreur lors de la mise à jour des tokens:", storageError);
+        console.error('❌ Erreur lors de la mise à jour des tokens:', storageError);
         // Continue despite storage errors, as the session was successfully refreshed
       }
       
       // Dispatcher un événement pour informer l'application du rafraîchissement
       try {
         window.dispatchEvent(new CustomEvent('klyra:token-refreshed', {
-          detail: { timestamp: Date.now() }
+          detail: { timestamp: Date.now() },
         }));
       } catch (eventError) {
-        console.warn("⚠️ Erreur lors de la distribution de l'événement:", eventError);
+        console.warn('⚠️ Erreur lors de la distribution de l\'événement:', eventError);
         // Continue despite event dispatch error
       }
       
       return true;
     } catch (raceError: any) {
       if (raceError.message === 'Refresh timeout') {
-        console.error("❌ Timeout lors du rafraîchissement de session (15s)");
+        console.error('❌ Timeout lors du rafraîchissement de session (15s)');
       } else {
-        console.error("❌ Erreur lors du rafraîchissement de session:", raceError);
+        console.error('❌ Erreur lors du rafraîchissement de session:', raceError);
       }
       return false;
     }
   } catch (error) {
-    console.error("❌ Exception lors du rafraîchissement de la session:", error);
+    console.error('❌ Exception lors du rafraîchissement de la session:', error);
     return false;
   }
 }
@@ -1552,7 +1560,9 @@ async function refreshSession(): Promise<boolean> {
  * Améliorer la fonction enforceTokenStorage pour utiliser les nouvelles fonctionnalités
  */
 export function enforceTokenStorage(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
 
   try {
     console.log('Enforcing token storage...');
@@ -1684,7 +1694,7 @@ export function enforceTokenStorage(): boolean {
     try {
       supabase.auth.setSession({
         access_token: accessToken,
-        refresh_token: refreshToken || ''
+        refresh_token: refreshToken || '',
       }).then(({ data, error }) => {
         if (error) {
           console.error('Error setting session in enforceTokenStorage:', error);
@@ -1708,7 +1718,9 @@ export function enforceTokenStorage(): boolean {
  * Vérifie et affiche l'état d'authentification actuel pour débogage
  */
 export function debugAuthState(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
   
   try {
     // Vérifier les jetons locaux
@@ -1730,7 +1742,7 @@ export function debugAuthState(): boolean {
       hasOtherToken: !!otherToken,
       hasCookie,
       cookieMatch: cookieValue && accessToken ? cookieValue === accessToken : 'N/A',
-      lastRefresh: localStorage.getItem('sb-token-last-refresh')
+      lastRefresh: localStorage.getItem('sb-token-last-refresh'),
     };
     
     console.log('Auth state debug:', results);

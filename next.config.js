@@ -7,7 +7,7 @@ const nextConfig = {
       'localhost', 
       'supabase.io', 
       'supabase.com',
-      'ecfccsjjfrweqzhkveku.supabase.co'  // Ajout du domaine Supabase du projet
+      'ecfccsjjfrweqzhkveku.supabase.co',  // Ajout du domaine Supabase du projet
     ],
   },
   // Configuration du préchargement des pages
@@ -31,7 +31,7 @@ const nextConfig = {
         source: '/api/:path*',
         destination: '/api/:path*',
       },
-    ]
+    ];
   },
   // Forcer le port 3000
   async headers() {
@@ -53,12 +53,12 @@ const nextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
   webpack: (config) => {
-    config.resolve.fallback = { fs: false, net: false, tls: false }
-    return config
+    config.resolve.fallback = { fs: false, net: false, tls: false };
+    return config;
   },
-}
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig; 

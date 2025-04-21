@@ -1,133 +1,135 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/components/ui/use-toast'
-import { getUploadRequests, submitUploadRequest } from '@/lib/supabase'
-import { useAuth } from '@/lib/auth'
-import type { UploadRequest } from '@/lib/supabase'
-import { motion } from 'framer-motion'
-import { FileUpload } from '@/components/ui/file-upload'
-import { CheckCircle, Clock, AlertTriangle, Download } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { getUploadRequests, submitUploadRequest } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
+import type { UploadRequest } from '@/lib/supabase';
+import { motion } from 'framer-motion';
+import { FileUpload } from '@/components/ui/file-upload';
+import { CheckCircle, Clock, AlertTriangle, Download } from 'lucide-react';
 
 type ClientUploadRequestsProps = {
   projectId: string
 }
 
 export default function ClientUploadRequests({ projectId }: ClientUploadRequestsProps) {
-  const [requests, setRequests] = useState<UploadRequest[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [uploadingRequestId, setUploadingRequestId] = useState<string | null>(null)
-  const [selectedFiles, setSelectedFiles] = useState<{[key: string]: File | null}>({})
-  const { user } = useAuth()
-  const { toast } = useToast()
+  const [requests, setRequests] = useState<UploadRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [uploadingRequestId, setUploadingRequestId] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<{[key: string]: File | null}>({});
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    loadRequests()
-  }, [projectId])
+    loadRequests();
+  }, [projectId]);
 
   const loadRequests = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const data = await getUploadRequests(projectId)
-      setRequests(data)
+      const data = await getUploadRequests(projectId);
+      setRequests(data);
       
       // Initialiser les fichiers sélectionnés
-      const newSelectedFiles: {[key: string]: File | null} = {}
+      const newSelectedFiles: {[key: string]: File | null} = {};
       data.forEach(request => {
-        newSelectedFiles[request.id] = null
-      })
-      setSelectedFiles(newSelectedFiles)
+        newSelectedFiles[request.id] = null;
+      });
+      setSelectedFiles(newSelectedFiles);
     } catch (error) {
-      console.error('Error loading upload requests:', error)
+      console.error('Error loading upload requests:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les demandes de fichiers.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les demandes de fichiers.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleFileChange = (requestId: string, files: File[]) => {
     if (files.length > 0) {
-      const newSelectedFiles = { ...selectedFiles }
-      newSelectedFiles[requestId] = files[0]
-      setSelectedFiles(newSelectedFiles)
+      const newSelectedFiles = { ...selectedFiles };
+      newSelectedFiles[requestId] = files[0];
+      setSelectedFiles(newSelectedFiles);
     }
-  }
+  };
 
   const handleSubmitFile = async (requestId: string) => {
-    if (!user || !selectedFiles[requestId]) return
+    if (!user || !selectedFiles[requestId]) {
+      return;
+    }
     
-    setUploadingRequestId(requestId)
+    setUploadingRequestId(requestId);
     try {
       const success = await submitUploadRequest(
         requestId,
         selectedFiles[requestId]!,
         user.id
-      )
+      );
       
       if (success) {
         toast({
-          title: "Succès",
-          description: "Votre fichier a été envoyé avec succès.",
-        })
+          title: 'Succès',
+          description: 'Votre fichier a été envoyé avec succès.',
+        });
         
         // Recharger les demandes
-        loadRequests()
+        loadRequests();
       } else {
-        throw new Error('Failed to submit file')
+        throw new Error('Failed to submit file');
       }
     } catch (error) {
-      console.error('Error submitting file:', error)
+      console.error('Error submitting file:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer le fichier.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible d\'envoyer le fichier.',
+        variant: 'destructive',
+      });
     } finally {
-      setUploadingRequestId(null)
+      setUploadingRequestId(null);
     }
-  }
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat('fr-FR', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
-    }).format(date)
-  }
+      year: 'numeric',
+    }).format(date);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <Clock className="h-5 w-5 text-yellow-500" />
-      case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case 'rejected':
-        return <AlertTriangle className="h-5 w-5 text-red-500" />
-      default:
-        return null
+    case 'pending':
+      return <Clock className="h-5 w-5 text-yellow-500" />;
+    case 'completed':
+      return <CheckCircle className="h-5 w-5 text-green-500" />;
+    case 'rejected':
+      return <AlertTriangle className="h-5 w-5 text-red-500" />;
+    default:
+      return null;
     }
-  }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <Badge className="bg-yellow-50 text-yellow-800 border-none">En attente</Badge>
-      case 'completed':
-        return <Badge className="bg-green-50 text-green-700 border-none">Complété</Badge>
-      case 'rejected':
-        return <Badge className="bg-red-50 text-red-700 border-none">Rejeté</Badge>
-      default:
-        return <Badge className="border-none">{status}</Badge>
+    case 'pending':
+      return <Badge className="bg-yellow-50 text-yellow-800 border-none">En attente</Badge>;
+    case 'completed':
+      return <Badge className="bg-green-50 text-green-700 border-none">Complété</Badge>;
+    case 'rejected':
+      return <Badge className="bg-red-50 text-red-700 border-none">Rejeté</Badge>;
+    default:
+      return <Badge className="border-none">{status}</Badge>;
     }
-  }
+  };
 
   if (requests.length === 0 && !isLoading) {
     return null; // Ne pas afficher le composant s'il n'y a pas de demandes
@@ -211,5 +213,5 @@ export default function ClientUploadRequests({ projectId }: ClientUploadRequests
         </div>
       )}
     </motion.div>
-  )
+  );
 } 

@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 export default function DebugPage() {
   const { user, isAdmin, checkUserRole, session, signOut } = useAuth();
@@ -21,11 +21,11 @@ export default function DebugPage() {
       const userType = typeof user;
       setIsTypeString(userType === 'string');
       
-      console.log("Debug: User type check:", {
+      console.log('Debug: User type check:', {
         type: userType,
         user: user,
         hasId: userType === 'object' && 'id' in (user as any),
-        isAdmin
+        isAdmin,
       });
       
       if (userType === 'object') {
@@ -35,20 +35,20 @@ export default function DebugPage() {
             email: (user as any).email,
             isAdmin,
             metadata: (user as any).user_metadata,
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
       } else if (userType === 'string') {
         setDebugInfo({
           userAsString: user,
           isTypeString: true,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     } else {
       setDebugInfo({
         noUser: true,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }, [user, isAdmin]);
@@ -64,16 +64,16 @@ export default function DebugPage() {
           ...prev, 
           manualRoleCheck: { 
             role, 
-            timestamp: new Date().toISOString() 
-          } 
+            timestamp: new Date().toISOString(), 
+          }, 
         }));
       } else {
         setDebugInfo((prev: Record<string, any>) => ({ 
           ...prev, 
           manualRoleCheckError: { 
-            error: "User is not an object or has no ID", 
-            timestamp: new Date().toISOString() 
-          } 
+            error: 'User is not an object or has no ID', 
+            timestamp: new Date().toISOString(), 
+          }, 
         }));
       }
     } catch (error) {
@@ -81,8 +81,8 @@ export default function DebugPage() {
         ...prev, 
         manualRoleCheckError: { 
           error, 
-          timestamp: new Date().toISOString() 
-        } 
+          timestamp: new Date().toISOString(), 
+        }, 
       }));
     } finally {
       setLoading(false);
@@ -96,34 +96,34 @@ export default function DebugPage() {
       const { data, error } = await supabase.auth.getUser();
       
       if (error) {
-        console.error("Error fetching user from Supabase:", error);
+        console.error('Error fetching user from Supabase:', error);
         setDebugInfo((prev: Record<string, any>) => ({ 
           ...prev, 
           supabaseUserError: { 
             error, 
-            timestamp: new Date().toISOString() 
-          } 
+            timestamp: new Date().toISOString(), 
+          }, 
         }));
         return;
       }
       
-      console.log("Direct Supabase user data:", data.user);
+      console.log('Direct Supabase user data:', data.user);
       setSupabaseUserData(data.user);
       setDebugInfo((prev: Record<string, any>) => ({ 
         ...prev, 
         supabaseUser: { 
           user: data.user, 
-          timestamp: new Date().toISOString() 
-        } 
+          timestamp: new Date().toISOString(), 
+        }, 
       }));
     } catch (error) {
-      console.error("Exception in getUserFromSupabase:", error);
+      console.error('Exception in getUserFromSupabase:', error);
       setDebugInfo((prev: Record<string, any>) => ({ 
         ...prev, 
         supabaseUserError: { 
           error, 
-          timestamp: new Date().toISOString() 
-        } 
+          timestamp: new Date().toISOString(), 
+        }, 
       }));
     } finally {
       setLoading(false);
@@ -137,21 +137,21 @@ export default function DebugPage() {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        console.error("Error forcing session fetch:", error);
+        console.error('Error forcing session fetch:', error);
         setDebugInfo((prev: Record<string, any>) => ({ 
           ...prev, 
           forceGetSessionError: { 
             error, 
-            timestamp: new Date().toISOString() 
-          } 
+            timestamp: new Date().toISOString(), 
+          }, 
         }));
         return;
       }
       
-      console.log("Force get session:", {
+      console.log('Force get session:', {
         session,
         user: session?.user,
-        userType: typeof session?.user
+        userType: typeof session?.user,
       });
       
       setDebugInfo((prev: Record<string, any>) => ({
@@ -160,17 +160,17 @@ export default function DebugPage() {
           session,
           user: session?.user,
           userType: typeof session?.user,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       }));
     } catch (error) {
-      console.error("Exception in forceGetSession:", error);
+      console.error('Exception in forceGetSession:', error);
       setDebugInfo((prev: Record<string, any>) => ({ 
         ...prev, 
         forceGetSessionError: { 
           error, 
-          timestamp: new Date().toISOString() 
-        } 
+          timestamp: new Date().toISOString(), 
+        }, 
       }));
     } finally {
       setLoading(false);
@@ -186,17 +186,17 @@ export default function DebugPage() {
         ...prev, 
         signOut: { 
           success: true, 
-          timestamp: new Date().toISOString() 
-        } 
+          timestamp: new Date().toISOString(), 
+        }, 
       }));
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error('Error signing out:', error);
       setDebugInfo((prev: Record<string, any>) => ({ 
         ...prev, 
         signOutError: { 
           error, 
-          timestamp: new Date().toISOString() 
-        } 
+          timestamp: new Date().toISOString(), 
+        }, 
       }));
     } finally {
       setLoading(false);
@@ -225,7 +225,7 @@ export default function DebugPage() {
                 className="bg-red-600 hover:bg-red-700"
                 disabled={loading}
               >
-                {loading ? "Déconnexion..." : "Déconnexion forcée"}
+                {loading ? 'Déconnexion...' : 'Déconnexion forcée'}
               </Button>
             </div>
           </CardContent>
@@ -239,21 +239,21 @@ export default function DebugPage() {
         </CardHeader>
         <CardContent>
           <div className="p-4 border rounded-md bg-slate-50">
-            <p><strong>User Authenticated:</strong> {user ? "Yes" : "No"}</p>
+            <p><strong>User Authenticated:</strong> {user ? 'Yes' : 'No'}</p>
             <p><strong>User Type:</strong> {typeof user}</p>
             {user && typeof user === 'object' && (
               <>
                 <p><strong>User ID:</strong> {(user as any).id}</p>
                 <p><strong>User Email:</strong> {(user as any).email}</p>
-                <p><strong>Is Admin (from auth context):</strong> {isAdmin ? "Yes" : "No"}</p>
+                <p><strong>Is Admin (from auth context):</strong> {isAdmin ? 'Yes' : 'No'}</p>
                 <p><strong>User Metadata:</strong> {JSON.stringify((user as any).user_metadata)}</p>
-                <p><strong>Manual Role Check:</strong> {loading ? "Checking..." : userRole || "Not checked"}</p>
+                <p><strong>Manual Role Check:</strong> {loading ? 'Checking...' : userRole || 'Not checked'}</p>
               </>
             )}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button onClick={manualRoleCheck} disabled={!user || loading || isTypeString}>
-              {loading ? "Checking..." : "Check User Role Manually"}
+              {loading ? 'Checking...' : 'Check User Role Manually'}
             </Button>
             <Button 
               onClick={getUserFromSupabase} 
@@ -304,7 +304,7 @@ export default function DebugPage() {
         <CardContent>
           <div className="p-4 border rounded-md bg-slate-50">
             <pre className="font-mono text-sm whitespace-pre-wrap overflow-auto">
-              {session ? JSON.stringify(session, null, 2) : "No active session"}
+              {session ? JSON.stringify(session, null, 2) : 'No active session'}
             </pre>
           </div>
         </CardContent>

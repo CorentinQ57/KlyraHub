@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -14,11 +14,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { useToast } from '@/components/ui/use-toast'
-import { getUploadRequests, createUploadRequest } from '@/lib/supabase'
-import { useAuth } from '@/lib/auth'
-import type { UploadRequest } from '@/lib/supabase'
+} from '@/components/ui/table';
+import { useToast } from '@/components/ui/use-toast';
+import { getUploadRequests, createUploadRequest } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
+import type { UploadRequest } from '@/lib/supabase';
 
 type ProjectUploadRequestsProps = {
   project: any
@@ -26,99 +26,101 @@ type ProjectUploadRequestsProps = {
 }
 
 export default function ProjectUploadRequests({ project, onRequestsUpdated }: ProjectUploadRequestsProps) {
-  const [requests, setRequests] = useState<UploadRequest[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isCreating, setIsCreating] = useState(false)
-  const [newRequestName, setNewRequestName] = useState('')
-  const [newRequestDescription, setNewRequestDescription] = useState('')
-  const { user } = useAuth()
-  const { toast } = useToast()
+  const [requests, setRequests] = useState<UploadRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newRequestName, setNewRequestName] = useState('');
+  const [newRequestDescription, setNewRequestDescription] = useState('');
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    loadRequests()
-  }, [project.id])
+    loadRequests();
+  }, [project.id]);
 
   const loadRequests = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const data = await getUploadRequests(project.id)
-      setRequests(data)
+      const data = await getUploadRequests(project.id);
+      setRequests(data);
     } catch (error) {
-      console.error('Error loading upload requests:', error)
+      console.error('Error loading upload requests:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les demandes de fichiers.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les demandes de fichiers.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCreateRequest = async () => {
-    if (!newRequestName.trim() || !user) return
+    if (!newRequestName.trim() || !user) {
+      return;
+    }
     
-    setIsCreating(true)
+    setIsCreating(true);
     try {
       const request = await createUploadRequest(
         project.id,
         newRequestName,
         newRequestDescription,
         user.id
-      )
+      );
       
       if (request) {
         toast({
-          title: "Succès",
-          description: "La demande de fichier a été créée.",
-        })
+          title: 'Succès',
+          description: 'La demande de fichier a été créée.',
+        });
         
         // Refresh the list
-        loadRequests()
+        loadRequests();
         
         // Reset form
-        setNewRequestName('')
-        setNewRequestDescription('')
+        setNewRequestName('');
+        setNewRequestDescription('');
         
-        onRequestsUpdated()
+        onRequestsUpdated();
       } else {
-        throw new Error('Failed to create upload request')
+        throw new Error('Failed to create upload request');
       }
     } catch (error) {
-      console.error('Error creating upload request:', error)
+      console.error('Error creating upload request:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de créer la demande de fichier.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de créer la demande de fichier.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsCreating(false)
+      setIsCreating(false);
     }
-  }
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
-    }).format(date)
-  }
+      minute: '2-digit',
+    }).format(date);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50">En attente</Badge>
-      case 'completed':
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Complété</Badge>
-      case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700">Rejeté</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
+    case 'pending':
+      return <Badge variant="outline" className="bg-yellow-50">En attente</Badge>;
+    case 'completed':
+      return <Badge variant="outline" className="bg-green-50 text-green-700">Complété</Badge>;
+    case 'rejected':
+      return <Badge variant="outline" className="bg-red-50 text-red-700">Rejeté</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
     }
-  }
+  };
 
   return (
     <Card>
@@ -227,5 +229,5 @@ export default function ProjectUploadRequests({ project, onRequestsUpdated }: Pr
         )}
       </CardContent>
     </Card>
-  )
+  );
 } 

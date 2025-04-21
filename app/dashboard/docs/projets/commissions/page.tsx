@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import {
   FileText,
   CreditCard,
@@ -20,24 +20,24 @@ import {
   Shield,
   HelpCircle,
   Receipt,
-  PieChart
-} from "lucide-react";
+  PieChart,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Facturation",
-    href: "/dashboard/docs/compte/facturation",
+    title: 'Facturation',
+    href: '/dashboard/docs/compte/facturation',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Modes de paiement",
-    href: "/dashboard/docs/compte/paiement",
+    title: 'Modes de paiement',
+    href: '/dashboard/docs/compte/paiement',
     icon: <CreditCard className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Questions fréquentes",
-    href: "/dashboard/docs/faq",
+    title: 'Questions fréquentes',
+    href: '/dashboard/docs/faq',
     icon: <HelpCircle className="h-4 w-4 text-primary" />,
   },
 ];
@@ -54,42 +54,42 @@ type PaymentOption = {
 
 const paymentOptions: PaymentOption[] = [
   {
-    id: "full-payment",
-    title: "Paiement intégral",
-    description: "Réglez la totalité du montant en une seule fois au moment de la commande.",
+    id: 'full-payment',
+    title: 'Paiement intégral',
+    description: 'Réglez la totalité du montant en une seule fois au moment de la commande.',
     icon: <DollarSign className="h-6 w-6 text-primary" />,
     details: [
-      "Réduction de 5% sur le montant total",
-      "Déblocage immédiat de toutes les fonctionnalités",
-      "Démarrage du projet sans délai",
-      "Facturation unique simplifiée"
+      'Réduction de 5% sur le montant total',
+      'Déblocage immédiat de toutes les fonctionnalités',
+      'Démarrage du projet sans délai',
+      'Facturation unique simplifiée',
     ],
-    recommended: true
+    recommended: true,
   },
   {
-    id: "milestone-payment",
-    title: "Paiement par étapes",
-    description: "Divisez le paiement en plusieurs versements liés à des jalons du projet.",
+    id: 'milestone-payment',
+    title: 'Paiement par étapes',
+    description: 'Divisez le paiement en plusieurs versements liés à des jalons du projet.',
     icon: <CheckCircle className="h-6 w-6 text-primary" />,
     details: [
-      "50% à la commande pour démarrer le projet",
-      "25% après validation des premières maquettes",
-      "25% à la livraison finale",
-      "Facturation détaillée pour chaque jalon"
-    ]
+      '50% à la commande pour démarrer le projet',
+      '25% après validation des premières maquettes',
+      '25% à la livraison finale',
+      'Facturation détaillée pour chaque jalon',
+    ],
   },
   {
-    id: "monthly-payment",
-    title: "Paiement mensuel",
-    description: "Pour les projets importants, étalez le paiement sur plusieurs mois.",
+    id: 'monthly-payment',
+    title: 'Paiement mensuel',
+    description: 'Pour les projets importants, étalez le paiement sur plusieurs mois.',
     icon: <Calendar className="h-6 w-6 text-primary" />,
     details: [
-      "30% à la commande pour démarrer le projet",
-      "Mensualités égales sur la durée du projet",
-      "Minimum 3 mois, maximum 12 mois",
-      "Planning de versements fixé dès le départ"
-    ]
-  }
+      '30% à la commande pour démarrer le projet',
+      'Mensualités égales sur la durée du projet',
+      'Minimum 3 mois, maximum 12 mois',
+      'Planning de versements fixé dès le départ',
+    ],
+  },
 ];
 
 // Informations sur les commissions pour les projets spéciaux
@@ -103,41 +103,41 @@ type CommissionInfo = {
 
 const commissionInfo: CommissionInfo[] = [
   {
-    id: "referral",
-    title: "Programme de parrainage",
-    description: "Recevez une commission pour chaque nouveau client que vous nous recommandez.",
-    rate: "10% du premier projet",
+    id: 'referral',
+    title: 'Programme de parrainage',
+    description: 'Recevez une commission pour chaque nouveau client que vous nous recommandez.',
+    rate: '10% du premier projet',
     details: [
-      "Applicable sur le montant hors taxes du premier projet",
-      "Versement après la finalisation du projet et le paiement complet",
-      "Sans limite du nombre de parrainages",
-      "Cumulable avec vos propres achats"
-    ]
+      'Applicable sur le montant hors taxes du premier projet',
+      'Versement après la finalisation du projet et le paiement complet',
+      'Sans limite du nombre de parrainages',
+      'Cumulable avec vos propres achats',
+    ],
   },
   {
-    id: "agency",
-    title: "Partenariat agence",
-    description: "Pour les agences qui sous-traitent régulièrement des projets de design.",
-    rate: "15-20% selon volume",
+    id: 'agency',
+    title: 'Partenariat agence',
+    description: 'Pour les agences qui sous-traitent régulièrement des projets de design.',
+    rate: '15-20% selon volume',
     details: [
-      "Grille tarifaire spéciale pour les agences partenaires",
-      "Possibilité de marque blanche sur les livrables",
-      "Dashboard dédié pour suivre tous vos projets",
-      "Gestionnaire de compte attitré"
-    ]
+      'Grille tarifaire spéciale pour les agences partenaires',
+      'Possibilité de marque blanche sur les livrables',
+      'Dashboard dédié pour suivre tous vos projets',
+      'Gestionnaire de compte attitré',
+    ],
   },
   {
-    id: "volume",
-    title: "Remises sur volume",
-    description: "Des réductions automatiques basées sur le volume de vos commandes.",
-    rate: "5-15% de remise",
+    id: 'volume',
+    title: 'Remises sur volume',
+    description: 'Des réductions automatiques basées sur le volume de vos commandes.',
+    rate: '5-15% de remise',
     details: [
-      "5% à partir de 3 000€ de commandes cumulées",
-      "10% à partir de 10 000€ de commandes cumulées",
-      "15% à partir de 25 000€ de commandes cumulées",
-      "Remises appliquées automatiquement"
-    ]
-  }
+      '5% à partir de 3 000€ de commandes cumulées',
+      '10% à partir de 10 000€ de commandes cumulées',
+      '15% à partir de 25 000€ de commandes cumulées',
+      'Remises appliquées automatiquement',
+    ],
+  },
 ];
 
 export default function ProjectCommissionsPage() {
@@ -146,21 +146,21 @@ export default function ProjectCommissionsPage() {
   // Générer la table des matières
   useEffect(() => {
     const items: TocItem[] = [
-      { id: "introduction", title: "Introduction", level: 2 },
-      { id: "payment-options", title: "Options de paiement", level: 2 },
+      { id: 'introduction', title: 'Introduction', level: 2 },
+      { id: 'payment-options', title: 'Options de paiement', level: 2 },
       ...paymentOptions.map((option) => ({
         id: option.id,
         title: option.title,
         level: 3,
       })),
-      { id: "commissions", title: "Programme de commissions", level: 2 },
+      { id: 'commissions', title: 'Programme de commissions', level: 2 },
       ...commissionInfo.map((info) => ({
         id: info.id,
         title: info.title,
         level: 3,
       })),
-      { id: "invoicing", title: "Facturation et comptabilité", level: 2 },
-      { id: "security", title: "Sécurité des paiements", level: 2 },
+      { id: 'invoicing', title: 'Facturation et comptabilité', level: 2 },
+      { id: 'security', title: 'Sécurité des paiements', level: 2 },
     ];
     setTocItems(items);
   }, []);
@@ -221,11 +221,11 @@ export default function ProjectCommissionsPage() {
 
             <div className="grid grid-cols-1 gap-6 mt-6">
               {paymentOptions.map((option) => (
-                <Card key={option.id} id={option.id} className={option.recommended ? "border-primary/30 bg-primary/5" : ""}>
-                  <CardHeader className={option.recommended ? "pb-2 border-b border-primary/20" : "pb-2 border-b"}>
+                <Card key={option.id} id={option.id} className={option.recommended ? 'border-primary/30 bg-primary/5' : ''}>
+                  <CardHeader className={option.recommended ? 'pb-2 border-b border-primary/20' : 'pb-2 border-b'}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className={option.recommended ? "bg-primary/20 p-2 rounded-lg" : "bg-muted p-2 rounded-lg"}>
+                        <div className={option.recommended ? 'bg-primary/20 p-2 rounded-lg' : 'bg-muted p-2 rounded-lg'}>
                           {option.icon}
                         </div>
                         <CardTitle className="text-xl">{option.title}</CardTitle>

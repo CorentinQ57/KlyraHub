@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import { 
   FileText, 
   CreditCard, 
@@ -16,37 +16,37 @@ import {
   DollarSign,
   Receipt,
   Clock,
-  Mail
-} from "lucide-react";
+  Mail,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Gestion de compte",
-    href: "/dashboard/docs/compte/gestion",
+    title: 'Gestion de compte',
+    href: '/dashboard/docs/compte/gestion',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Modes de paiement",
-    href: "/dashboard/docs/compte/paiement",
+    title: 'Modes de paiement',
+    href: '/dashboard/docs/compte/paiement',
     icon: <CreditCard className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Contacter le support",
-    href: "/dashboard/docs/support/contact",
+    title: 'Contacter le support',
+    href: '/dashboard/docs/support/contact',
     icon: <Mail className="h-4 w-4 text-primary" />,
   },
 ];
 
 export default function BillingDocPage() {
   const [tocItems] = useState<TocItem[]>([
-    { id: "overview", title: "Vue d'ensemble", level: 2 },
-    { id: "invoice-generation", title: "Génération des factures", level: 2 },
-    { id: "invoice-details", title: "Détails des factures", level: 2 },
-    { id: "payment-methods", title: "Méthodes de paiement", level: 2 },
-    { id: "payment-terms", title: "Conditions de paiement", level: 2 },
-    { id: "download-invoice", title: "Téléchargement des factures", level: 2 },
-    { id: "billing-issues", title: "Problèmes de facturation", level: 2 },
+    { id: 'overview', title: 'Vue d\'ensemble', level: 2 },
+    { id: 'invoice-generation', title: 'Génération des factures', level: 2 },
+    { id: 'invoice-details', title: 'Détails des factures', level: 2 },
+    { id: 'payment-methods', title: 'Méthodes de paiement', level: 2 },
+    { id: 'payment-terms', title: 'Conditions de paiement', level: 2 },
+    { id: 'download-invoice', title: 'Téléchargement des factures', level: 2 },
+    { id: 'billing-issues', title: 'Problèmes de facturation', level: 2 },
   ]);
 
   return (

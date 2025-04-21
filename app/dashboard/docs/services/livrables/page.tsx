@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import {
   ArrowRight,
   FileText,
@@ -21,23 +21,23 @@ import {
   Archive,
   Mail,
   ShoppingCart,
-} from "lucide-react";
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Catalogue de services",
-    href: "/dashboard/docs/services/catalogue",
+    title: 'Catalogue de services',
+    href: '/dashboard/docs/services/catalogue',
     icon: <ShoppingCart className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Processus de validation",
-    href: "/dashboard/docs/projets/validation",
+    title: 'Processus de validation',
+    href: '/dashboard/docs/projets/validation',
     icon: <CheckCircle className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Cycle de vie d'un projet",
-    href: "/dashboard/docs/projets/cycle-vie",
+    title: 'Cycle de vie d\'un projet',
+    href: '/dashboard/docs/projets/cycle-vie',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
@@ -55,76 +55,76 @@ type DeliverableFormat = {
 // Types de livrables par catégorie
 const deliverableFormats: DeliverableFormat[] = [
   {
-    id: "design-graphique",
-    title: "Design Graphique",
-    description: "Formats standards pour les éléments de design graphique et d'identité visuelle.",
+    id: 'design-graphique',
+    title: 'Design Graphique',
+    description: 'Formats standards pour les éléments de design graphique et d\'identité visuelle.',
     icon: <FileImage className="h-6 w-6 text-primary" />,
     formats: [
-      "AI (Adobe Illustrator) - Fichiers sources pour les logos et illustrations vectorielles",
-      "PSD (Adobe Photoshop) - Fichiers sources pour les designs complexes et retouches photo",
-      "PDF - Format de présentation finale pour impression et partage",
-      "PNG - Format d'image avec transparence pour utilisation web",
-      "JPG - Format d'image compressé pour utilisation web et présentations",
-      "SVG - Format vectoriel pour utilisation web et redimensionnement sans perte de qualité"
+      'AI (Adobe Illustrator) - Fichiers sources pour les logos et illustrations vectorielles',
+      'PSD (Adobe Photoshop) - Fichiers sources pour les designs complexes et retouches photo',
+      'PDF - Format de présentation finale pour impression et partage',
+      'PNG - Format d\'image avec transparence pour utilisation web',
+      'JPG - Format d\'image compressé pour utilisation web et présentations',
+      'SVG - Format vectoriel pour utilisation web et redimensionnement sans perte de qualité',
     ],
-    usage: "Les fichiers sources (AI, PSD) vous permettent de modifier les éléments par la suite, tandis que les formats d'export (PDF, PNG, JPG, SVG) sont prêts à être utilisés dans vos communications."
+    usage: 'Les fichiers sources (AI, PSD) vous permettent de modifier les éléments par la suite, tandis que les formats d\'export (PDF, PNG, JPG, SVG) sont prêts à être utilisés dans vos communications.',
   },
   {
-    id: "web-design",
-    title: "Web Design",
-    description: "Formats pour les maquettes et prototypes de sites web et applications.",
+    id: 'web-design',
+    title: 'Web Design',
+    description: 'Formats pour les maquettes et prototypes de sites web et applications.',
     icon: <PenTool className="h-6 w-6 text-primary" />,
     formats: [
-      "Figma - Fichiers de design collaboratifs avec prototypes interactifs",
-      "XD (Adobe XD) - Fichiers de maquettes et prototypes",
-      "Sketch - Fichiers sources pour les designs d'interface",
-      "HTML/CSS - Maquettes fonctionnelles pour prévisualisation directe dans le navigateur",
-      "PDF interactif - Documentation interactive des maquettes et flux utilisateurs"
+      'Figma - Fichiers de design collaboratifs avec prototypes interactifs',
+      'XD (Adobe XD) - Fichiers de maquettes et prototypes',
+      'Sketch - Fichiers sources pour les designs d\'interface',
+      'HTML/CSS - Maquettes fonctionnelles pour prévisualisation directe dans le navigateur',
+      'PDF interactif - Documentation interactive des maquettes et flux utilisateurs',
     ],
-    usage: "Les maquettes sont livrées avec accès aux fichiers sources, ce qui vous permet de consulter tous les éléments de design (grilles, styles, composants) et de partager facilement avec votre équipe technique."
+    usage: 'Les maquettes sont livrées avec accès aux fichiers sources, ce qui vous permet de consulter tous les éléments de design (grilles, styles, composants) et de partager facilement avec votre équipe technique.',
   },
   {
-    id: "developpement",
-    title: "Développement Web",
-    description: "Livraison de code et d'applications fonctionnelles.",
+    id: 'developpement',
+    title: 'Développement Web',
+    description: 'Livraison de code et d\'applications fonctionnelles.',
     icon: <FileCode className="h-6 w-6 text-primary" />,
     formats: [
-      "Code source (GitHub/GitLab) - Accès complet au code source via un dépôt Git",
-      "Fichiers d'application - Ensemble des fichiers nécessaires au fonctionnement de l'application",
-      "Documentation technique - Guide d'implémentation et de maintenance",
-      "Base de données - Structure et données initiales si applicable",
-      "API Documentation - Documentation des endpoints et méthodes disponibles"
+      'Code source (GitHub/GitLab) - Accès complet au code source via un dépôt Git',
+      'Fichiers d\'application - Ensemble des fichiers nécessaires au fonctionnement de l\'application',
+      'Documentation technique - Guide d\'implémentation et de maintenance',
+      'Base de données - Structure et données initiales si applicable',
+      'API Documentation - Documentation des endpoints et méthodes disponibles',
     ],
-    usage: "Le code source est livré avec une documentation claire pour permettre à votre équipe technique de prendre en main le projet facilement. Nous proposons également des sessions de transfert de connaissances pour garantir une transition fluide."
+    usage: 'Le code source est livré avec une documentation claire pour permettre à votre équipe technique de prendre en main le projet facilement. Nous proposons également des sessions de transfert de connaissances pour garantir une transition fluide.',
   },
   {
-    id: "strategie-marketing",
-    title: "Stratégie & Marketing",
-    description: "Documents stratégiques et livrables pour vos campagnes marketing.",
+    id: 'strategie-marketing',
+    title: 'Stratégie & Marketing',
+    description: 'Documents stratégiques et livrables pour vos campagnes marketing.',
     icon: <FileCheck className="h-6 w-6 text-primary" />,
     formats: [
-      "DOCX/PDF - Rapports détaillés et plans stratégiques",
-      "XLSX - Tableaux d'analyse, plannings et suivis de performance",
-      "PPTX - Présentations et rapports visuels",
-      "Trello/Asana - Planifications et suivis de projets",
-      "Google Analytics/Data Studio - Dashboards de suivi des performances"
+      'DOCX/PDF - Rapports détaillés et plans stratégiques',
+      'XLSX - Tableaux d\'analyse, plannings et suivis de performance',
+      'PPTX - Présentations et rapports visuels',
+      'Trello/Asana - Planifications et suivis de projets',
+      'Google Analytics/Data Studio - Dashboards de suivi des performances',
     ],
-    usage: "Les documents stratégiques sont accompagnés d'explications claires et de recommandations concrètes pour vous permettre de mettre en œuvre les stratégies proposées de manière autonome."
+    usage: 'Les documents stratégiques sont accompagnés d\'explications claires et de recommandations concrètes pour vous permettre de mettre en œuvre les stratégies proposées de manière autonome.',
   },
   {
-    id: "archives-transfert",
-    title: "Archives & Transfert",
-    description: "Modalités de livraison et d'archivage des projets terminés.",
+    id: 'archives-transfert',
+    title: 'Archives & Transfert',
+    description: 'Modalités de livraison et d\'archivage des projets terminés.',
     icon: <Archive className="h-6 w-6 text-primary" />,
     formats: [
-      "ZIP/RAR - Archives compressées de tous les fichiers du projet",
-      "Google Drive/Dropbox - Partage via cloud avec structure de dossiers organisée",
-      "WeTransfer - Transfert temporaire pour les fichiers volumineux",
-      "FTP - Transfert direct sur votre serveur si nécessaire",
-      "Clé USB/Disque dur - Livraison physique pour les projets très volumineux (sur demande)"
+      'ZIP/RAR - Archives compressées de tous les fichiers du projet',
+      'Google Drive/Dropbox - Partage via cloud avec structure de dossiers organisée',
+      'WeTransfer - Transfert temporaire pour les fichiers volumineux',
+      'FTP - Transfert direct sur votre serveur si nécessaire',
+      'Clé USB/Disque dur - Livraison physique pour les projets très volumineux (sur demande)',
     ],
-    usage: "Tous les projets sont archivés pendant une durée minimale de 12 mois après livraison, vous permettant d'accéder à nouveau aux fichiers en cas de besoin. Des options d'archivage prolongé sont disponibles sur demande."
-  }
+    usage: 'Tous les projets sont archivés pendant une durée minimale de 12 mois après livraison, vous permettant d\'accéder à nouveau aux fichiers en cas de besoin. Des options d\'archivage prolongé sont disponibles sur demande.',
+  },
 ];
 
 export default function DeliverablesFormatsPage() {
@@ -133,13 +133,13 @@ export default function DeliverablesFormatsPage() {
   // Générer la table des matières
   useEffect(() => {
     const items: TocItem[] = [
-      { id: "introduction", title: "Introduction", level: 2 },
+      { id: 'introduction', title: 'Introduction', level: 2 },
       ...deliverableFormats.map((format) => ({
         id: format.id,
         title: format.title,
         level: 2,
       })),
-      { id: "validation-reception", title: "Validation et réception", level: 2 },
+      { id: 'validation-reception', title: 'Validation et réception', level: 2 },
     ];
     setTocItems(items);
   }, []);

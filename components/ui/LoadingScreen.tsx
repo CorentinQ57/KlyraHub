@@ -13,7 +13,7 @@ interface LoadingScreenProps {
 }
 
 export default function LoadingScreen({
-  message = "Chargement en cours...",
+  message = 'Chargement en cours...',
   subtitle,
   showAfterMs = 300,
   hideSpinner = false,
@@ -40,7 +40,9 @@ export default function LoadingScreen({
     // Afficher les options de récupération après la durée maximale
     const durationTimer = setTimeout(() => {
       setShowRecoveryOptions(true);
-      if (onTimeout) onTimeout();
+      if (onTimeout) {
+        onTimeout();
+      }
     }, duration);
 
     return () => {
@@ -109,7 +111,7 @@ export default function LoadingScreen({
           {!hideSpinner && (
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
             >
               <Loader2 className="w-12 h-12 text-primary" />
             </motion.div>
@@ -139,9 +141,9 @@ export default function LoadingScreen({
               >
                 <p className="font-medium">Problème d'authentification détecté</p>
                 <p className="text-sm mt-1">
-                  {errorState === 'circuit_breaker' && "Timeout lors de la vérification de votre session."}
-                  {errorState === 'error' && "Une erreur est survenue lors de la connexion."}
-                  {errorState === 'unknown' && "Problème de connexion détecté."}
+                  {errorState === 'circuit_breaker' && 'Timeout lors de la vérification de votre session.'}
+                  {errorState === 'error' && 'Une erreur est survenue lors de la connexion.'}
+                  {errorState === 'unknown' && 'Problème de connexion détecté.'}
                 </p>
               </motion.div>
             )}

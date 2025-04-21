@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import {
   FileText,
   CheckCircle,
@@ -24,23 +24,23 @@ import {
   Award,
   Bell,
   ChevronRight,
-} from "lucide-react";
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Validation des livrables",
-    href: "/dashboard/docs/projets/validation",
+    title: 'Validation des livrables',
+    href: '/dashboard/docs/projets/validation',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Suivi et communication",
-    href: "/dashboard/docs/projets/suivi",
+    title: 'Suivi et communication',
+    href: '/dashboard/docs/projets/suivi',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Questions fréquentes",
-    href: "/dashboard/docs/faq",
+    title: 'Questions fréquentes',
+    href: '/dashboard/docs/faq',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
@@ -57,94 +57,94 @@ type ProjectPhase = {
 
 const projectPhases: ProjectPhase[] = [
   {
-    id: "discovery",
-    title: "Découverte & Briefing",
-    description: "Phase initiale où nous comprenons vos besoins, objectifs et contexte spécifique.",
+    id: 'discovery',
+    title: 'Découverte & Briefing',
+    description: 'Phase initiale où nous comprenons vos besoins, objectifs et contexte spécifique.',
     icon: <Lightbulb className="h-6 w-6" />,
     keyPoints: [
-      "Collecte d'informations détaillées sur votre projet",
-      "Définition des objectifs principaux et des attentes",
-      "Analyse du marché cible et des concurrents",
-      "Élaboration du cahier des charges"
+      'Collecte d\'informations détaillées sur votre projet',
+      'Définition des objectifs principaux et des attentes',
+      'Analyse du marché cible et des concurrents',
+      'Élaboration du cahier des charges',
     ],
     clientActions: [
-      "Fournir un briefing détaillé",
-      "Partager des exemples d'inspiration",
-      "Clarifier vos attentes et besoins spécifiques",
-      "Valider le cahier des charges"
-    ]
+      'Fournir un briefing détaillé',
+      'Partager des exemples d\'inspiration',
+      'Clarifier vos attentes et besoins spécifiques',
+      'Valider le cahier des charges',
+    ],
   },
   {
-    id: "concept",
-    title: "Conceptualisation",
-    description: "Développement des premiers concepts créatifs basés sur le briefing.",
+    id: 'concept',
+    title: 'Conceptualisation',
+    description: 'Développement des premiers concepts créatifs basés sur le briefing.',
     icon: <Pencil className="h-6 w-6" />,
     keyPoints: [
-      "Exploration de plusieurs directions créatives",
-      "Présentation des premiers concepts",
-      "Développement des éléments visuels clés",
-      "Définition de l'approche stratégique"
+      'Exploration de plusieurs directions créatives',
+      'Présentation des premiers concepts',
+      'Développement des éléments visuels clés',
+      'Définition de l\'approche stratégique',
     ],
     clientActions: [
-      "Examiner les concepts proposés",
-      "Fournir des retours détaillés",
-      "Choisir la direction créative à développer",
-      "Valider le concept final"
-    ]
+      'Examiner les concepts proposés',
+      'Fournir des retours détaillés',
+      'Choisir la direction créative à développer',
+      'Valider le concept final',
+    ],
   },
   {
-    id: "production",
-    title: "Production",
-    description: "Création des livrables finaux selon le concept validé.",
+    id: 'production',
+    title: 'Production',
+    description: 'Création des livrables finaux selon le concept validé.',
     icon: <Package className="h-6 w-6" />,
     keyPoints: [
-      "Développement complet des éléments du projet",
-      "Application cohérente de l'identité visuelle",
-      "Optimisation pour différentes plateformes et supports",
-      "Tests et contrôle qualité"
+      'Développement complet des éléments du projet',
+      'Application cohérente de l\'identité visuelle',
+      'Optimisation pour différentes plateformes et supports',
+      'Tests et contrôle qualité',
     ],
     clientActions: [
-      "Rester disponible pour des questions ponctuelles",
-      "Fournir les ressources additionnelles nécessaires",
-      "Suivre l'avancement via le tableau de bord"
-    ]
+      'Rester disponible pour des questions ponctuelles',
+      'Fournir les ressources additionnelles nécessaires',
+      'Suivre l\'avancement via le tableau de bord',
+    ],
   },
   {
-    id: "review",
-    title: "Révision & Affinement",
-    description: "Phase de retours et ajustements pour perfectionner le résultat.",
+    id: 'review',
+    title: 'Révision & Affinement',
+    description: 'Phase de retours et ajustements pour perfectionner le résultat.',
     icon: <RefreshCw className="h-6 w-6" />,
     keyPoints: [
-      "Présentation des livrables pour évaluation",
-      "Collecte et analyse de vos retours",
-      "Application des modifications demandées",
-      "Optimisation des détails"
+      'Présentation des livrables pour évaluation',
+      'Collecte et analyse de vos retours',
+      'Application des modifications demandées',
+      'Optimisation des détails',
     ],
     clientActions: [
-      "Examiner attentivement les livrables",
-      "Fournir des retours précis et constructifs",
-      "Valider les modifications apportées",
-      "Approuver les versions finales"
-    ]
+      'Examiner attentivement les livrables',
+      'Fournir des retours précis et constructifs',
+      'Valider les modifications apportées',
+      'Approuver les versions finales',
+    ],
   },
   {
-    id: "completion",
-    title: "Livraison & Clôture",
-    description: "Finalisation du projet et transmission des livrables définitifs.",
+    id: 'completion',
+    title: 'Livraison & Clôture',
+    description: 'Finalisation du projet et transmission des livrables définitifs.',
     icon: <Rocket className="h-6 w-6" />,
     keyPoints: [
-      "Préparation des fichiers définitifs",
-      "Livraison dans tous les formats requis",
-      "Documentation technique si nécessaire",
-      "Session de transfert des connaissances"
+      'Préparation des fichiers définitifs',
+      'Livraison dans tous les formats requis',
+      'Documentation technique si nécessaire',
+      'Session de transfert des connaissances',
     ],
     clientActions: [
-      "Télécharger et sauvegarder tous les fichiers livrés",
-      "Confirmer la réception des livrables",
-      "Compléter le formulaire de satisfaction",
-      "Partager votre expérience (témoignage)"
-    ]
-  }
+      'Télécharger et sauvegarder tous les fichiers livrés',
+      'Confirmer la réception des livrables',
+      'Compléter le formulaire de satisfaction',
+      'Partager votre expérience (témoignage)',
+    ],
+  },
 ];
 
 // Facteurs de succès
@@ -157,35 +157,35 @@ type SuccessFactor = {
 
 const successFactors: SuccessFactor[] = [
   {
-    id: "communication",
-    title: "Communication claire",
-    description: "Une communication transparente et régulière est essentielle pour maintenir l'alignement entre vos attentes et notre travail.",
-    icon: <MessageSquare className="h-6 w-6" />
+    id: 'communication',
+    title: 'Communication claire',
+    description: 'Une communication transparente et régulière est essentielle pour maintenir l\'alignement entre vos attentes et notre travail.',
+    icon: <MessageSquare className="h-6 w-6" />,
   },
   {
-    id: "commitment",
-    title: "Engagement mutuel",
-    description: "Votre implication active et notre dévouement professionnel forment le socle d'une collaboration réussie.",
-    icon: <Users className="h-6 w-6" />
+    id: 'commitment',
+    title: 'Engagement mutuel',
+    description: 'Votre implication active et notre dévouement professionnel forment le socle d\'une collaboration réussie.',
+    icon: <Users className="h-6 w-6" />,
   },
   {
-    id: "flexibility",
-    title: "Flexibilité adaptative",
-    description: "La capacité à s'adapter aux changements et imprévus permet d'optimiser le résultat final.",
-    icon: <Zap className="h-6 w-6" />
+    id: 'flexibility',
+    title: 'Flexibilité adaptative',
+    description: 'La capacité à s\'adapter aux changements et imprévus permet d\'optimiser le résultat final.',
+    icon: <Zap className="h-6 w-6" />,
   },
   {
-    id: "timeliness",
-    title: "Respect des délais",
-    description: "Le respect des échéances par toutes les parties garantit une progression fluide du projet.",
-    icon: <Clock className="h-6 w-6" />
+    id: 'timeliness',
+    title: 'Respect des délais',
+    description: 'Le respect des échéances par toutes les parties garantit une progression fluide du projet.',
+    icon: <Clock className="h-6 w-6" />,
   },
   {
-    id: "excellence",
-    title: "Exigence de qualité",
-    description: "Notre engagement pour l'excellence et votre regard critique assurent un résultat à la hauteur de vos ambitions.",
-    icon: <Award className="h-6 w-6" />
-  }
+    id: 'excellence',
+    title: 'Exigence de qualité',
+    description: 'Notre engagement pour l\'excellence et votre regard critique assurent un résultat à la hauteur de vos ambitions.',
+    icon: <Award className="h-6 w-6" />,
+  },
 ];
 
 export default function ProjectLifecyclePage() {
@@ -194,16 +194,16 @@ export default function ProjectLifecyclePage() {
   // Générer la table des matières
   useEffect(() => {
     const items: TocItem[] = [
-      { id: "introduction", title: "Introduction", level: 2 },
-      { id: "phases", title: "Les phases du projet", level: 2 },
+      { id: 'introduction', title: 'Introduction', level: 2 },
+      { id: 'phases', title: 'Les phases du projet', level: 2 },
       ...projectPhases.map((phase) => ({
         id: phase.id,
         title: phase.title,
         level: 3,
       })),
-      { id: "timeline", title: "Chronologie indicative", level: 2 },
-      { id: "success-factors", title: "Facteurs de réussite", level: 2 },
-      { id: "conclusion", title: "Conclusion", level: 2 },
+      { id: 'timeline', title: 'Chronologie indicative', level: 2 },
+      { id: 'success-factors', title: 'Facteurs de réussite', level: 2 },
+      { id: 'conclusion', title: 'Conclusion', level: 2 },
     ];
     setTocItems(items);
   }, []);
@@ -327,10 +327,10 @@ export default function ProjectLifecyclePage() {
                   </div>
                   <h3 className="font-medium">{phase.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {index === 0 ? "1-3 jours" : 
-                     index === 1 ? "2-5 jours" : 
-                     index === 2 ? "3-10 jours" : 
-                     index === 3 ? "2-5 jours" : "1-2 jours"}
+                    {index === 0 ? '1-3 jours' : 
+                      index === 1 ? '2-5 jours' : 
+                        index === 2 ? '3-10 jours' : 
+                          index === 3 ? '2-5 jours' : '1-2 jours'}
                   </p>
                 </div>
               ))}

@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Play, X, Maximize2, Volume2, VolumeX } from 'lucide-react'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Play, X, Maximize2, Volume2, VolumeX } from 'lucide-react';
 
 interface VideoWalkthroughProps {
   videoSrc?: string
@@ -12,12 +12,12 @@ interface VideoWalkthroughProps {
 }
 
 export default function VideoWalkthrough({ 
-  videoSrc = "https://www.youtube.com/embed/xxxxxxxx?autoplay=0&rel=0", 
-  videoTitle = "Guide d'utilisation de Klyra Hub" 
+  videoSrc = 'https://www.youtube.com/embed/xxxxxxxx?autoplay=0&rel=0', 
+  videoTitle = 'Guide d\'utilisation de Klyra Hub', 
 }: VideoWalkthroughProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <motion.div
@@ -95,5 +95,5 @@ export default function VideoWalkthrough({
         </AnimatePresence>
       )}
     </motion.div>
-  )
+  );
 } 

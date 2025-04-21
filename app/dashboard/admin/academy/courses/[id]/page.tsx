@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { 
   FileEdit, 
   Trash2, 
@@ -21,22 +21,22 @@ import {
   Lock,
   Unlock,
   GripVertical,
-  Layers
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
+  Layers,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Dialog,
   DialogContent,
@@ -45,39 +45,39 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { Course, CourseModule, CourseLesson, getCourseById, getCourseModules } from '@/lib/academy-service'
-import { supabase } from '@/lib/supabase'
+} from '@/components/ui/accordion';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { Course, CourseModule, CourseLesson, getCourseById, getCourseModules } from '@/lib/academy-service';
+import { supabase } from '@/lib/supabase';
 
 export default function CourseModulesManagementPage({ params }: { params: { id: string } }) {
   const courseId = params.id;
-  const [course, setCourse] = useState<Course | null>(null)
-  const [modules, setModules] = useState<CourseModule[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [course, setCourse] = useState<Course | null>(null);
+  const [modules, setModules] = useState<CourseModule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   // États pour les dialogues
-  const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false)
-  const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false)
-  const [editingModule, setEditingModule] = useState<CourseModule | null>(null)
-  const [editingLesson, setEditingLesson] = useState<CourseLesson | null>(null)
-  const [currentModuleId, setCurrentModuleId] = useState<string | null>(null)
+  const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
+  const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
+  const [editingModule, setEditingModule] = useState<CourseModule | null>(null);
+  const [editingLesson, setEditingLesson] = useState<CourseLesson | null>(null);
+  const [currentModuleId, setCurrentModuleId] = useState<string | null>(null);
   
   // Formulaire module
   const [moduleForm, setModuleForm] = useState({
     title: '',
     description: '',
-    order: 1
-  })
+    order: 1,
+  });
   
   // Formulaire leçon
   const [lessonForm, setLessonForm] = useState({
@@ -88,101 +88,103 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
     content: '',
     video_url: '',
     is_free: true,
-    order: 1
-  })
+    order: 1,
+  });
   
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
-  const { toast } = useToast()
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin && courseId) {
-      loadData()
+      loadData();
     }
-  }, [user, authLoading, isAdmin, router, courseId])
+  }, [user, authLoading, isAdmin, router, courseId]);
 
   const loadData = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Charger les informations du cours
-      const courseData = await getCourseById(courseId)
+      const courseData = await getCourseById(courseId);
       if (!courseData) {
         toast({
-          title: "Erreur",
-          description: "Cours introuvable",
-          variant: "destructive",
-        })
-        router.push('/dashboard/admin/academy/courses')
-        return
+          title: 'Erreur',
+          description: 'Cours introuvable',
+          variant: 'destructive',
+        });
+        router.push('/dashboard/admin/academy/courses');
+        return;
       }
-      setCourse(courseData)
+      setCourse(courseData);
       
       // Charger les modules et leçons
-      const modulesData = await getCourseModules(courseId)
-      setModules(modulesData)
+      const modulesData = await getCourseModules(courseId);
+      setModules(modulesData);
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('Error loading data:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les données.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les données.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Gestion des modules
   const openAddModuleDialog = () => {
-    setEditingModule(null)
+    setEditingModule(null);
     setModuleForm({
       title: '',
       description: '',
-      order: modules.length + 1
-    })
-    setIsModuleDialogOpen(true)
-  }
+      order: modules.length + 1,
+    });
+    setIsModuleDialogOpen(true);
+  };
 
   const openEditModuleDialog = (module: CourseModule) => {
-    setEditingModule(module)
+    setEditingModule(module);
     setModuleForm({
       title: module.title,
       description: module.description || '',
-      order: module.order
-    })
-    setIsModuleDialogOpen(true)
-  }
+      order: module.order,
+    });
+    setIsModuleDialogOpen(true);
+  };
 
   const handleModuleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
       const moduleData = {
         title: moduleForm.title,
         description: moduleForm.description,
         order: moduleForm.order,
         course_id: courseId,
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      };
 
       if (editingModule) {
         // Mettre à jour un module existant
         const { error } = await supabase
           .from('course_modules')
           .update(moduleData)
-          .eq('id', editingModule.id)
+          .eq('id', editingModule.id);
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
         
         toast({
-          title: "Succès",
-          description: "Module mis à jour avec succès",
-        })
+          title: 'Succès',
+          description: 'Module mis à jour avec succès',
+        });
       } else {
         // Créer un nouveau module
         const { error } = await supabase
@@ -190,65 +192,69 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
           .insert({
             ...moduleData,
             created_at: new Date().toISOString(),
-          })
+          });
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
         
         toast({
-          title: "Succès",
-          description: "Module créé avec succès",
-        })
+          title: 'Succès',
+          description: 'Module créé avec succès',
+        });
       }
 
-      setIsModuleDialogOpen(false)
-      await loadData()
+      setIsModuleDialogOpen(false);
+      await loadData();
     } catch (error) {
-      console.error('Error saving module:', error)
+      console.error('Error saving module:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder le module.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de sauvegarder le module.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleDeleteModule = async (moduleId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce module ? Toutes les leçons associées seront également supprimées.")) {
-      return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce module ? Toutes les leçons associées seront également supprimées.')) {
+      return;
     }
 
     try {
       const { error } = await supabase
         .from('course_modules')
         .delete()
-        .eq('id', moduleId)
+        .eq('id', moduleId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
       toast({
-        title: "Succès",
-        description: "Module supprimé avec succès",
-      })
+        title: 'Succès',
+        description: 'Module supprimé avec succès',
+      });
       
-      await loadData()
+      await loadData();
     } catch (error) {
-      console.error('Error deleting module:', error)
+      console.error('Error deleting module:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le module.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de supprimer le module.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   // Gestion des leçons
   const openAddLessonDialog = (moduleId: string) => {
-    setEditingLesson(null)
-    setCurrentModuleId(moduleId)
+    setEditingLesson(null);
+    setCurrentModuleId(moduleId);
     
     // Trouver le module pour déterminer l'ordre
-    const currentModule = modules.find(m => m.id === moduleId)
-    const nextOrder = currentModule ? currentModule.lessons.length + 1 : 1
+    const currentModule = modules.find(m => m.id === moduleId);
+    const nextOrder = currentModule ? currentModule.lessons.length + 1 : 1;
     
     setLessonForm({
       title: '',
@@ -258,15 +264,15 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
       content: '',
       video_url: '',
       is_free: true,
-      order: nextOrder
-    })
+      order: nextOrder,
+    });
     
-    setIsLessonDialogOpen(true)
-  }
+    setIsLessonDialogOpen(true);
+  };
 
   const openEditLessonDialog = (lesson: CourseLesson, moduleId: string) => {
-    setEditingLesson(lesson)
-    setCurrentModuleId(moduleId)
+    setEditingLesson(lesson);
+    setCurrentModuleId(moduleId);
     setLessonForm({
       title: lesson.title,
       description: lesson.description || '',
@@ -275,14 +281,16 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
       content: lesson.content || '',
       video_url: lesson.video_url || '',
       is_free: true,
-      order: lesson.order
-    })
-    setIsLessonDialogOpen(true)
-  }
+      order: lesson.order,
+    });
+    setIsLessonDialogOpen(true);
+  };
 
   const handleLessonSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!currentModuleId) return
+    e.preventDefault();
+    if (!currentModuleId) {
+      return;
+    }
     
     try {
       const lessonData = {
@@ -295,22 +303,24 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
         is_free: lessonForm.is_free,
         order: lessonForm.order,
         module_id: currentModuleId,
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      };
 
       if (editingLesson) {
         // Mettre à jour une leçon existante
         const { error } = await supabase
           .from('course_lessons')
           .update(lessonData)
-          .eq('id', editingLesson.id)
+          .eq('id', editingLesson.id);
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
         
         toast({
-          title: "Succès",
-          description: "Leçon mise à jour avec succès",
-        })
+          title: 'Succès',
+          description: 'Leçon mise à jour avec succès',
+        });
       } else {
         // Créer une nouvelle leçon
         const { error } = await supabase
@@ -318,88 +328,92 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
           .insert({
             ...lessonData,
             created_at: new Date().toISOString(),
-          })
+          });
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
         
         toast({
-          title: "Succès",
-          description: "Leçon créée avec succès",
-        })
+          title: 'Succès',
+          description: 'Leçon créée avec succès',
+        });
       }
 
-      setIsLessonDialogOpen(false)
-      await loadData()
+      setIsLessonDialogOpen(false);
+      await loadData();
     } catch (error) {
-      console.error('Error saving lesson:', error)
+      console.error('Error saving lesson:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder la leçon.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de sauvegarder la leçon.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette leçon ?")) {
-      return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette leçon ?')) {
+      return;
     }
 
     try {
       const { error } = await supabase
         .from('course_lessons')
         .delete()
-        .eq('id', lessonId)
+        .eq('id', lessonId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
       toast({
-        title: "Succès",
-        description: "Leçon supprimée avec succès",
-      })
+        title: 'Succès',
+        description: 'Leçon supprimée avec succès',
+      });
       
-      await loadData()
+      await loadData();
     } catch (error) {
-      console.error('Error deleting lesson:', error)
+      console.error('Error deleting lesson:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer la leçon.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de supprimer la leçon.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   // Fonction pour obtenir l'icône du type de leçon
   const getLessonTypeIcon = (type: string) => {
     switch (type) {
-      case 'video':
-        return <Video className="h-4 w-4" />
-      case 'text':
-        return <FileText className="h-4 w-4" />
-      case 'quiz':
-        return <MessageSquare className="h-4 w-4" />
-      default:
-        return <FileText className="h-4 w-4" />
+    case 'video':
+      return <Video className="h-4 w-4" />;
+    case 'text':
+      return <FileText className="h-4 w-4" />;
+    case 'quiz':
+      return <MessageSquare className="h-4 w-4" />;
+    default:
+      return <FileText className="h-4 w-4" />;
     }
-  }
+  };
 
   // Fonction pour déplacer un module vers le haut ou le bas
   const moveModule = async (moduleId: string, direction: 'up' | 'down') => {
-    const moduleIndex = modules.findIndex(m => m.id === moduleId)
+    const moduleIndex = modules.findIndex(m => m.id === moduleId);
     if (
       (direction === 'up' && moduleIndex === 0) || 
       (direction === 'down' && moduleIndex === modules.length - 1)
     ) {
-      return
+      return;
     }
 
-    const currentModule = modules[moduleIndex]
+    const currentModule = modules[moduleIndex];
     const newOrder = direction === 'up' 
       ? currentModule.order - 1 
-      : currentModule.order + 1
+      : currentModule.order + 1;
     
-    const otherModuleIndex = direction === 'up' ? moduleIndex - 1 : moduleIndex + 1
-    const otherModule = modules[otherModuleIndex]
+    const otherModuleIndex = direction === 'up' ? moduleIndex - 1 : moduleIndex + 1;
+    const otherModule = modules[otherModuleIndex];
     
     try {
       // Mettre à jour les deux modules concernés
@@ -411,47 +425,49 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
         supabase
           .from('course_modules')
           .update({ order: currentModule.order })
-          .eq('id', otherModule.id)
-      ]
+          .eq('id', otherModule.id),
+      ];
       
-      const results = await Promise.all(promises)
-      const errors = results.flatMap(r => r.error ? [r.error] : [])
+      const results = await Promise.all(promises);
+      const errors = results.flatMap(r => r.error ? [r.error] : []);
       
       if (errors.length > 0) {
-        throw errors[0]
+        throw errors[0];
       }
       
-      await loadData()
+      await loadData();
     } catch (error) {
-      console.error('Error reordering modules:', error)
+      console.error('Error reordering modules:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de réorganiser les modules.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de réorganiser les modules.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   // Fonction pour déplacer une leçon vers le haut ou le bas
   const moveLesson = async (lessonId: string, moduleId: string, direction: 'up' | 'down') => {
-    const module = modules.find(m => m.id === moduleId)
-    if (!module) return
+    const module = modules.find(m => m.id === moduleId);
+    if (!module) {
+      return;
+    }
     
-    const lessonIndex = module.lessons.findIndex(l => l.id === lessonId)
+    const lessonIndex = module.lessons.findIndex(l => l.id === lessonId);
     if (
       (direction === 'up' && lessonIndex === 0) || 
       (direction === 'down' && lessonIndex === module.lessons.length - 1)
     ) {
-      return
+      return;
     }
 
-    const currentLesson = module.lessons[lessonIndex]
+    const currentLesson = module.lessons[lessonIndex];
     const newOrder = direction === 'up' 
       ? currentLesson.order - 1 
-      : currentLesson.order + 1
+      : currentLesson.order + 1;
     
-    const otherLessonIndex = direction === 'up' ? lessonIndex - 1 : lessonIndex + 1
-    const otherLesson = module.lessons[otherLessonIndex]
+    const otherLessonIndex = direction === 'up' ? lessonIndex - 1 : lessonIndex + 1;
+    const otherLesson = module.lessons[otherLessonIndex];
     
     try {
       // Mettre à jour les deux leçons concernées
@@ -463,64 +479,66 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
         supabase
           .from('course_lessons')
           .update({ order: currentLesson.order })
-          .eq('id', otherLesson.id)
-      ]
+          .eq('id', otherLesson.id),
+      ];
       
-      const results = await Promise.all(promises)
-      const errors = results.flatMap(r => r.error ? [r.error] : [])
+      const results = await Promise.all(promises);
+      const errors = results.flatMap(r => r.error ? [r.error] : []);
       
       if (errors.length > 0) {
-        throw errors[0]
+        throw errors[0];
       }
       
-      await loadData()
+      await loadData();
     } catch (error) {
-      console.error('Error reordering lessons:', error)
+      console.error('Error reordering lessons:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de réorganiser les leçons.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de réorganiser les leçons.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   // Mise à jour du nombre de leçons dans le cours
   const updateCourseInfo = async () => {
     // Calculer le nombre total de leçons
-    const totalLessons = modules.reduce((count, module) => count + module.lessons.length, 0)
+    const totalLessons = modules.reduce((count, module) => count + module.lessons.length, 0);
     
     try {
       const { error } = await supabase
         .from('courses')
         .update({ 
           lessons: totalLessons,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', courseId)
+        .eq('id', courseId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
       // Recharger les données du cours
-      const courseData = await getCourseById(courseId)
+      const courseData = await getCourseById(courseId);
       if (courseData) {
-        setCourse(courseData)
+        setCourse(courseData);
       }
     } catch (error) {
-      console.error('Error updating course info:', error)
+      console.error('Error updating course info:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour les informations du cours.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour les informations du cours.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   // Mise à jour automatique du nombre de leçons lorsque les modules ou leçons changent
   useEffect(() => {
     if (modules.length > 0) {
-      updateCourseInfo()
+      updateCourseInfo();
     }
-  }, [modules])
+  }, [modules]);
 
   if (isLoading) {
     return (
@@ -536,7 +554,7 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
           <Skeleton className="h-40 w-full" />
         </div>
       </div>
-    )
+    );
   }
 
   if (!course) {
@@ -552,7 +570,7 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -594,8 +612,8 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
                 <p className="text-sm font-medium text-muted-foreground">Niveau</p>
                 <Badge className={
                   course.level === 'Débutant' ? 'bg-green-500' : 
-                  course.level === 'Intermédiaire' ? 'bg-blue-500' : 
-                  'bg-purple-500'
+                    course.level === 'Intermédiaire' ? 'bg-blue-500' : 
+                      'bg-purple-500'
                 }>
                   {course.level}
                 </Badge>
@@ -944,8 +962,8 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
                   rows={8}
                   placeholder={
                     lessonForm.type === 'text' 
-                      ? "Entrez le contenu textuel de la leçon (supporte le markdown)"
-                      : "Entrez les questions du quiz au format JSON ou texte structuré"
+                      ? 'Entrez le contenu textuel de la leçon (supporte le markdown)'
+                      : 'Entrez les questions du quiz au format JSON ou texte structuré'
                   }
                 />
               </div>
@@ -963,5 +981,5 @@ export default function CourseModulesManagementPage({ params }: { params: { id: 
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 } 

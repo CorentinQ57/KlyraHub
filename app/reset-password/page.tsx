@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { motion } from "framer-motion"
-import { Logo } from "@/components/Logo"
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Logo } from '@/components/Logo';
 
 // Background Mesh Component
 const BackgroundMesh = () => {
@@ -23,24 +23,24 @@ const BackgroundMesh = () => {
       </div>
       <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px]" />
     </div>
-  )
-}
+  );
+};
 
 export default function ResetPasswordPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const router = useRouter();
+  const searchParams = useSearchParams();
   
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [mounted, setMounted] = useState(false)
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
 
   // Set mounted state to true on client-side
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   // Check if there's a valid token in the URL
   useEffect(() => {
@@ -48,62 +48,62 @@ export default function ResetPasswordPage() {
       // This logic assumes Supabase handles the token verification automatically
       // but we need to check that we have the necessary parameters in the URL
       if (!searchParams || !searchParams.has('type') || searchParams.get('type') !== 'recovery') {
-        setError('Lien de réinitialisation invalide ou expiré. Veuillez demander un nouveau lien.')
+        setError('Lien de réinitialisation invalide ou expiré. Veuillez demander un nouveau lien.');
       }
     }
-  }, [searchParams, mounted])
+  }, [searchParams, mounted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setMessage('')
-    setError('')
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage('');
+    setError('');
 
     // Basic validation
     if (!password || !confirmPassword) {
-      setError('Veuillez remplir tous les champs')
-      setIsLoading(false)
-      return
+      setError('Veuillez remplir tous les champs');
+      setIsLoading(false);
+      return;
     }
 
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas')
-      setIsLoading(false)
-      return
+      setError('Les mots de passe ne correspondent pas');
+      setIsLoading(false);
+      return;
     }
 
     if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères')
-      setIsLoading(false)
-      return
+      setError('Le mot de passe doit contenir au moins 6 caractères');
+      setIsLoading(false);
+      return;
     }
 
     try {
       // Use Supabase's built-in function to update the password
       const { data, error } = await supabase.auth.updateUser({
-        password: password
-      })
+        password: password,
+      });
 
       if (error) {
-        setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe')
+        setError(error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe');
       } else {
-        setMessage('Votre mot de passe a été réinitialisé avec succès')
+        setMessage('Votre mot de passe a été réinitialisé avec succès');
         // Clear the form
-        setPassword('')
-        setConfirmPassword('')
+        setPassword('');
+        setConfirmPassword('');
         
         // Redirect after a short delay
         setTimeout(() => {
-          router.push('/login')
-        }, 3000)
+          router.push('/login');
+        }, 3000);
       }
     } catch (err) {
-      setError('Une erreur inattendue s\'est produite')
-      console.error('Password reset error:', err)
+      setError('Une erreur inattendue s\'est produite');
+      console.error('Password reset error:', err);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // If not mounted yet (server-side), don't show content to prevent hydration errors
   if (!mounted) {
@@ -122,7 +122,7 @@ export default function ResetPasswordPage() {
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -199,5 +199,5 @@ export default function ResetPasswordPage() {
         </motion.div>
       </main>
     </div>
-  )
+  );
 } 

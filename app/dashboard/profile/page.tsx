@@ -1,125 +1,125 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { updateProfile, getProfileData } from '@/lib/supabase'
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { User, KeyRound, ArrowLeft, Save, LogOut } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { updateProfile, getProfileData } from '@/lib/supabase';
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { User, KeyRound, ArrowLeft, Save, LogOut } from 'lucide-react';
 
 export default function ProfilePage() {
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [avatarUrl, setAvatarUrl] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [loadError, setLoadError] = useState(false)
-  const router = useRouter()
-  const { user, isLoading: authLoading, signOut } = useAuth()
-  const { toast } = useToast()
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const router = useRouter();
+  const { user, isLoading: authLoading, signOut } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && user) {
-      loadProfile()
+      loadProfile();
     } else if (!authLoading && !user) {
-      console.log('No authenticated user found, redirecting to login')
-      router.push('/login')
+      console.log('No authenticated user found, redirecting to login');
+      router.push('/login');
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading, router]);
 
   async function loadProfile() {
-    setLoadError(false)
-    setIsLoading(true)
+    setLoadError(false);
+    setIsLoading(true);
     
     try {
       if (!user) {
-        throw new Error('User not authenticated')
+        throw new Error('User not authenticated');
       }
       
-      setEmail(user.email || '')
+      setEmail(user.email || '');
 
-      const profileData = await getProfileData(user.id)
+      const profileData = await getProfileData(user.id);
       
       if (profileData) {
-        setFullName(profileData.full_name || '')
-        setAvatarUrl(profileData.avatar_url || '')
+        setFullName(profileData.full_name || '');
+        setAvatarUrl(profileData.avatar_url || '');
       } else {
-        console.warn('Profile data not found for user')
+        console.warn('Profile data not found for user');
       }
     } catch (error) {
-      console.error('Error loading profile:', error)
-      setLoadError(true)
+      console.error('Error loading profile:', error);
+      setLoadError(true);
       toast({
-        title: "Erreur de chargement",
-        description: "Impossible de charger les données du profil. Veuillez réessayer.",
-        variant: "destructive",
-      })
+        title: 'Erreur de chargement',
+        description: 'Impossible de charger les données du profil. Veuillez réessayer.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
     if (!user) {
       toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour mettre à jour votre profil",
-        variant: "destructive",
-      })
-      return
+        title: 'Erreur',
+        description: 'Vous devez être connecté pour mettre à jour votre profil',
+        variant: 'destructive',
+      });
+      return;
     }
     
-    setIsUpdating(true)
+    setIsUpdating(true);
     
     try {
       const updates = {
         id: user.id,
         full_name: fullName,
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      };
       
-      const updatedProfile = await updateProfile(user.id, updates)
+      const updatedProfile = await updateProfile(user.id, updates);
       
       if (updatedProfile) {
         toast({
-          title: "Profil mis à jour",
-          description: "Vos informations ont été mises à jour avec succès",
-        })
+          title: 'Profil mis à jour',
+          description: 'Vos informations ont été mises à jour avec succès',
+        });
       } else {
-        throw new Error('Failed to update profile')
+        throw new Error('Failed to update profile');
       }
     } catch (error) {
-      console.error('Error updating profile:', error)
+      console.error('Error updating profile:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le profil. Veuillez réessayer.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le profil. Veuillez réessayer.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsUpdating(false)
+      setIsUpdating(false);
     }
-  }
+  };
 
   const handleLogout = async () => {
     try {
-      await signOut()
-      router.push('/')
+      await signOut();
+      router.push('/');
     } catch (error) {
-      console.error('Error logging out:', error)
+      console.error('Error logging out:', error);
       toast({
-        title: "Erreur",
-        description: "Problème lors de la déconnexion. Veuillez réessayer.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Problème lors de la déconnexion. Veuillez réessayer.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   if (authLoading) {
     return (
@@ -131,7 +131,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </PageContainer>
-    )
+    );
   }
 
   if (isLoading) {
@@ -144,7 +144,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </PageContainer>
-    )
+    );
   }
 
   if (loadError) {
@@ -167,7 +167,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </PageContainer>
-    )
+    );
   }
 
   return (
@@ -226,7 +226,7 @@ export default function ProfilePage() {
                     disabled={isUpdating}
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    {isUpdating ? "Mise à jour..." : "Enregistrer les modifications"}
+                    {isUpdating ? 'Mise à jour...' : 'Enregistrer les modifications'}
                   </Button>
                 </div>
               </form>
@@ -273,5 +273,5 @@ export default function ProfilePage() {
         </div>
       </div>
     </PageContainer>
-  )
+  );
 } 

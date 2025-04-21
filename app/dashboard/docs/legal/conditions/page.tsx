@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import { 
   FileText, 
   ShieldCheck, 
@@ -14,37 +14,37 @@ import {
   Users,
   Check,
   X,
-  HelpCircle
-} from "lucide-react";
+  HelpCircle,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Politique de confidentialité",
-    href: "/dashboard/docs/legal/confidentialite",
+    title: 'Politique de confidentialité',
+    href: '/dashboard/docs/legal/confidentialite',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Contacter le support",
-    href: "/dashboard/docs/support/contact",
+    title: 'Contacter le support',
+    href: '/dashboard/docs/support/contact',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
 
 export default function TermsOfServicePage() {
   const [tocItems] = useState<TocItem[]>([
-    { id: "introduction", title: "Introduction", level: 2 },
-    { id: "definitions", title: "Définitions", level: 2 },
-    { id: "account", title: "Création et gestion de compte", level: 2 },
-    { id: "services", title: "Services proposés", level: 2 },
-    { id: "content", title: "Contenu et propriété intellectuelle", level: 2 },
-    { id: "payment", title: "Paiements et facturation", level: 2 },
-    { id: "restrictions", title: "Restrictions et obligations", level: 2 },
-    { id: "termination", title: "Résiliation et suspension", level: 2 },
-    { id: "warranty", title: "Garanties et responsabilité", level: 2 },
-    { id: "changes", title: "Modifications des conditions", level: 2 },
-    { id: "legal", title: "Dispositions légales", level: 2 },
-    { id: "contact", title: "Nous contacter", level: 2 },
+    { id: 'introduction', title: 'Introduction', level: 2 },
+    { id: 'definitions', title: 'Définitions', level: 2 },
+    { id: 'account', title: 'Création et gestion de compte', level: 2 },
+    { id: 'services', title: 'Services proposés', level: 2 },
+    { id: 'content', title: 'Contenu et propriété intellectuelle', level: 2 },
+    { id: 'payment', title: 'Paiements et facturation', level: 2 },
+    { id: 'restrictions', title: 'Restrictions et obligations', level: 2 },
+    { id: 'termination', title: 'Résiliation et suspension', level: 2 },
+    { id: 'warranty', title: 'Garanties et responsabilité', level: 2 },
+    { id: 'changes', title: 'Modifications des conditions', level: 2 },
+    { id: 'legal', title: 'Dispositions légales', level: 2 },
+    { id: 'contact', title: 'Nous contacter', level: 2 },
   ]);
 
   return (

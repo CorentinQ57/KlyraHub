@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { enforceTokenStorage, debugAuthState } from '@/lib/supabase'
-import { supabase } from '@/lib/supabase'
-import { AuthResponse } from '@supabase/supabase-js'
-import { useRouter, usePathname } from 'next/navigation'
-import LoadingScreen from '@/components/ui/LoadingScreen'
-import { toast } from '@/components/ui/use-toast'
-import { useSupabase } from '@/hooks/useSupabase'
-import { AuthChangeEvent, Session } from '@supabase/supabase-js'
-import { useToast } from '@/components/ui/use-toast'
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { enforceTokenStorage, debugAuthState } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import { AuthResponse } from '@supabase/supabase-js';
+import { useRouter, usePathname } from 'next/navigation';
+import LoadingScreen from '@/components/ui/LoadingScreen';
+import { toast } from '@/components/ui/use-toast';
+import { useSupabase } from '@/hooks/useSupabase';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { useToast } from '@/components/ui/use-toast';
 
 // Routes qui ne nécessitent pas d'authentification
 const PUBLIC_ROUTES = ['/login', '/signup', '/reset-password', '/success', '/docs', '/', '/services', '/about', '/contact'];
@@ -55,13 +55,15 @@ const loginRoutes = [
   '/login',
   '/register',
   '/forgot-password',
-  '/reset-password'
+  '/reset-password',
 ];
 
 // Vérifier si la route est publique
 function isPublicRoute(pathname: string) {
   // Vérifier les routes exactes
-  if (publicRoutes.includes(pathname)) return true;
+  if (publicRoutes.includes(pathname)) {
+    return true;
+  }
   
   // Vérifier les patterns de routes
   for (const route of publicRoutes) {
@@ -71,8 +73,12 @@ function isPublicRoute(pathname: string) {
   }
   
   // Vérifier les routes dynamiques de blog
-  if (pathname.startsWith('/blog/')) return true;
-  if (pathname.startsWith('/docs/')) return true;
+  if (pathname.startsWith('/blog/')) {
+    return true;
+  }
+  if (pathname.startsWith('/docs/')) {
+    return true;
+  }
   
   return false;
 }
@@ -129,9 +135,9 @@ export default function ClientTokenManager() {
         inDegradedMode.current = true;
         setState('degraded');
         toast({
-          title: "Mode dégradé activé",
-          description: "Trop de redirections détectées. L'application fonctionne en mode limité.",
-          variant: "destructive"
+          title: 'Mode dégradé activé',
+          description: 'Trop de redirections détectées. L\'application fonctionne en mode limité.',
+          variant: 'destructive',
         });
         
         // Forcer le mode dégradé pendant 2 minutes
@@ -201,16 +207,24 @@ export default function ClientTokenManager() {
   // Effet redirection avec protection améliorée
   useEffect(() => {
     // Si circuit breaker actif, ne pas rediriger
-    if (circuitBreakerRef.current) return;
+    if (circuitBreakerRef.current) {
+      return;
+    }
     
     // Ne pas rediriger en mode dégradé
-    if (state === 'degraded') return;
+    if (state === 'degraded') {
+      return;
+    }
     
     // Ne pas rediriger si en cours de chargement
-    if (state === 'loading') return;
+    if (state === 'loading') {
+      return;
+    }
     
     // Protection: ne pas rediriger si déjà redirigé récemment
-    if (hasRedirectedRef.current) return;
+    if (hasRedirectedRef.current) {
+      return;
+    }
     
     try {
       const now = Date.now();
@@ -318,9 +332,9 @@ export default function ClientTokenManager() {
           
           // Notification du mode dégradé
           toast({
-            title: "Mode dégradé activé",
-            description: "L'application fonctionne en mode limité suite à un problème d'authentification.",
-            variant: "destructive"
+            title: 'Mode dégradé activé',
+            description: 'L\'application fonctionne en mode limité suite à un problème d\'authentification.',
+            variant: 'destructive',
           });
           
           return;
@@ -358,7 +372,7 @@ export default function ClientTokenManager() {
       // Annuler le timeout car la réponse est arrivée
       clearTimeout(timeoutId);
         
-        if (error) {
+      if (error) {
         console.error('[ClientTokenManager] Error getting user:', error.message);
         
         // Réessayer avec backoff si ce n'est pas déjà une tentative
@@ -421,7 +435,7 @@ export default function ClientTokenManager() {
         // Lancer la vérification complète
         checkSession();
       }
-      } catch (error) {
+    } catch (error) {
       console.error('Error during initial auth check:', error);
       setState('unauthenticated'); // Fallback pour permettre la connexion
     }
@@ -460,7 +474,7 @@ export default function ClientTokenManager() {
     try {
       window.addEventListener('klyra:token-refreshed', handleTokenRefreshed);
       return () => window.removeEventListener('klyra:token-refreshed', handleTokenRefreshed);
-        } catch (error) {
+    } catch (error) {
       console.warn('Error setting up token refresh listener:', error);
     }
   }, [checkSession]);
@@ -529,9 +543,9 @@ export default function ClientTokenManager() {
         
         // Notification du mode dégradé
         toast({
-          title: "Mode dégradé activé",
-          description: "L'application fonctionne en mode limité suite à un problème d'authentification.",
-          variant: "destructive"
+          title: 'Mode dégradé activé',
+          description: 'L\'application fonctionne en mode limité suite à un problème d\'authentification.',
+          variant: 'destructive',
         });
       } else {
         // L'utilisateur a été récupéré avec succès
@@ -550,7 +564,7 @@ export default function ClientTokenManager() {
   const dispatchAuthEvent = useCallback((status: 'authenticated' | 'unauthenticated', user: any) => {
     // Créer et déclencher un événement global pour l'authentification
     const event = new CustomEvent('auth_state_change', { 
-      detail: { status, user } 
+      detail: { status, user }, 
     });
     window.dispatchEvent(event);
     

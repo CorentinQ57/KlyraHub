@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import {
   FileText,
   CheckCircle,
@@ -20,24 +20,24 @@ import {
   BookOpen,
   MessageSquare,
   Zap,
-  Monitor
-} from "lucide-react";
+  Monitor,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Processus de livraison",
-    href: "/dashboard/docs/services/processus-livraison",
+    title: 'Processus de livraison',
+    href: '/dashboard/docs/services/processus-livraison',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Livrables et formats",
-    href: "/dashboard/docs/services/livrables",
+    title: 'Livrables et formats',
+    href: '/dashboard/docs/services/livrables',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Cycle de vie d'un projet",
-    href: "/dashboard/docs/projets/cycle-vie",
+    title: 'Cycle de vie d\'un projet',
+    href: '/dashboard/docs/projets/cycle-vie',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
@@ -64,202 +64,202 @@ type Service = {
 // Catégories de services
 const serviceCategories: ServiceCategory[] = [
   {
-    id: "branding",
-    title: "Identité de marque",
-    description: "Construisez une marque forte et cohérente qui résonne avec votre public cible.",
+    id: 'branding',
+    title: 'Identité de marque',
+    description: 'Construisez une marque forte et cohérente qui résonne avec votre public cible.',
     icon: <PenTool className="h-6 w-6 text-primary" />,
     services: [
       {
-        id: "logo-design",
-        title: "Création de logo",
-        description: "Un logo unique et mémorable qui incarne l'essence de votre marque et renforce votre identité visuelle.",
-        price: "À partir de 490€",
-        duration: "2-3 semaines",
+        id: 'logo-design',
+        title: 'Création de logo',
+        description: 'Un logo unique et mémorable qui incarne l\'essence de votre marque et renforce votre identité visuelle.',
+        price: 'À partir de 490€',
+        duration: '2-3 semaines',
         highlights: [
-          "3 propositions de concepts",
-          "Jusqu'à 3 cycles de révisions",
-          "Fichiers sources et formats d'export",
-          "Guide d'utilisation du logo"
-        ]
+          '3 propositions de concepts',
+          'Jusqu\'à 3 cycles de révisions',
+          'Fichiers sources et formats d\'export',
+          'Guide d\'utilisation du logo',
+        ],
       },
       {
-        id: "brand-identity",
-        title: "Identité visuelle complète",
-        description: "Une identité de marque cohérente incluant logo, typographie, palette de couleurs et éléments graphiques.",
-        price: "À partir de 990€",
-        duration: "3-5 semaines",
+        id: 'brand-identity',
+        title: 'Identité visuelle complète',
+        description: 'Une identité de marque cohérente incluant logo, typographie, palette de couleurs et éléments graphiques.',
+        price: 'À partir de 990€',
+        duration: '3-5 semaines',
         highlights: [
-          "Création de logo",
-          "Système typographique et palette de couleurs",
-          "Éléments graphiques secondaires",
-          "Guide de style complet",
-          "Applications sur supports essentiels"
-        ]
+          'Création de logo',
+          'Système typographique et palette de couleurs',
+          'Éléments graphiques secondaires',
+          'Guide de style complet',
+          'Applications sur supports essentiels',
+        ],
       },
       {
-        id: "brand-refresh",
-        title: "Refonte d'identité",
-        description: "Modernisez votre marque existante tout en préservant sa reconnaissance et son héritage.",
-        price: "À partir de 790€",
-        duration: "2-4 semaines",
+        id: 'brand-refresh',
+        title: 'Refonte d\'identité',
+        description: 'Modernisez votre marque existante tout en préservant sa reconnaissance et son héritage.',
+        price: 'À partir de 790€',
+        duration: '2-4 semaines',
         highlights: [
-          "Analyse de l'identité existante",
-          "Évolution du logo et des éléments visuels",
-          "Mise à jour du guide de style",
-          "Adaptation aux supports numériques modernes"
-        ]
-      }
-    ]
+          'Analyse de l\'identité existante',
+          'Évolution du logo et des éléments visuels',
+          'Mise à jour du guide de style',
+          'Adaptation aux supports numériques modernes',
+        ],
+      },
+    ],
   },
   {
-    id: "web-design",
-    title: "Design Web & UI/UX",
-    description: "Créez des expériences digitales engageantes qui convertissent les visiteurs en clients.",
+    id: 'web-design',
+    title: 'Design Web & UI/UX',
+    description: 'Créez des expériences digitales engageantes qui convertissent les visiteurs en clients.',
     icon: <Layout className="h-6 w-6 text-primary" />,
     services: [
       {
-        id: "landing-page",
-        title: "Landing Page",
-        description: "Une page d'atterrissage optimisée pour la conversion, parfaite pour lancer un produit ou service.",
-        price: "À partir de 690€",
-        duration: "1-2 semaines",
+        id: 'landing-page',
+        title: 'Landing Page',
+        description: 'Une page d\'atterrissage optimisée pour la conversion, parfaite pour lancer un produit ou service.',
+        price: 'À partir de 690€',
+        duration: '1-2 semaines',
         highlights: [
-          "Design UI/UX optimisé pour la conversion",
-          "Structure de contenu persuasive",
-          "Compatible mobile et tablette",
-          "Maquettes Figma avec prototype interactif"
-        ]
+          'Design UI/UX optimisé pour la conversion',
+          'Structure de contenu persuasive',
+          'Compatible mobile et tablette',
+          'Maquettes Figma avec prototype interactif',
+        ],
       },
       {
-        id: "website-design",
-        title: "Site Web (5-8 pages)",
-        description: "Un site web professionnel et responsive qui présente efficacement votre entreprise et vos services.",
-        price: "À partir de 1490€",
-        duration: "3-5 semaines",
+        id: 'website-design',
+        title: 'Site Web (5-8 pages)',
+        description: 'Un site web professionnel et responsive qui présente efficacement votre entreprise et vos services.',
+        price: 'À partir de 1490€',
+        duration: '3-5 semaines',
         highlights: [
-          "Architecture d'information",
-          "Design UI/UX complet",
-          "Optimisation mobile-first",
-          "Maquettes Figma et prototype interactif",
-          "Guide de design pour développeurs"
-        ]
+          'Architecture d\'information',
+          'Design UI/UX complet',
+          'Optimisation mobile-first',
+          'Maquettes Figma et prototype interactif',
+          'Guide de design pour développeurs',
+        ],
       },
       {
-        id: "e-commerce",
-        title: "E-commerce",
-        description: "Une boutique en ligne complète conçue pour maximiser les ventes et offrir une expérience d'achat fluide.",
-        price: "À partir de 2490€",
-        duration: "4-8 semaines",
+        id: 'e-commerce',
+        title: 'E-commerce',
+        description: 'Une boutique en ligne complète conçue pour maximiser les ventes et offrir une expérience d\'achat fluide.',
+        price: 'À partir de 2490€',
+        duration: '4-8 semaines',
         highlights: [
-          "Architecture produits et panier",
-          "Parcours d'achat optimisé",
-          "Fiches produits et catalogues",
-          "Maquettes de toutes les pages clés",
-          "Système de design complet"
-        ]
-      }
-    ]
+          'Architecture produits et panier',
+          'Parcours d\'achat optimisé',
+          'Fiches produits et catalogues',
+          'Maquettes de toutes les pages clés',
+          'Système de design complet',
+        ],
+      },
+    ],
   },
   {
-    id: "development",
-    title: "Développement",
-    description: "Transformez vos designs en sites et applications fonctionnels avec nos services de développement.",
+    id: 'development',
+    title: 'Développement',
+    description: 'Transformez vos designs en sites et applications fonctionnels avec nos services de développement.',
     icon: <Code className="h-6 w-6 text-primary" />,
     services: [
       {
-        id: "frontend-dev",
-        title: "Intégration Front-end",
-        description: "Transformation de vos maquettes en code HTML/CSS/JS parfaitement responsive et optimisé.",
-        price: "À partir de 990€",
-        duration: "2-3 semaines",
+        id: 'frontend-dev',
+        title: 'Intégration Front-end',
+        description: 'Transformation de vos maquettes en code HTML/CSS/JS parfaitement responsive et optimisé.',
+        price: 'À partir de 990€',
+        duration: '2-3 semaines',
         highlights: [
-          "Intégration responsive",
-          "Optimisation des performances",
-          "Animations et interactions",
-          "Compatible avec tous les navigateurs",
-          "Code propre et documenté"
-        ]
+          'Intégration responsive',
+          'Optimisation des performances',
+          'Animations et interactions',
+          'Compatible avec tous les navigateurs',
+          'Code propre et documenté',
+        ],
       },
       {
-        id: "cms-implementation",
-        title: "Implémentation CMS",
-        description: "Mise en place d'un système de gestion de contenu pour vous permettre de gérer votre site facilement.",
-        price: "À partir de 1490€",
-        duration: "3-4 semaines",
+        id: 'cms-implementation',
+        title: 'Implémentation CMS',
+        description: 'Mise en place d\'un système de gestion de contenu pour vous permettre de gérer votre site facilement.',
+        price: 'À partir de 1490€',
+        duration: '3-4 semaines',
         highlights: [
-          "Installation et configuration",
-          "Intégration de votre design",
-          "Création de types de contenu personnalisés",
-          "Formation à l'utilisation",
-          "Documentation utilisateur"
-        ]
+          'Installation et configuration',
+          'Intégration de votre design',
+          'Création de types de contenu personnalisés',
+          'Formation à l\'utilisation',
+          'Documentation utilisateur',
+        ],
       },
       {
-        id: "webapp-dev",
-        title: "Application Web",
-        description: "Développement d'applications web complètes avec fonctionnalités avancées et back-end personnalisé.",
-        price: "Sur devis",
-        duration: "8-12 semaines",
+        id: 'webapp-dev',
+        title: 'Application Web',
+        description: 'Développement d\'applications web complètes avec fonctionnalités avancées et back-end personnalisé.',
+        price: 'Sur devis',
+        duration: '8-12 semaines',
         highlights: [
-          "Architecture technique complète",
-          "Développement front-end et back-end",
-          "Intégration d'API et services tiers",
-          "Tests et assurance qualité",
-          "Déploiement et maintenance"
-        ]
-      }
-    ]
+          'Architecture technique complète',
+          'Développement front-end et back-end',
+          'Intégration d\'API et services tiers',
+          'Tests et assurance qualité',
+          'Déploiement et maintenance',
+        ],
+      },
+    ],
   },
   {
-    id: "strategy",
-    title: "Stratégie & Marketing",
-    description: "Maximisez l'impact de votre présence en ligne grâce à des stratégies digitales ciblées et efficaces.",
+    id: 'strategy',
+    title: 'Stratégie & Marketing',
+    description: 'Maximisez l\'impact de votre présence en ligne grâce à des stratégies digitales ciblées et efficaces.',
     icon: <LineChart className="h-6 w-6 text-primary" />,
     services: [
       {
-        id: "brand-strategy",
-        title: "Stratégie de marque",
-        description: "Définissez le positionnement, la voix et la personnalité de votre marque pour vous démarquer de la concurrence.",
-        price: "À partir de 990€",
-        duration: "2-3 semaines",
+        id: 'brand-strategy',
+        title: 'Stratégie de marque',
+        description: 'Définissez le positionnement, la voix et la personnalité de votre marque pour vous démarquer de la concurrence.',
+        price: 'À partir de 990€',
+        duration: '2-3 semaines',
         highlights: [
-          "Analyse de marché et concurrentielle",
-          "Définition de positionnement",
-          "Plateforme de marque",
-          "Stratégie de différenciation",
-          "Guide de communication"
-        ]
+          'Analyse de marché et concurrentielle',
+          'Définition de positionnement',
+          'Plateforme de marque',
+          'Stratégie de différenciation',
+          'Guide de communication',
+        ],
       },
       {
-        id: "content-strategy",
-        title: "Stratégie de contenu",
-        description: "Plan stratégique pour créer et diffuser du contenu pertinent qui attire et engage votre audience cible.",
-        price: "À partir de 790€",
-        duration: "2-3 semaines",
+        id: 'content-strategy',
+        title: 'Stratégie de contenu',
+        description: 'Plan stratégique pour créer et diffuser du contenu pertinent qui attire et engage votre audience cible.',
+        price: 'À partir de 790€',
+        duration: '2-3 semaines',
         highlights: [
-          "Audit de contenu existant",
-          "Définition des personas",
-          "Planification éditoriale",
-          "Recommandations SEO",
-          "Guide de style rédactionnel"
-        ]
+          'Audit de contenu existant',
+          'Définition des personas',
+          'Planification éditoriale',
+          'Recommandations SEO',
+          'Guide de style rédactionnel',
+        ],
       },
       {
-        id: "digital-audit",
-        title: "Audit digital complet",
-        description: "Analyse approfondie de votre présence en ligne avec recommandations concrètes pour l'améliorer.",
-        price: "À partir de 690€",
-        duration: "1-2 semaines",
+        id: 'digital-audit',
+        title: 'Audit digital complet',
+        description: 'Analyse approfondie de votre présence en ligne avec recommandations concrètes pour l\'améliorer.',
+        price: 'À partir de 690€',
+        duration: '1-2 semaines',
         highlights: [
-          "Analyse du site web et UX",
-          "Audit SEO technique",
-          "Évaluation des réseaux sociaux",
-          "Analyse de la concurrence",
-          "Plan d'action prioritaire"
-        ]
-      }
-    ]
-  }
+          'Analyse du site web et UX',
+          'Audit SEO technique',
+          'Évaluation des réseaux sociaux',
+          'Analyse de la concurrence',
+          'Plan d\'action prioritaire',
+        ],
+      },
+    ],
+  },
 ];
 
 export default function ServiceCataloguePage() {
@@ -268,14 +268,14 @@ export default function ServiceCataloguePage() {
   // Générer la table des matières
   useEffect(() => {
     const items: TocItem[] = [
-      { id: "introduction", title: "Introduction", level: 2 },
+      { id: 'introduction', title: 'Introduction', level: 2 },
       ...serviceCategories.map((category) => ({
         id: category.id,
         title: category.title,
         level: 2,
       })),
-      { id: "custom-projects", title: "Projets sur mesure", level: 2 },
-      { id: "how-to-order", title: "Comment commander", level: 2 },
+      { id: 'custom-projects', title: 'Projets sur mesure', level: 2 },
+      { id: 'how-to-order', title: 'Comment commander', level: 2 },
     ];
     setTocItems(items);
   }, []);

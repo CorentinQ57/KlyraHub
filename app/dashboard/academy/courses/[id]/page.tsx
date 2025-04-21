@@ -1,153 +1,158 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { notFound } from 'next/navigation'
-import Image from 'next/image'
-import Link from 'next/link'
-import { ArrowLeft, BookOpen, Clock, Play, CheckCircle, Lock, Award, Users, Download, Video, FileText, MessageSquare, ExternalLink } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft, BookOpen, Clock, Play, CheckCircle, Lock, Award, Users, Download, Video, FileText, MessageSquare, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Components
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { AuroraBackground } from '@/components/ui/aurora-background'
-import { Separator } from '@/components/ui/separator'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Skeleton } from '@/components/ui/skeleton'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Services
-import { useAuth } from '@/lib/auth'
-import { Course, CourseModule, CourseLesson, getCourseById, getCourseModules } from '@/lib/academy-service'
+import { useAuth } from '@/lib/auth';
+import { Course, CourseModule, CourseLesson, getCourseById, getCourseModules } from '@/lib/academy-service';
 
 export default function CoursePage({ params }: { params: { id: string } }) {
-  const { user } = useAuth()
-  const [loading, setLoading] = useState(true)
-  const [course, setCourse] = useState<Course | null>(null)
-  const [modules, setModules] = useState<CourseModule[]>([])
-  const [activeTab, setActiveTab] = useState('overview')
-  const [selectedLesson, setSelectedLesson] = useState<CourseLesson | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [modules, setModules] = useState<CourseModule[]>([]);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedLesson, setSelectedLesson] = useState<CourseLesson | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Récupérer les données du cours et des modules
   useEffect(() => {
     const fetchCourseData = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
-        const courseData = await getCourseById(params.id)
+        const courseData = await getCourseById(params.id);
         
         if (!courseData) {
-          return notFound()
+          return notFound();
         }
         
-        setCourse(courseData)
+        setCourse(courseData);
         
         // Récupérer les modules et leçons
-        const modulesData = await getCourseModules(params.id)
-        setModules(modulesData)
+        const modulesData = await getCourseModules(params.id);
+        setModules(modulesData);
         
         // Définir la première leçon comme sélectionnée par défaut
         if (modulesData.length > 0 && modulesData[0].lessons.length > 0) {
-          setSelectedLesson(modulesData[0].lessons[0])
+          setSelectedLesson(modulesData[0].lessons[0]);
         }
       } catch (error) {
-        console.error("Erreur lors du chargement du cours:", error)
+        console.error('Erreur lors du chargement du cours:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
     
-    fetchCourseData()
-  }, [params.id])
+    fetchCourseData();
+  }, [params.id]);
 
   // Fonction pour détecter si l'URL est une vidéo (YouTube ou Vimeo)
   const isVideoUrl = (url?: string) => {
-    if (!url) return false
-    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')
-  }
+    if (!url) {
+      return false;
+    }
+    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com');
+  };
 
   // Fonction pour convertir les URLs YouTube/Vimeo en URLs d'intégration
   const getEmbedUrl = (url: string | undefined) => {
-    if (!url) return ''
+    if (!url) {
+      return '';
+    }
     
     try {
       // Conversion des URLs YouTube standard (watch?v=...)
       if (url.includes('youtube.com/watch')) {
-        const videoId = new URL(url).searchParams.get('v')
+        const videoId = new URL(url).searchParams.get('v');
         if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`
+          return `https://www.youtube.com/embed/${videoId}`;
         }
       }
       
       // Conversion des URLs YouTube courtes (youtu.be/...)
       if (url.includes('youtu.be/')) {
-        const videoId = url.split('youtu.be/')[1]?.split('?')[0]
+        const videoId = url.split('youtu.be/')[1]?.split('?')[0];
         if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`
+          return `https://www.youtube.com/embed/${videoId}`;
         }
       }
       
       // Conversion des URLs Vimeo
       if (url.includes('vimeo.com/')) {
-        const videoId = url.split('vimeo.com/')[1]?.split('?')[0]
+        const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
         if (videoId) {
-          return `https://player.vimeo.com/video/${videoId}`
+          return `https://player.vimeo.com/video/${videoId}`;
         }
       }
       
-      return url
+      return url;
     } catch (error) {
-      console.error('Erreur lors de la conversion de l\'URL:', error)
-      return url
+      console.error('Erreur lors de la conversion de l\'URL:', error);
+      return url;
     }
-  }
+  };
 
   // Fonction pour formater la durée totale
   const formatTotalDuration = () => {
     // Calculer la durée totale des leçons (en supposant un format comme "15-20 min")
-    let totalMinutes = 0
+    let totalMinutes = 0;
     
     modules.forEach(module => {
       module.lessons.forEach(lesson => {
         // Extraire les minutes du format "XX-YY min" ou "XX min"
-        const durationText = lesson.duration
+        const durationText = lesson.duration;
         const minutes = durationText.includes('-')
           ? parseInt(durationText.split('-')[1])
-          : parseInt(durationText)
+          : parseInt(durationText);
           
         if (!isNaN(minutes)) {
-          totalMinutes += minutes
+          totalMinutes += minutes;
         }
-      })
-    })
+      });
+    });
     
     // Formater en heures et minutes
     if (totalMinutes >= 60) {
-      const hours = Math.floor(totalMinutes / 60)
-      const minutes = totalMinutes % 60
-      return `${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`;
     } else {
-      return `${totalMinutes} min`
+      return `${totalMinutes} min`;
     }
-  }
+  };
 
   // Composant pour afficher une leçon
   const LessonItem = ({ lesson, moduleId }: { lesson: CourseLesson, moduleId: string }) => {
-    const isActive = selectedLesson?.id === lesson.id
+    const isActive = selectedLesson?.id === lesson.id;
     
     const handleLessonClick = () => {
-      // Sélectionner la leçon pour l'affichage dans l'onglet
+      // Sélectionner la leçon pour l'affichage
       setSelectedLesson(lesson);
-      
-      // Activer l'onglet leçon
-      setActiveTab('lesson');
       
       // Réinitialiser l'état de lecture pour la nouvelle leçon
       setIsPlaying(false);
-    }
+      
+      // Faire défiler la page vers le haut pour voir la vidéo
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
     
     return (
       <div 
@@ -176,8 +181,54 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           <CheckCircle className={`h-5 w-5 ${isActive ? 'text-blue-500' : 'text-gray-300'}`} />
         </div>
       </div>
-    )
-  }
+    );
+  };
+
+  const getPreviousLesson = () => {
+    if (!selectedLesson || !modules) {
+      return null;
+    }
+    
+    let previousLesson: CourseLesson | null = null;
+    for (let i = 0; i < modules.length; i++) {
+      const moduleIndex = modules[i].lessons.findIndex(lesson => lesson.id === selectedLesson.id);
+      if (moduleIndex !== -1) {
+        if (moduleIndex > 0) {
+          previousLesson = modules[i].lessons[moduleIndex - 1];
+        } else if (i > 0) {
+          previousLesson = modules[i - 1].lessons[modules[i - 1].lessons.length - 1];
+        }
+        break;
+      }
+    }
+    return previousLesson;
+  };
+
+  const getNextLesson = () => {
+    if (!selectedLesson || !modules) {
+      return null;
+    }
+    
+    let nextLesson: CourseLesson | null = null;
+    for (let i = 0; i < modules.length; i++) {
+      const moduleIndex = modules[i].lessons.findIndex(lesson => lesson.id === selectedLesson.id);
+      if (moduleIndex !== -1) {
+        if (moduleIndex < modules[i].lessons.length - 1) {
+          nextLesson = modules[i].lessons[moduleIndex + 1];
+        } else if (i < modules.length - 1) {
+          nextLesson = modules[i + 1].lessons[0];
+        }
+        break;
+      }
+    }
+    return nextLesson;
+  };
+
+  const handleLessonClick = (lesson: CourseLesson | null) => {
+    if (lesson) {
+      setSelectedLesson(lesson);
+    }
+  };
 
   if (loading) {
     return (
@@ -207,11 +258,11 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           </PageSection>
         </PageContainer>
       </AuroraBackground>
-    )
+    );
   }
 
   if (!course) {
-    return notFound()
+    return notFound();
   }
 
   // Debug - Afficher les informations sur la vidéo sélectionnée
@@ -238,7 +289,22 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="col-span-1 lg:col-span-2">
               <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative">
-                {course.video_url ? (
+                {selectedLesson ? (
+                  selectedLesson.type === 'video' && selectedLesson.video_url ? (
+                    <iframe 
+                      className="w-full h-full border-0"
+                      src={getEmbedUrl(selectedLesson.video_url)}
+                      title={selectedLesson.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <FileText className="h-20 w-20 text-gray-400" />
+                    </div>
+                  )
+                ) : course.video_url ? (
                   <iframe 
                     className="w-full h-full border-0"
                     src={getEmbedUrl(course.video_url)}
@@ -273,10 +339,50 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 )}
               </div>
 
+              {selectedLesson && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold">{selectedLesson.title}</h2>
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <Clock className="h-4 w-4" />
+                      <span>{selectedLesson.duration}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="prose max-w-none">
+                    <p>{selectedLesson.description || 'Contenu de la leçon en cours de développement.'}</p>
+                    {selectedLesson.content && (
+                      <div dangerouslySetInnerHTML={{ __html: selectedLesson.content || '' }} />
+                    )}
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleLessonClick(getPreviousLesson())}
+                      disabled={!selectedLesson || !getPreviousLesson()}
+                      className="flex items-center space-x-2"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>Précédent</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleLessonClick(getNextLesson())}
+                      disabled={!selectedLesson || !getNextLesson()}
+                      className="flex items-center space-x-2"
+                    >
+                      <span>Suivant</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2 mt-4 mb-6">
                 <Badge className={
                   course.level === 'Débutant' ? 'bg-green-500' :
-                  course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
+                    course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
                 }>
                   {course.level}
                 </Badge>
@@ -357,9 +463,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-              {selectedLesson && (
-                <TabsTrigger value="lesson">Leçon en cours</TabsTrigger>
-              )}
             </TabsList>
             
             <TabsContent value="overview" className="mt-0">
@@ -388,7 +491,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       <p className="font-medium">{new Date(course.updated_at).toLocaleDateString('fr-FR', { 
                         year: 'numeric', 
                         month: 'long', 
-                        day: 'numeric' 
+                        day: 'numeric', 
                       })}</p>
                     </div>
                     <div>
@@ -490,129 +593,9 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 </Card>
               </div>
             </TabsContent>
-            
-            {selectedLesson && (
-              <TabsContent value="lesson" className="mt-0">
-                <div className="grid grid-cols-1 gap-6">
-                  <ContentCard>
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold">{selectedLesson.title}</h2>
-                      
-                      <div className="flex items-center gap-4">
-                        <Link href={`/dashboard/academy/lessons/${selectedLesson.id}`}>
-                          <Button variant="outline" size="sm">
-                            Voir en plein écran
-                            <ExternalLink className="ml-2 h-4 w-4" />
-                          </Button>
-                        </Link>
-                        
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <Clock className="h-4 w-4" />
-                          <span>{selectedLesson.duration}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {selectedLesson && selectedLesson.type === 'video' && (
-                      <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative mb-6">
-                        {/* Afficher toujours l'iframe pour la vidéo, sans condition sur isPlaying */}
-                        <iframe 
-                          className="w-full h-full border-0"
-                          src={getEmbedUrl(selectedLesson.video_url)}
-                          title={selectedLesson.title || "Vidéo du cours"}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="prose max-w-none">
-                      <p>
-                        {selectedLesson.description || 'Contenu de la leçon en cours de développement.'}
-                      </p>
-                      
-                      {selectedLesson.content ? (
-                        <div dangerouslySetInnerHTML={{ __html: selectedLesson.content }} />
-                      ) : (
-                        <>
-                          <p>
-                            Dans cette leçon, nous allons explorer les concepts fondamentaux et les principes clés
-                            qui vous permettront de maîtriser ce sujet important. Vous apprendrez des techniques
-                            pratiques et des approches méthodiques pour résoudre les problèmes courants.
-                          </p>
-                          <h3>Points clés de cette leçon</h3>
-                          <ul>
-                            <li>Comprendre les principes fondamentaux et leur application</li>
-                            <li>Développer une approche méthodique pour résoudre les problèmes</li>
-                            <li>Appliquer les techniques dans des situations réelles</li>
-                            <li>Éviter les erreurs communes et les pièges</li>
-                          </ul>
-                          <p>
-                            Cette leçon contient des exercices pratiques et des exemples concrets pour vous aider
-                            à mieux comprendre et appliquer les concepts présentés.
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="mt-8 pt-6 border-t flex items-center justify-between">
-                      <Button 
-                        variant="outline" 
-                        disabled={
-                          modules[0].lessons[0].id === selectedLesson.id
-                        }
-                        onClick={() => {
-                          // Trouver la leçon précédente
-                          let found = false
-                          
-                          for (const module of modules) {
-                            for (let i = 0; i < module.lessons.length; i++) {
-                              if (module.lessons[i].id === selectedLesson.id && i > 0) {
-                                setSelectedLesson(module.lessons[i - 1])
-                                found = true
-                                break
-                              }
-                            }
-                            if (found) break
-                          }
-                        }}
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Leçon précédente
-                      </Button>
-                      
-                      <Button 
-                        disabled={
-                          modules[modules.length - 1].lessons[modules[modules.length - 1].lessons.length - 1].id === selectedLesson.id
-                        }
-                        onClick={() => {
-                          // Trouver la leçon suivante
-                          let found = false
-                          
-                          for (const module of modules) {
-                            for (let i = 0; i < module.lessons.length; i++) {
-                              if (module.lessons[i].id === selectedLesson.id && i < module.lessons.length - 1) {
-                                setSelectedLesson(module.lessons[i + 1])
-                                found = true
-                                break
-                              }
-                            }
-                            if (found) break
-                          }
-                        }}
-                      >
-                        Leçon suivante
-                        <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
-                      </Button>
-                    </div>
-                  </ContentCard>
-                </div>
-              </TabsContent>
-            )}
           </Tabs>
         </PageSection>
       </PageContainer>
     </AuroraBackground>
-  )
+  );
 } 

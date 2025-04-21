@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/components/ui/use-toast'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Service {
   id: string
@@ -29,28 +29,28 @@ interface Category {
 }
 
 export default function AdminServices() {
-  const { toast } = useToast()
-  const [services, setServices] = useState<Service[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [showAddService, setShowAddService] = useState(false)
-  const [showAddCategory, setShowAddCategory] = useState(false)
+  const { toast } = useToast();
+  const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAddService, setShowAddService] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
   
   // Nouveaux services
-  const [newServiceName, setNewServiceName] = useState('')
-  const [newServiceDescription, setNewServiceDescription] = useState('')
-  const [newServicePrice, setNewServicePrice] = useState('')
-  const [newServiceDuration, setNewServiceDuration] = useState('')
-  const [newServiceCategoryId, setNewServiceCategoryId] = useState('')
-  const [newServiceImage, setNewServiceImage] = useState<File | null>(null)
+  const [newServiceName, setNewServiceName] = useState('');
+  const [newServiceDescription, setNewServiceDescription] = useState('');
+  const [newServicePrice, setNewServicePrice] = useState('');
+  const [newServiceDuration, setNewServiceDuration] = useState('');
+  const [newServiceCategoryId, setNewServiceCategoryId] = useState('');
+  const [newServiceImage, setNewServiceImage] = useState<File | null>(null);
   
   // Nouvelle catégorie
-  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryName, setNewCategoryName] = useState('');
   
   useEffect(() => {
-    fetchServices()
-    fetchCategories()
-  }, [])
+    fetchServices();
+    fetchCategories();
+  }, []);
   
   const fetchServices = async () => {
     try {
@@ -60,72 +60,78 @@ export default function AdminServices() {
           *,
           category:categories(id, name)
         `)
-        .order('name')
+        .order('name');
       
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
-      setServices(data || [])
+      setServices(data || []);
     } catch (error) {
-      console.error('Error fetching services:', error)
+      console.error('Error fetching services:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les services",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les services',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
   
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('name')
+        .order('name');
       
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
-      setCategories(data || [])
+      setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error)
+      console.error('Error fetching categories:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les catégories",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les catégories',
+        variant: 'destructive',
+      });
     }
-  }
+  };
   
   const addService = async () => {
     try {
       if (!newServiceName || !newServiceDescription || !newServicePrice || !newServiceDuration || !newServiceCategoryId) {
         return toast({
-          title: "Champs manquants",
-          description: "Veuillez remplir tous les champs obligatoires",
-          variant: "destructive"
-        })
+          title: 'Champs manquants',
+          description: 'Veuillez remplir tous les champs obligatoires',
+          variant: 'destructive',
+        });
       }
       
-      let imageUrl = null
+      let imageUrl = null;
       
       // Upload image if provided
       if (newServiceImage) {
-        const fileExt = newServiceImage.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-        const filePath = `services/${fileName}`
+        const fileExt = newServiceImage.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `services/${fileName}`;
         
         const { error: uploadError } = await supabase.storage
           .from('images')
-          .upload(filePath, newServiceImage)
+          .upload(filePath, newServiceImage);
           
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          throw uploadError;
+        }
         
         const { data: urlData } = supabase.storage
           .from('images')
-          .getPublicUrl(filePath)
+          .getPublicUrl(filePath);
           
-        imageUrl = urlData.publicUrl
+        imageUrl = urlData.publicUrl;
       }
       
       // Add service to database
@@ -138,104 +144,110 @@ export default function AdminServices() {
           duration: parseInt(newServiceDuration),
           category_id: newServiceCategoryId,
           image_url: imageUrl,
-          active: true
-        })
+          active: true,
+        });
         
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
       toast({
-        title: "Service ajouté",
-        description: "Le service a été ajouté avec succès"
-      })
+        title: 'Service ajouté',
+        description: 'Le service a été ajouté avec succès',
+      });
       
       // Reset form
-      setNewServiceName('')
-      setNewServiceDescription('')
-      setNewServicePrice('')
-      setNewServiceDuration('')
-      setNewServiceCategoryId('')
-      setNewServiceImage(null)
-      setShowAddService(false)
+      setNewServiceName('');
+      setNewServiceDescription('');
+      setNewServicePrice('');
+      setNewServiceDuration('');
+      setNewServiceCategoryId('');
+      setNewServiceImage(null);
+      setShowAddService(false);
       
       // Refresh services
-      fetchServices()
+      fetchServices();
       
     } catch (error) {
-      console.error('Error adding service:', error)
+      console.error('Error adding service:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter le service",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter le service',
+        variant: 'destructive',
+      });
     }
-  }
+  };
   
   const addCategory = async () => {
     try {
       if (!newCategoryName) {
         return toast({
-          title: "Champ manquant",
-          description: "Veuillez entrer un nom de catégorie",
-          variant: "destructive"
-        })
+          title: 'Champ manquant',
+          description: 'Veuillez entrer un nom de catégorie',
+          variant: 'destructive',
+        });
       }
       
       const { error } = await supabase
         .from('categories')
         .insert({
-          name: newCategoryName
-        })
+          name: newCategoryName,
+        });
         
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
       toast({
-        title: "Catégorie ajoutée",
-        description: "La catégorie a été ajoutée avec succès"
-      })
+        title: 'Catégorie ajoutée',
+        description: 'La catégorie a été ajoutée avec succès',
+      });
       
       // Reset form
-      setNewCategoryName('')
-      setShowAddCategory(false)
+      setNewCategoryName('');
+      setShowAddCategory(false);
       
       // Refresh categories
-      fetchCategories()
+      fetchCategories();
       
     } catch (error) {
-      console.error('Error adding category:', error)
+      console.error('Error adding category:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter la catégorie",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter la catégorie',
+        variant: 'destructive',
+      });
     }
-  }
+  };
   
   const toggleServiceStatus = async (serviceId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
         .from('services')
         .update({ active: !currentStatus })
-        .eq('id', serviceId)
+        .eq('id', serviceId);
         
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
       toast({
-        title: "Statut modifié",
-        description: `Le service est maintenant ${!currentStatus ? 'actif' : 'inactif'}`
-      })
+        title: 'Statut modifié',
+        description: `Le service est maintenant ${!currentStatus ? 'actif' : 'inactif'}`,
+      });
       
       // Refresh services
-      fetchServices()
+      fetchServices();
       
     } catch (error) {
-      console.error('Error toggling service status:', error)
+      console.error('Error toggling service status:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de modifier le statut du service",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de modifier le statut du service',
+        variant: 'destructive',
+      });
     }
-  }
+  };
   
   if (isLoading) {
     return (
@@ -245,7 +257,7 @@ export default function AdminServices() {
           <p className="mt-4 text-lg">Chargement des services...</p>
         </div>
       </div>
-    )
+    );
   }
   
   return (
@@ -285,8 +297,8 @@ export default function AdminServices() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setShowAddCategory(false)
-                    setNewCategoryName('')
+                    setShowAddCategory(false);
+                    setNewCategoryName('');
                   }}
                 >
                   Annuler
@@ -381,13 +393,13 @@ export default function AdminServices() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setShowAddService(false)
-                    setNewServiceName('')
-                    setNewServiceDescription('')
-                    setNewServicePrice('')
-                    setNewServiceDuration('')
-                    setNewServiceCategoryId('')
-                    setNewServiceImage(null)
+                    setShowAddService(false);
+                    setNewServiceName('');
+                    setNewServiceDescription('');
+                    setNewServicePrice('');
+                    setNewServiceDuration('');
+                    setNewServiceCategoryId('');
+                    setNewServiceImage(null);
                   }}
                 >
                   Annuler
@@ -497,9 +509,9 @@ export default function AdminServices() {
                           </Button>
                         </Link>
                         <Button
-                          variant={service.active ? "outline" : "default"}
+                          variant={service.active ? 'outline' : 'default'}
                           size="sm"
-                          className={service.active ? "text-red-500 hover:text-red-700 hover:bg-red-50" : "bg-green-600 hover:bg-green-700"}
+                          className={service.active ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'bg-green-600 hover:bg-green-700'}
                           onClick={() => toggleServiceStatus(service.id, service.active)}
                         >
                           {service.active ? 'Désactiver' : 'Activer'}
@@ -514,5 +526,5 @@ export default function AdminServices() {
         </div>
       </div>
     </div>
-  )
+  );
 } 

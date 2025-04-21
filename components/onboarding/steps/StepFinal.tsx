@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { CheckCircle2 } from 'lucide-react'
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle2 } from 'lucide-react';
 
 interface StepFinalProps {
   data: {
@@ -25,20 +25,20 @@ const getSectorName = (id: string) => {
     'healthcare': 'Santé',
     'education': 'Éducation',
     'retail': 'Commerce',
-    'manufacturing': 'Industrie'
-  }
-  return sectors[id as keyof typeof sectors] || id
-}
+    'manufacturing': 'Industrie',
+  };
+  return sectors[id as keyof typeof sectors] || id;
+};
 
 const getCompanySizeName = (id: string) => {
   const sizes = {
     'solo': 'Entrepreneur individuel',
     'small': 'Petite entreprise (2-10)',
     'medium': 'Moyenne entreprise (11-50)',
-    'large': 'Grande entreprise (51+)'
-  }
-  return sizes[id as keyof typeof sizes] || id
-}
+    'large': 'Grande entreprise (51+)',
+  };
+  return sizes[id as keyof typeof sizes] || id;
+};
 
 const getNeedName = (id: string) => {
   const needs = {
@@ -47,40 +47,40 @@ const getNeedName = (id: string) => {
     'marketing': 'Marketing numérique',
     'ui-ux': 'UI/UX Design',
     'social': 'Réseaux sociaux',
-    'content': 'Création de contenu'
-  }
-  return needs[id as keyof typeof needs] || id
-}
+    'content': 'Création de contenu',
+  };
+  return needs[id as keyof typeof needs] || id;
+};
 
 const getStyleName = (id: string) => {
   const styles = {
     'minimal': 'Minimaliste',
     'bold': 'Audacieux',
     'classic': 'Classique',
-    'playful': 'Ludique'
-  }
-  return styles[id as keyof typeof styles] || id
-}
+    'playful': 'Ludique',
+  };
+  return styles[id as keyof typeof styles] || id;
+};
 
 const getCommunicationStyleName = (id: string) => {
   const styles = {
     'direct': 'Direct et concis',
     'detailed': 'Détaillé et explicatif',
     'casual': 'Décontracté et amical',
-    'formal': 'Formel et professionnel'
-  }
-  return styles[id as keyof typeof styles] || id
-}
+    'formal': 'Formel et professionnel',
+  };
+  return styles[id as keyof typeof styles] || id;
+};
 
 const getTimeManagementName = (id: string) => {
   const styles = {
     'flexible': 'Flexible et adaptable',
     'structured': 'Structuré et planifié',
     'deadline': 'Focalisé sur les deadlines',
-    'proactive': 'Proactif et anticipatif'
-  }
-  return styles[id as keyof typeof styles] || id
-}
+    'proactive': 'Proactif et anticipatif',
+  };
+  return styles[id as keyof typeof styles] || id;
+};
 
 export default function StepFinal({ data, onComplete }: StepFinalProps) {
   return (
@@ -100,7 +100,7 @@ export default function StepFinal({ data, onComplete }: StepFinalProps) {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.5 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.5 }}
           >
             <CheckCircle2 className="w-16 h-16 text-green-500" />
           </motion.div>
@@ -166,5 +166,5 @@ export default function StepFinal({ data, onComplete }: StepFinalProps) {
         </Button>
       </motion.div>
     </motion.div>
-  )
+  );
 } 

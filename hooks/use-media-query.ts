@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 export function useMediaQuery() {
   const [isMobile, setIsMobile] = useState(false);
@@ -15,10 +15,10 @@ export function useMediaQuery() {
     checkIfMobile();
     
     // Ajouter un listener pour les changements de taille d'écran
-    window.addEventListener("resize", checkIfMobile);
+    window.addEventListener('resize', checkIfMobile);
     
     // Nettoyage lors du démontage du composant
-    return () => window.removeEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
   return { isMobile };

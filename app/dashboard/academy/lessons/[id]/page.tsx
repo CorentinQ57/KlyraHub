@@ -1,37 +1,39 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Clock, Play, ArrowUp, ExternalLink } from 'lucide-react'
-import Image from 'next/image'
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { ArrowLeft, Clock, Play, ArrowUp, ExternalLink } from 'lucide-react';
+import Image from 'next/image';
 
-import { AuroraBackground } from '@/components/ui/aurora-background'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { PageContainer, PageSection, ContentCard } from '@/components/ui/page-container'
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { PageContainer, PageSection, ContentCard } from '@/components/ui/page-container';
 
-import { supabase } from '@/lib/supabase'
-import { CourseLesson, CourseModule, getCourseModules } from '@/lib/academy-service'
+import { supabase } from '@/lib/supabase';
+import { CourseLesson, CourseModule, getCourseModules } from '@/lib/academy-service';
 
 export default function LessonPage() {
-  const router = useRouter()
-  const params = useParams()
-  const lessonId = params.id as string
+  const router = useRouter();
+  const params = useParams();
+  const lessonId = params.id as string;
   
-  const [loading, setLoading] = useState(true)
-  const [lesson, setLesson] = useState<CourseLesson | null>(null)
-  const [courseId, setCourseId] = useState<string | null>(null)
-  const [courseTitle, setCourseTitle] = useState<string | null>(null)
-  const [module, setModule] = useState<CourseModule | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [nextLesson, setNextLesson] = useState<CourseLesson | null>(null)
-  const [prevLesson, setPrevLesson] = useState<CourseLesson | null>(null)
+  const [loading, setLoading] = useState(true);
+  const [lesson, setLesson] = useState<CourseLesson | null>(null);
+  const [courseId, setCourseId] = useState<string | null>(null);
+  const [courseTitle, setCourseTitle] = useState<string | null>(null);
+  const [module, setModule] = useState<CourseModule | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [nextLesson, setNextLesson] = useState<CourseLesson | null>(null);
+  const [prevLesson, setPrevLesson] = useState<CourseLesson | null>(null);
   
   // Fonction pour convertir les URLs YouTube en URLs d'intégration
   const getEmbedUrl = (url: string | undefined) => {
-    if (!url) return 'https://www.youtube.com/embed/dQw4w9WgXcQ'; // URL de fallback pour tester
+    if (!url) {
+      return 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+    } // URL de fallback pour tester
     
     try {
       // Conversion des URLs YouTube standard (watch?v=...)
@@ -72,7 +74,7 @@ export default function LessonPage() {
   useEffect(() => {
     async function fetchLessonData() {
       try {
-        setLoading(true)
+        setLoading(true);
         
         // Récupérer la leçon depuis Supabase
         const { data: lessonData, error: lessonError } = await supabase
@@ -85,19 +87,19 @@ export default function LessonPage() {
             )
           `)
           .eq('id', lessonId)
-          .single()
+          .single();
         
         if (lessonError) {
-          console.error('Erreur lors de la récupération de la leçon:', lessonError)
-          setError('Impossible de charger cette leçon. Veuillez réessayer plus tard.')
-          setLoading(false)
-          return
+          console.error('Erreur lors de la récupération de la leçon:', lessonError);
+          setError('Impossible de charger cette leçon. Veuillez réessayer plus tard.');
+          setLoading(false);
+          return;
         }
         
         if (!lessonData) {
-          setError('Leçon introuvable.')
-          setLoading(false)
-          return
+          setError('Leçon introuvable.');
+          setLoading(false);
+          return;
         }
         
         // Extraire les données de la leçon
@@ -110,18 +112,18 @@ export default function LessonPage() {
           content: lessonData.content,
           video_url: lessonData.video_url,
           order: lessonData.order,
-          module_id: lessonData.module_id
-        }
+          module_id: lessonData.module_id,
+        };
 
         // Ajouter is_free seulement s'il est défini
         if (typeof lessonData.is_free === 'boolean') {
-          lessonInfo.is_free = lessonData.is_free
+          lessonInfo.is_free = lessonData.is_free;
         }
         
         // Extraire les informations du cours
-        const courseInfo = lessonData.course_modules.courses
-        setCourseId(courseInfo.id)
-        setCourseTitle(courseInfo.title)
+        const courseInfo = lessonData.course_modules.courses;
+        setCourseId(courseInfo.id);
+        setCourseTitle(courseInfo.title);
         
         // Extraire les informations du module
         const moduleInfo = {
@@ -130,74 +132,74 @@ export default function LessonPage() {
           description: lessonData.course_modules.description,
           order: lessonData.course_modules.order,
           course_id: lessonData.course_modules.course_id,
-          lessons: []
-        }
-        setModule(moduleInfo)
+          lessons: [],
+        };
+        setModule(moduleInfo);
         
         // Définir la leçon actuelle
-        setLesson(lessonInfo)
+        setLesson(lessonInfo);
         
         // Récupérer toutes les leçons du module pour déterminer la suivante et la précédente
         const { data: moduleLessons, error: moduleLessonsError } = await supabase
           .from('course_lessons')
           .select('*')
           .eq('module_id', lessonData.module_id)
-          .order('order')
+          .order('order');
         
         if (!moduleLessonsError && moduleLessons) {
-          const currentIndex = moduleLessons.findIndex(l => l.id === lessonId)
+          const currentIndex = moduleLessons.findIndex(l => l.id === lessonId);
           
           // Définir la leçon précédente si elle existe
           if (currentIndex > 0) {
-            setPrevLesson(moduleLessons[currentIndex - 1])
+            setPrevLesson(moduleLessons[currentIndex - 1]);
           } else {
-            setPrevLesson(null)
+            setPrevLesson(null);
           }
           
           // Définir la leçon suivante si elle existe
           if (currentIndex < moduleLessons.length - 1) {
-            setNextLesson(moduleLessons[currentIndex + 1])
+            setNextLesson(moduleLessons[currentIndex + 1]);
           } else {
             // Vérifier s'il y a un module suivant avec des leçons
-            const allModules = await getCourseModules(courseInfo.id)
-            const currentModuleIndex = allModules.findIndex(m => m.id === moduleInfo.id)
+            const allModules = await getCourseModules(courseInfo.id);
+            const currentModuleIndex = allModules.findIndex(m => m.id === moduleInfo.id);
             
             if (currentModuleIndex < allModules.length - 1) {
-              const nextModuleLessons = allModules[currentModuleIndex + 1].lessons
+              const nextModuleLessons = allModules[currentModuleIndex + 1].lessons;
               if (nextModuleLessons && nextModuleLessons.length > 0) {
-                setNextLesson(nextModuleLessons[0])
+                setNextLesson(nextModuleLessons[0]);
               } else {
-                setNextLesson(null)
+                setNextLesson(null);
               }
             } else {
-              setNextLesson(null)
+              setNextLesson(null);
             }
           }
         }
       } catch (err) {
-        console.error('Erreur inattendue:', err)
-        setError('Une erreur s\'est produite lors du chargement de la leçon.')
+        console.error('Erreur inattendue:', err);
+        setError('Une erreur s\'est produite lors du chargement de la leçon.');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
     
     if (lessonId) {
-      fetchLessonData()
+      fetchLessonData();
     }
-  }, [lessonId])
+  }, [lessonId]);
   
   // Naviguer vers la page du cours
   const navigateToCourse = () => {
     if (courseId) {
-      router.push(`/dashboard/academy/courses/${courseId}`)
+      router.push(`/dashboard/academy/courses/${courseId}`);
     }
-  }
+  };
   
   // Naviguer vers une autre leçon
   const navigateToLesson = (lesson: CourseLesson) => {
-    router.push(`/dashboard/academy/lessons/${lesson.id}`)
-  }
+    router.push(`/dashboard/academy/lessons/${lesson.id}`);
+  };
   
   if (loading) {
     return (
@@ -230,7 +232,7 @@ export default function LessonPage() {
           </PageSection>
         </PageContainer>
       </AuroraBackground>
-    )
+    );
   }
   
   if (error || !lesson) {
@@ -258,7 +260,7 @@ export default function LessonPage() {
           </PageSection>
         </PageContainer>
       </AuroraBackground>
-    )
+    );
   }
   
   return (
@@ -355,5 +357,5 @@ export default function LessonPage() {
         </PageSection>
       </PageContainer>
     </AuroraBackground>
-  )
+  );
 } 

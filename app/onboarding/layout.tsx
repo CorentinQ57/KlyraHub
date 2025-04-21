@@ -1,23 +1,23 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth'
-import { AuroraBackground } from '@/components/ui/aurora-background'
-import Link from 'next/link'
-import Image from 'next/image'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import Link from 'next/link';
+import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 export default function OnboardingLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  const [redirectionChecked, setRedirectionChecked] = useState(false)
-  const [profileChecked, setProfileChecked] = useState(false)
-  const [isOnboarded, setIsOnboarded] = useState(false)
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const [redirectionChecked, setRedirectionChecked] = useState(false);
+  const [profileChecked, setProfileChecked] = useState(false);
+  const [isOnboarded, setIsOnboarded] = useState(false);
   
   // Logs détaillés de l'état utilisateur
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function OnboardingLayout({
       isLoadingAuth: isLoading,
       redirectionState: redirectionChecked,
       profileState: profileChecked,
-      onboardedState: isOnboarded
+      onboardedState: isOnboarded,
     });
   }, [user, isLoading, redirectionChecked, profileChecked, isOnboarded]);
   
@@ -96,7 +96,7 @@ export default function OnboardingLayout({
       redirectionChecked,
       profileChecked,
       isLoading,
-      isOnboarded
+      isOnboarded,
     });
     
     if (redirectionChecked) {
@@ -159,5 +159,5 @@ export default function OnboardingLayout({
         </footer>
       </div>
     </AuroraBackground>
-  )
+  );
 } 

@@ -1,21 +1,21 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -24,96 +24,96 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { createService, getAllCategories } from '@/lib/supabase'
-import { Category, Service } from '@/lib/supabase'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
+} from '@/components/ui/form';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { createService, getAllCategories } from '@/lib/supabase';
+import { Category, Service } from '@/lib/supabase';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 // Schema de validation pour le formulaire
 const serviceFormSchema = z.object({
   name: z.string().min(2, {
-    message: "Le nom doit comporter au moins 2 caractères.",
+    message: 'Le nom doit comporter au moins 2 caractères.',
   }),
   description: z.string().min(10, {
-    message: "La description doit comporter au moins 10 caractères.",
+    message: 'La description doit comporter au moins 10 caractères.',
   }),
   long_description: z.string().optional(),
   category_id: z.string({
-    required_error: "Veuillez sélectionner une catégorie.",
+    required_error: 'Veuillez sélectionner une catégorie.',
   }),
   price: z.coerce.number().min(0, {
-    message: "Le prix ne peut pas être négatif.",
+    message: 'Le prix ne peut pas être négatif.',
   }),
   duration: z.coerce.number().int().min(1, {
-    message: "La durée doit être d'au moins 1 jour.",
+    message: 'La durée doit être d\'au moins 1 jour.',
   }),
   active: z.boolean(),
   features: z.string(),
-  phases: z.string()
-})
+  phases: z.string(),
+});
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>
 
 export default function NewServicePage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
-  const { toast } = useToast()
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   // Initialisation du formulaire
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      long_description: "",
-      category_id: "",
+      name: '',
+      description: '',
+      long_description: '',
+      category_id: '',
       price: 0,
       duration: 7,
       active: true,
-      features: "",
-      phases: "Briefing\nConception\nDéveloppement\nTests et validation\nLivraison"
+      features: '',
+      phases: 'Briefing\nConception\nDéveloppement\nTests et validation\nLivraison',
     },
-  })
+  });
 
   useEffect(() => {
     // Redirect if not authenticated or not admin
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadCategories()
+      loadCategories();
     }
-  }, [user, authLoading, isAdmin, router])
+  }, [user, authLoading, isAdmin, router]);
 
   const loadCategories = async () => {
     try {
-      setIsLoading(true)
-      const data = await getAllCategories()
-      setCategories(data)
+      setIsLoading(true);
+      const data = await getAllCategories();
+      setCategories(data);
     } catch (error) {
-      console.error('Error loading categories:', error)
+      console.error('Error loading categories:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les catégories.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les catégories.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const onSubmit = async (data: ServiceFormValues) => {
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
       
       // Prépare les features et les phases comme des tableaux
       const featuresArray = data.features
@@ -122,7 +122,7 @@ export default function NewServicePage() {
         
       const phasesArray = data.phases
         ? data.phases.split('\n').map(line => line.trim()).filter(line => line.length > 0)
-        : ["Briefing", "Conception", "Développement", "Tests et validation", "Livraison"];
+        : ['Briefing', 'Conception', 'Développement', 'Tests et validation', 'Livraison'];
       
       // Création du service
       const serviceData = {
@@ -134,33 +134,33 @@ export default function NewServicePage() {
         duration: data.duration,
         active: data.active,
         features: featuresArray,
-        phases: phasesArray
+        phases: phasesArray,
       };
       
       const createdService = await createService(serviceData);
       
       if (createdService) {
         toast({
-          title: "Succès",
-          description: "Service créé avec succès.",
-        })
+          title: 'Succès',
+          description: 'Service créé avec succès.',
+        });
         
         // Redirection vers la liste des services
-        router.push('/dashboard/admin/services')
+        router.push('/dashboard/admin/services');
       } else {
-        throw new Error('Échec de la création du service')
+        throw new Error('Échec de la création du service');
       }
     } catch (error) {
-      console.error('Error creating service:', error)
+      console.error('Error creating service:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de créer le service.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de créer le service.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -170,7 +170,7 @@ export default function NewServicePage() {
           <p className="mt-4 text-lg">Chargement...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -402,5 +402,5 @@ export default function NewServicePage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 } 

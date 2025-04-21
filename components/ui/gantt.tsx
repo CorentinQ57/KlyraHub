@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useRef, useState, useEffect } from "react";
-import { Gantt as GanttChart, ViewMode, StylingOption, DisplayOption } from "gantt-task-react";
-import "gantt-task-react/dist/index.css";
-import { cn } from "@/lib/utils";
-import { format, addDays, addMonths, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useRef, useState, useEffect } from 'react';
+import { Gantt as GanttChart, ViewMode, StylingOption, DisplayOption } from 'gantt-task-react';
+import 'gantt-task-react/dist/index.css';
+import { cn } from '@/lib/utils';
+import { format, addDays, addMonths, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Définir l'interface Task car elle n'est pas exportée par la librairie
 export interface Task {
   id: string;
-  type: "task" | "milestone" | "project";
+  type: 'task' | 'milestone' | 'project';
   name: string;
   start: Date;
   end: Date;
@@ -71,20 +71,20 @@ export function Gantt({
   const defaultOptions: StylingOption = {
     headerHeight: options?.headerHeight || 50,
     columnWidth: options?.columnWidth || 60,
-    listCellWidth: options?.listCellWidth || "155px",
+    listCellWidth: options?.listCellWidth || '155px',
     rowHeight: options?.rowHeight || 50,
     barCornerRadius: options?.barCornerRadius || 4,
     barFill: options?.barFill || 60,
-    todayColor: options?.todayColor || "#467FF7",
-    projectProgressColor: options?.projectProgressColor || "#467FF7",
-    barProgressColor: options?.barProgressColor || "#7FA3F9",
-    fontFamily: "Poppins, sans-serif",
+    todayColor: options?.todayColor || '#467FF7',
+    projectProgressColor: options?.projectProgressColor || '#467FF7',
+    barProgressColor: options?.barProgressColor || '#7FA3F9',
+    fontFamily: 'Poppins, sans-serif',
   };
   
   // Options d'affichage pour le Gantt
   const displayOptions: DisplayOption = {
     viewMode: view,
-    locale: options?.locale || "fr",
+    locale: options?.locale || 'fr',
   };
   
   // Effet pour faire défiler le gantt vers la position enregistrée
@@ -111,7 +111,7 @@ export function Gantt({
       >
         <div className="font-semibold">{task.name}</div>
         <div className="mt-1 text-gray-600">
-          {format(task.start, "dd/MM/yyyy", { locale: fr })} - {format(task.end, "dd/MM/yyyy", { locale: fr })}
+          {format(task.start, 'dd/MM/yyyy', { locale: fr })} - {format(task.end, 'dd/MM/yyyy', { locale: fr })}
         </div>
         {task.progress !== undefined && (
           <div className="flex items-center mt-2">
@@ -129,7 +129,7 @@ export function Gantt({
   };
   
   return (
-    <div className={cn("gantt-container flex flex-col h-full", className)}>
+    <div className={cn('gantt-container flex flex-col h-full', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white border-b mb-3">
         <div className="flex items-center space-x-1">
           <Button
@@ -137,7 +137,7 @@ export function Gantt({
             size="sm"
             onClick={() => handleViewChange(ViewMode.Day)}
             className={cn(
-              view === ViewMode.Day ? "bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]" : ""
+              view === ViewMode.Day ? 'bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]' : ''
             )}
           >
             Jour
@@ -147,7 +147,7 @@ export function Gantt({
             size="sm"
             onClick={() => handleViewChange(ViewMode.Week)}
             className={cn(
-              view === ViewMode.Week ? "bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]" : ""
+              view === ViewMode.Week ? 'bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]' : ''
             )}
           >
             Semaine
@@ -157,7 +157,7 @@ export function Gantt({
             size="sm"
             onClick={() => handleViewChange(ViewMode.Month)}
             className={cn(
-              view === ViewMode.Month ? "bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]" : ""
+              view === ViewMode.Month ? 'bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]' : ''
             )}
           >
             Mois
@@ -167,7 +167,7 @@ export function Gantt({
             size="sm"
             onClick={() => handleViewChange(ViewMode.QuarterDay)}
             className={cn(
-              view === ViewMode.QuarterDay ? "bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]" : ""
+              view === ViewMode.QuarterDay ? 'bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]' : ''
             )}
           >
             Trimestre
@@ -177,7 +177,7 @@ export function Gantt({
             size="sm"
             onClick={() => handleViewChange(ViewMode.Year)}
             className={cn(
-              view === ViewMode.Year ? "bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]" : ""
+              view === ViewMode.Year ? 'bg-[#EBF2FF] text-[#467FF7] border-[#467FF7]' : ''
             )}
           >
             Année
@@ -212,7 +212,7 @@ export function Gantt({
 }
 
 // Exporte l'enum pour faciliter l'utilisation
-export { ViewMode }
+export { ViewMode };
 
 // Fonction utilitaire pour créer une tâche
 export function createTask(
@@ -220,7 +220,7 @@ export function createTask(
   name: string,
   start: Date | string,
   end: Date | string,
-  type: "task" | "milestone" | "project",
+  type: 'task' | 'milestone' | 'project',
   progress: number = 0,
   dependencies: string[] = [],
   styles: any = {},
@@ -228,8 +228,8 @@ export function createTask(
   project?: string
 ): Task {
   // Convertit les dates string en objets Date si nécessaire
-  const startDate = typeof start === "string" ? parseISO(start) : start;
-  const endDate = typeof end === "string" ? parseISO(end) : end;
+  const startDate = typeof start === 'string' ? parseISO(start) : start;
+  const endDate = typeof end === 'string' ? parseISO(end) : end;
   
   // S'assure que la date de fin est après la date de début
   const finalEndDate = endDate < startDate ? addDays(startDate, 1) : endDate;
@@ -257,7 +257,7 @@ export function createProjectTask(
   progress: number = 0,
   hideChildren: boolean = false
 ): Task {
-  const task = createTask(id, name, start, end, "project", progress);
+  const task = createTask(id, name, start, end, 'project', progress);
   return {
     ...task,
     hideChildren,
@@ -266,12 +266,12 @@ export function createProjectTask(
 
 // Fonction utilitaire pour calculer la date de fin basée sur la durée en jours
 export function calculateEndDate(start: Date | string, durationInDays: number): Date {
-  const startDate = typeof start === "string" ? parseISO(start) : start;
+  const startDate = typeof start === 'string' ? parseISO(start) : start;
   return addDays(startDate, durationInDays);
 }
 
 // Fonction utilitaire pour calculer la date de fin basée sur la durée en mois
 export function calculateEndDateMonths(start: Date | string, durationInMonths: number): Date {
-  const startDate = typeof start === "string" ? parseISO(start) : start;
+  const startDate = typeof start === 'string' ? parseISO(start) : start;
   return addMonths(startDate, durationInMonths);
 } 

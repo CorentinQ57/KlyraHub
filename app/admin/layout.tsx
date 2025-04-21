@@ -1,98 +1,98 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useAuth } from '@/lib/auth'
-import { Button } from '@/components/ui/button'
-import { AlertCircle } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
-  const { user, isAdmin, isLoading, signOut, reloadAuthState } = useAuth()
+  const router = useRouter();
+  const { user, isAdmin, isLoading, signOut, reloadAuthState } = useAuth();
   // État pour gérer un timeout de sécurité
-  const [safetyTimeout, setSafetyTimeout] = useState(false)
-  const [forceDisplay, setForceDisplay] = useState(false)
-  const [userTypeError, setUserTypeError] = useState(false)
-  const [isReloading, setIsReloading] = useState(false)
+  const [safetyTimeout, setSafetyTimeout] = useState(false);
+  const [forceDisplay, setForceDisplay] = useState(false);
+  const [userTypeError, setUserTypeError] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
 
   // Vérifier que l'utilisateur est valide et a les permissions
   useEffect(() => {
     // Vérifier si user est un objet ou une chaîne
-    const userType = typeof user
-    const isValidUser = user && userType === 'object' && 'id' in user
+    const userType = typeof user;
+    const isValidUser = user && userType === 'object' && 'id' in user;
     
     if (userType === 'string' || (user && !isValidUser)) {
-      console.error("Erreur critique: user n'est pas un objet valide dans le admin layout", { 
+      console.error('Erreur critique: user n\'est pas un objet valide dans le admin layout', { 
         userType, 
         user,
-        hasId: user && userType === 'object' ? 'id' in user : false
-      })
-      setUserTypeError(true)
+        hasId: user && userType === 'object' ? 'id' in user : false,
+      });
+      setUserTypeError(true);
     } else {
-      setUserTypeError(false)
+      setUserTypeError(false);
     }
     
     // Vérifier les permissions d'admin
     if (!isLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
+      router.push('/dashboard');
     }
-  }, [user, isAdmin, isLoading, router])
+  }, [user, isAdmin, isLoading, router]);
   
   // Timeout de sécurité pour éviter un loading infini
   useEffect(() => {
     // Log détaillé pour déboguer le type de user
-    console.log("Admin layout - loading state:", isLoading, 
-                "user type:", typeof user, 
-                "user email:", user && typeof user === 'object' ? user.email : user,
-                "has id:", user && typeof user === 'object' ? 'id' in user : false,
-                "isAdmin:", isAdmin)
+    console.log('Admin layout - loading state:', isLoading, 
+      'user type:', typeof user, 
+      'user email:', user && typeof user === 'object' ? user.email : user,
+      'has id:', user && typeof user === 'object' ? 'id' in user : false,
+      'isAdmin:', isAdmin);
     
     if (isLoading) {
       // Après 5 secondes, montrer un bouton pour forcer l'affichage
       const timeoutId = setTimeout(() => {
-        console.log("Safety timeout triggered in admin layout")
-        setSafetyTimeout(true)
-      }, 5000) // Réduit de 8 à 5 secondes
+        console.log('Safety timeout triggered in admin layout');
+        setSafetyTimeout(true);
+      }, 5000); // Réduit de 8 à 5 secondes
       
-      return () => clearTimeout(timeoutId)
+      return () => clearTimeout(timeoutId);
     }
-  }, [isLoading, user, isAdmin])
+  }, [isLoading, user, isAdmin]);
   
   // Fonction pour forcer la déconnexion en cas d'erreur de type
   const handleForceSignOut = async () => {
-    console.log("Forcing sign out due to user type error")
+    console.log('Forcing sign out due to user type error');
     try {
-      await signOut()
+      await signOut();
     } catch (error) {
-      console.error("Error during forced sign out:", error)
+      console.error('Error during forced sign out:', error);
       // Redirection manuelle en cas d'échec du signOut
-      router.push('/login')
+      router.push('/login');
     }
-  }
+  };
   
   // Fonction pour forcer l'affichage du dashboard
   const handleForceDisplay = () => {
-    console.log("User forced display of admin panel")
-    setForceDisplay(true)
-  }
+    console.log('User forced display of admin panel');
+    setForceDisplay(true);
+  };
   
   // Fonction pour forcer le rafraîchissement de l'état d'authentification
   const handleForceReload = async () => {
     try {
-      console.log("User requested auth state reload in admin layout")
-      setIsReloading(true)
-      await reloadAuthState()
+      console.log('User requested auth state reload in admin layout');
+      setIsReloading(true);
+      await reloadAuthState();
     } catch (error) {
-      console.error("Error during force reload in admin layout:", error)
+      console.error('Error during force reload in admin layout:', error);
     } finally {
-      setIsReloading(false)
+      setIsReloading(false);
     }
-  }
+  };
   
   // Afficher un message d'erreur si user n'est pas un objet valide
   if (userTypeError) {
@@ -114,7 +114,7 @@ export default function AdminLayout({
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   if (isLoading && !forceDisplay) {
@@ -140,7 +140,7 @@ export default function AdminLayout({
                   variant="outline"
                   disabled={isReloading}
                 >
-                  {isReloading ? "Rafraîchissement..." : "Rafraîchir l'authentification"}
+                  {isReloading ? 'Rafraîchissement...' : 'Rafraîchir l\'authentification'}
                 </Button>
                 <Button 
                   onClick={handleForceDisplay}
@@ -153,14 +153,14 @@ export default function AdminLayout({
           )}
         </div>
       </div>
-    )
+    );
   }
 
   // Vérifier que l'utilisateur existe, est valide et a les droits admin avant d'afficher le contenu
-  const isValidAdminUser = user && typeof user === 'object' && 'id' in user && isAdmin
+  const isValidAdminUser = user && typeof user === 'object' && 'id' in user && isAdmin;
   
   if (!isValidAdminUser && !forceDisplay) {
-    return null
+    return null;
   }
 
   return (
@@ -215,5 +215,5 @@ export default function AdminLayout({
         </div>
       </main>
     </div>
-  )
+  );
 } 

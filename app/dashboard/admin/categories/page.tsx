@@ -1,13 +1,13 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -25,10 +25,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+} from '@/components/ui/table';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 type Category = {
   id: string;
@@ -40,33 +40,33 @@ type Category = {
 }
 
 export default function CategoriesManagementPage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    image: null as File | null
-  })
+    image: null as File | null,
+  });
   
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
-  const { toast } = useToast()
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadCategories()
+      loadCategories();
     }
-  }, [user, authLoading, isAdmin, router])
+  }, [user, authLoading, isAdmin, router]);
 
   const loadCategories = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Récupérer les catégories avec le comptage des services
       const { data: categoriesWithCount, error: countError } = await supabase
@@ -75,57 +75,61 @@ export default function CategoriesManagementPage() {
           *,
           services_count:services(count)
         `)
-        .order('name')
+        .order('name');
 
-      if (countError) throw countError
+      if (countError) {
+        throw countError;
+      }
 
       // Formater les données pour inclure le comptage
       const formattedCategories = (categoriesWithCount || []).map(cat => ({
         ...cat,
-        services_count: cat.services_count?.[0]?.count || 0
-      }))
+        services_count: cat.services_count?.[0]?.count || 0,
+      }));
 
-      setCategories(formattedCategories)
+      setCategories(formattedCategories);
     } catch (error) {
-      console.error('Error loading categories:', error)
+      console.error('Error loading categories:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les catégories.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les catégories.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, image: e.target.files![0] }))
+      setFormData(prev => ({ ...prev, image: e.target.files![0] }));
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      let imageUrl = editingCategory?.image_url
+      let imageUrl = editingCategory?.image_url;
 
       // Upload new image if provided
       if (formData.image) {
-        const fileExt = formData.image.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-        const filePath = fileName // Pas besoin de sous-dossier car nous avons un bucket dédié
+        const fileExt = formData.image.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = fileName; // Pas besoin de sous-dossier car nous avons un bucket dédié
 
         const { error: uploadError } = await supabase.storage
           .from('klyra-categories')
-          .upload(filePath, formData.image)
+          .upload(filePath, formData.image);
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          throw uploadError;
+        }
 
         const { data: urlData } = supabase.storage
           .from('klyra-categories')
-          .getPublicUrl(filePath)
+          .getPublicUrl(filePath);
 
-        imageUrl = urlData.publicUrl
+        imageUrl = urlData.publicUrl;
       }
 
       if (editingCategory) {
@@ -135,11 +139,13 @@ export default function CategoriesManagementPage() {
           .update({
             name: formData.name,
             image_url: imageUrl,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', editingCategory.id)
+          .eq('id', editingCategory.id);
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
       } else {
         // Create new category
         const { error } = await supabase
@@ -148,34 +154,36 @@ export default function CategoriesManagementPage() {
             name: formData.name,
             image_url: imageUrl,
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+            updated_at: new Date().toISOString(),
+          });
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
       }
 
       toast({
-        title: "Succès",
+        title: 'Succès',
         description: `Catégorie ${editingCategory ? 'modifiée' : 'créée'} avec succès.`,
-      })
+      });
 
-      setIsDialogOpen(false)
-      setEditingCategory(null)
-      setFormData({ name: '', image: null })
-      loadCategories()
+      setIsDialogOpen(false);
+      setEditingCategory(null);
+      setFormData({ name: '', image: null });
+      loadCategories();
     } catch (error) {
-      console.error('Error saving category:', error)
+      console.error('Error saving category:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder la catégorie.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de sauvegarder la catégorie.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) {
-      return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
+      return;
     }
 
     try {
@@ -183,50 +191,54 @@ export default function CategoriesManagementPage() {
       const { data: services, error: checkError } = await supabase
         .from('services')
         .select('id')
-        .eq('category_id', categoryId)
+        .eq('category_id', categoryId);
 
-      if (checkError) throw checkError
+      if (checkError) {
+        throw checkError;
+      }
 
       if (services && services.length > 0) {
         toast({
-          title: "Erreur",
-          description: "Impossible de supprimer la catégorie car elle est utilisée par des services.",
-          variant: "destructive",
-        })
-        return
+          title: 'Erreur',
+          description: 'Impossible de supprimer la catégorie car elle est utilisée par des services.',
+          variant: 'destructive',
+        });
+        return;
       }
 
       const { error } = await supabase
         .from('categories')
         .delete()
-        .eq('id', categoryId)
+        .eq('id', categoryId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
       toast({
-        title: "Succès",
-        description: "Catégorie supprimée avec succès.",
-      })
+        title: 'Succès',
+        description: 'Catégorie supprimée avec succès.',
+      });
 
-      loadCategories()
+      loadCategories();
     } catch (error) {
-      console.error('Error deleting category:', error)
+      console.error('Error deleting category:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer la catégorie.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de supprimer la catégorie.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleEditCategory = (category: Category) => {
-    setEditingCategory(category)
+    setEditingCategory(category);
     setFormData({
       name: category.name,
-      image: null
-    })
-    setIsDialogOpen(true)
-  }
+      image: null,
+    });
+    setIsDialogOpen(true);
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -236,7 +248,7 @@ export default function CategoriesManagementPage() {
           <p className="mt-4 text-lg">Chargement des catégories...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -256,9 +268,9 @@ export default function CategoriesManagementPage() {
         </div>
         <Button 
           onClick={() => {
-            setEditingCategory(null)
-            setFormData({ name: '', image: null })
-            setIsDialogOpen(true)
+            setEditingCategory(null);
+            setFormData({ name: '', image: null });
+            setIsDialogOpen(true);
           }}
           className="mt-4 sm:mt-0"
         >
@@ -378,5 +390,5 @@ export default function CategoriesManagementPage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 } 

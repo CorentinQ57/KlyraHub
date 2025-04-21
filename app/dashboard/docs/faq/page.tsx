@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import {
   ChevronDown,
   ChevronRight,
@@ -12,7 +12,7 @@ import {
   MessageSquare,
   Search,
   HelpCircle,
-} from "lucide-react";
+} from 'lucide-react';
 
 // Structure pour les questions fréquentes
 type FAQ = {
@@ -28,14 +28,14 @@ type FAQ = {
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Support client",
-    href: "/dashboard/docs/support/contact",
-    description: "Notre équipe est disponible pour vous aider",
+    title: 'Support client',
+    href: '/dashboard/docs/support/contact',
+    description: 'Notre équipe est disponible pour vous aider',
     icon: <Mail className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Rapporter un problème",
-    href: "/dashboard/docs/support/probleme",
+    title: 'Rapporter un problème',
+    href: '/dashboard/docs/support/probleme',
     icon: <MessageSquare className="h-4 w-4 text-primary" />,
   },
 ];
@@ -43,12 +43,12 @@ const relatedLinks: LinkItem[] = [
 // Définition des FAQs par catégorie
 const faqs: FAQ[] = [
   {
-    category: "Général",
-    id: "general",
+    category: 'Général',
+    id: 'general',
     questions: [
       {
-        id: "what-is-klyra",
-        question: "Qu'est-ce que Klyra Design ?",
+        id: 'what-is-klyra',
+        question: 'Qu\'est-ce que Klyra Design ?',
         answer: (
           <div>
             <p>
@@ -64,8 +64,8 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "account-creation",
-        question: "Comment créer un compte sur Klyra Design ?",
+        id: 'account-creation',
+        question: 'Comment créer un compte sur Klyra Design ?',
         answer: (
           <p>
             Créer un compte est simple et gratuit ! Cliquez sur "S'inscrire" en haut à droite de notre site, remplissez le formulaire avec votre adresse e-mail et un mot de passe sécurisé. Vous recevrez un e-mail de confirmation pour activer votre compte. Une fois confirmé, vous pourrez accéder à votre tableau de bord et explorer nos services.
@@ -73,8 +73,8 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "service-types",
-        question: "Quels types de services proposez-vous ?",
+        id: 'service-types',
+        question: 'Quels types de services proposez-vous ?',
         answer: (
           <div>
             <p>
@@ -96,12 +96,12 @@ const faqs: FAQ[] = [
     ],
   },
   {
-    category: "Projets et commandes",
-    id: "projects",
+    category: 'Projets et commandes',
+    id: 'projects',
     questions: [
       {
-        id: "order-process",
-        question: "Comment passer une commande pour un service ?",
+        id: 'order-process',
+        question: 'Comment passer une commande pour un service ?',
         answer: (
           <div>
             <p>Pour commander un service :</p>
@@ -120,8 +120,8 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "project-timeline",
-        question: "Combien de temps prendra mon projet ?",
+        id: 'project-timeline',
+        question: 'Combien de temps prendra mon projet ?',
         answer: (
           <p>
             La durée de réalisation dépend du service choisi. Chaque service dans notre marketplace indique clairement le délai estimé (par exemple : 5, 10 ou 15 jours). Ces délais commencent à courir une fois que votre projet a été validé par notre équipe et que nous avons reçu toutes les informations nécessaires de votre part.
@@ -129,8 +129,8 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "project-stages",
-        question: "Quelles sont les différentes étapes d'un projet ?",
+        id: 'project-stages',
+        question: 'Quelles sont les différentes étapes d\'un projet ?',
         answer: (
           <div>
             <p>Chaque projet passe par 5 étapes principales :</p>
@@ -150,12 +150,12 @@ const faqs: FAQ[] = [
     ],
   },
   {
-    category: "Paiements et facturation",
-    id: "payments",
+    category: 'Paiements et facturation',
+    id: 'payments',
     questions: [
       {
-        id: "payment-methods",
-        question: "Quels modes de paiement acceptez-vous ?",
+        id: 'payment-methods',
+        question: 'Quels modes de paiement acceptez-vous ?',
         answer: (
           <div>
             <p>Nous acceptons les méthodes de paiement suivantes :</p>
@@ -171,8 +171,8 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "refund-policy",
-        question: "Quelle est votre politique de remboursement ?",
+        id: 'refund-policy',
+        question: 'Quelle est votre politique de remboursement ?',
         answer: (
           <p>
             Nous offrons un remboursement complet si votre demande est faite dans les 48 heures suivant l'achat et si le travail n'a pas encore commencé. Une fois que le projet est en cours de réalisation, des frais peuvent s'appliquer. Contactez notre service client pour discuter de votre situation spécifique.
@@ -180,23 +180,23 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "invoice-download",
-        question: "Comment récupérer mes factures ?",
+        id: 'invoice-download',
+        question: 'Comment récupérer mes factures ?',
         answer: (
           <p>
-            Vous pouvez télécharger vos factures à tout moment depuis votre tableau de bord. Accédez à "Mon compte" {">"} "Historique des achats", puis cliquez sur l'icône de téléchargement à côté de la commande concernée. Les factures sont au format PDF et contiennent toutes les informations nécessaires pour votre comptabilité.
+            Vous pouvez télécharger vos factures à tout moment depuis votre tableau de bord. Accédez à "Mon compte" {'>'} "Historique des achats", puis cliquez sur l'icône de téléchargement à côté de la commande concernée. Les factures sont au format PDF et contiennent toutes les informations nécessaires pour votre comptabilité.
           </p>
         ),
       },
     ],
   },
   {
-    category: "Support et assistance",
-    id: "support",
+    category: 'Support et assistance',
+    id: 'support',
     questions: [
       {
-        id: "contact-support",
-        question: "Comment contacter le support client ?",
+        id: 'contact-support',
+        question: 'Comment contacter le support client ?',
         answer: (
           <div>
             <p>Plusieurs options s'offrent à vous pour contacter notre support :</p>
@@ -214,8 +214,8 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "feedback",
-        question: "Comment puis-je donner mon avis sur un service ?",
+        id: 'feedback',
+        question: 'Comment puis-je donner mon avis sur un service ?',
         answer: (
           <p>
             Votre feedback est précieux ! Une fois votre projet terminé, vous recevrez automatiquement une invitation par email pour évaluer le service. Vous pouvez également laisser un commentaire directement sur la page de votre projet ou contacter notre service client pour partager votre expérience.
@@ -225,12 +225,12 @@ const faqs: FAQ[] = [
     ],
   },
   {
-    category: "Technique",
-    id: "technical",
+    category: 'Technique',
+    id: 'technical',
     questions: [
       {
-        id: "file-formats",
-        question: "Quels formats de fichiers recevrai-je pour les livrables ?",
+        id: 'file-formats',
+        question: 'Quels formats de fichiers recevrai-je pour les livrables ?',
         answer: (
           <div>
             <p>
@@ -249,8 +249,8 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "browser-compatibility",
-        question: "Quels navigateurs sont supportés par votre plateforme ?",
+        id: 'browser-compatibility',
+        question: 'Quels navigateurs sont supportés par votre plateforme ?',
         answer: (
           <div>
             <p>
@@ -270,8 +270,8 @@ const faqs: FAQ[] = [
         ),
       },
       {
-        id: "account-security",
-        question: "Comment est sécurisé mon compte ?",
+        id: 'account-security',
+        question: 'Comment est sécurisé mon compte ?',
         answer: (
           <p>
             La sécurité de vos données est notre priorité. Nous utilisons le chiffrement SSL pour toutes les communications, authentification à deux facteurs (2FA) en option, et des politiques strictes de protection des données. Vos informations de paiement ne sont jamais stockées sur nos serveurs et nous respectons toutes les exigences du RGPD.
@@ -284,7 +284,7 @@ const faqs: FAQ[] = [
 
 export default function FAQPage() {
   const [tocItems, setTocItems] = useState<TocItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [filteredFaqs, setFilteredFaqs] = useState<FAQ[]>(faqs);
 
   // Générer la table des matières
@@ -310,10 +310,12 @@ export default function FAQPage() {
         const filteredQuestions = faqCategory.questions.filter(
           (q) =>
             q.question.toLowerCase().includes(query) ||
-            (typeof q.answer === "string" && q.answer.toLowerCase().includes(query))
+            (typeof q.answer === 'string' && q.answer.toLowerCase().includes(query))
         );
 
-        if (filteredQuestions.length === 0) return null;
+        if (filteredQuestions.length === 0) {
+          return null;
+        }
 
         return {
           ...faqCategory,
@@ -364,7 +366,7 @@ export default function FAQPage() {
               <HelpCircle className="h-12 w-12 mx-auto text-muted-foreground" />
               <p className="mt-4 text-lg font-medium">Aucune question trouvée</p>
               <p className="text-muted-foreground">
-                Essayez de reformuler votre recherche ou{" "}
+                Essayez de reformuler votre recherche ou{' '}
                 <Link
                   href="/dashboard/docs/support/contact"
                   className="text-primary hover:underline"

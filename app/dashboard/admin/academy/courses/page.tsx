@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { 
   FileEdit, 
   Trash2, 
@@ -13,21 +13,21 @@ import {
   X,
   BookOpen,
   ChevronLeft,
-  Layers
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+  Layers,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Dialog,
   DialogContent,
@@ -36,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -45,12 +45,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Switch } from '@/components/ui/switch'
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { Course, getCategories, getCourses } from '@/lib/academy-service'
-import { supabase } from '@/lib/supabase'
+} from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { Course, getCategories, getCourses } from '@/lib/academy-service';
+import { supabase } from '@/lib/supabase';
 
 type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
 
@@ -68,12 +68,12 @@ interface CourseFormData {
 }
 
 export default function CoursesManagementPage() {
-  const [courses, setCourses] = useState<Course[]>([])
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null)
-  const [tagInput, setTagInput] = useState('')
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [tagInput, setTagInput] = useState('');
   const [courseData, setCourseData] = useState({
     title: '',
     description: '',
@@ -87,86 +87,86 @@ export default function CoursesManagementPage() {
     objectives: [] as string[],
     objectiveInput: '',
     image: null as File | null,
-    video_url: ''
-  })
+    video_url: '',
+  });
   
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
-  const { toast } = useToast()
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadData()
+      loadData();
     }
-  }, [user, authLoading, isAdmin, router])
+  }, [user, authLoading, isAdmin, router]);
 
   const loadData = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Charger les cours
-      const coursesData = await getCourses()
-      setCourses(coursesData)
+      const coursesData = await getCourses();
+      setCourses(coursesData);
       
       // Charger les catégories pour le formulaire
-      const categoriesData = await getCategories()
-      setCategories(categoriesData)
+      const categoriesData = await getCategories();
+      setCategories(categoriesData);
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('Error loading data:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les données.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les données.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setCourseData(prev => ({ ...prev, image: e.target.files![0] }))
+      setCourseData(prev => ({ ...prev, image: e.target.files![0] }));
     }
-  }
+  };
 
   const handleAddTag = () => {
     if (tagInput.trim() && !courseData.tags.includes(tagInput.trim())) {
       setCourseData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
-      }))
-      setTagInput('')
+        tags: [...prev.tags, tagInput.trim()],
+      }));
+      setTagInput('');
     }
-  }
+  };
 
   const handleRemoveTag = (tag: string) => {
     setCourseData(prev => ({
       ...prev,
-      tags: prev.tags.filter(t => t !== tag)
-    }))
-  }
+      tags: prev.tags.filter(t => t !== tag),
+    }));
+  };
 
   const handleAddObjective = () => {
     if (courseData.objectiveInput.trim() && !courseData.objectives.includes(courseData.objectiveInput.trim())) {
       setCourseData(prev => ({
         ...prev,
         objectives: [...prev.objectives, prev.objectiveInput.trim()],
-        objectiveInput: ''
-      }))
+        objectiveInput: '',
+      }));
     }
-  }
+  };
 
   const handleRemoveObjective = (objective: string) => {
     setCourseData(prev => ({
       ...prev,
-      objectives: prev.objectives.filter(o => o !== objective)
-    }))
-  }
+      objectives: prev.objectives.filter(o => o !== objective),
+    }));
+  };
 
   const handleInputChange = (field: keyof CourseFormData, value: string | number | boolean | string[] | null) => {
     setCourseData((prev) => ({
@@ -176,33 +176,35 @@ export default function CoursesManagementPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      let imageUrl = editingCourse?.image_url
-      let videoUrl = editingCourse?.video_url
+      let imageUrl = editingCourse?.image_url;
+      let videoUrl = editingCourse?.video_url;
 
       // Gérer l'URL vidéo si fournie
       if (courseData.video_url) {
-        videoUrl = courseData.video_url
+        videoUrl = courseData.video_url;
       }
 
       // Gérer l'image si fournie
       if (courseData.image) {
-        const fileExt = courseData.image.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-        const filePath = fileName
+        const fileExt = courseData.image.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = fileName;
 
         const { error: uploadError } = await supabase.storage
           .from('klyra-academy')
-          .upload(filePath, courseData.image)
+          .upload(filePath, courseData.image);
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          throw uploadError;
+        }
 
         const { data: urlData } = supabase.storage
           .from('klyra-academy')
-          .getPublicUrl(filePath)
+          .getPublicUrl(filePath);
 
-        imageUrl = urlData.publicUrl
+        imageUrl = urlData.publicUrl;
       }
 
       const courseDataToSave = {
@@ -218,17 +220,19 @@ export default function CoursesManagementPage() {
         is_new: courseData.is_new,
         tags: courseData.tags,
         objectives: courseData.objectives,
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      };
 
       if (editingCourse) {
         // Update existing course
         const { error } = await supabase
           .from('courses')
           .update(courseDataToSave)
-          .eq('id', editingCourse.id)
+          .eq('id', editingCourse.id);
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
       } else {
         // Create new course
         const { error } = await supabase
@@ -236,32 +240,34 @@ export default function CoursesManagementPage() {
           .insert({
             ...courseDataToSave,
             created_at: new Date().toISOString(),
-          })
+          });
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
       }
 
       toast({
-        title: "Succès",
+        title: 'Succès',
         description: `Cours ${editingCourse ? 'modifié' : 'créé'} avec succès.`,
-      })
+      });
 
-      setIsDialogOpen(false)
-      resetForm()
-      loadData()
+      setIsDialogOpen(false);
+      resetForm();
+      loadData();
     } catch (error) {
-      console.error('Error saving course:', error)
+      console.error('Error saving course:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder le cours.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de sauvegarder le cours.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleDeleteCourse = async (courseId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce cours ?")) {
-      return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce cours ?')) {
+      return;
     }
 
     try {
@@ -269,57 +275,65 @@ export default function CoursesManagementPage() {
       const { data: modules, error: modulesError } = await supabase
         .from('course_modules')
         .select('id')
-        .eq('course_id', courseId)
+        .eq('course_id', courseId);
 
-      if (modulesError) throw modulesError
+      if (modulesError) {
+        throw modulesError;
+      }
 
       if (modules && modules.length > 0) {
         // Il faudrait idéalement supprimer toutes les leçons associées aux modules
-        const moduleIds = modules.map(m => m.id)
+        const moduleIds = modules.map(m => m.id);
         
         // Supprimer les leçons
         const { error: lessonsError } = await supabase
           .from('course_lessons')
           .delete()
-          .in('module_id', moduleIds)
+          .in('module_id', moduleIds);
         
-        if (lessonsError) throw lessonsError
+        if (lessonsError) {
+          throw lessonsError;
+        }
         
         // Supprimer les modules
         const { error: deleteModulesError } = await supabase
           .from('course_modules')
           .delete()
-          .eq('course_id', courseId)
+          .eq('course_id', courseId);
         
-        if (deleteModulesError) throw deleteModulesError
+        if (deleteModulesError) {
+          throw deleteModulesError;
+        }
       }
 
       // Supprimer le cours
       const { error } = await supabase
         .from('courses')
         .delete()
-        .eq('id', courseId)
+        .eq('id', courseId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
       toast({
-        title: "Succès",
-        description: "Cours supprimé avec succès.",
-      })
+        title: 'Succès',
+        description: 'Cours supprimé avec succès.',
+      });
 
-      loadData()
+      loadData();
     } catch (error) {
-      console.error('Error deleting course:', error)
+      console.error('Error deleting course:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le cours.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de supprimer le cours.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleEditCourse = (course: Course) => {
-    setEditingCourse(course)
+    setEditingCourse(course);
     setCourseData({
       title: course.title,
       description: course.description || '',
@@ -333,13 +347,13 @@ export default function CoursesManagementPage() {
       objectives: course.objectives || [],
       objectiveInput: '',
       image: null,
-      video_url: course.video_url || ''
-    })
-    setIsDialogOpen(true)
-  }
+      video_url: course.video_url || '',
+    });
+    setIsDialogOpen(true);
+  };
 
   const resetForm = () => {
-    setEditingCourse(null)
+    setEditingCourse(null);
     setCourseData({
       title: '',
       description: '',
@@ -353,14 +367,14 @@ export default function CoursesManagementPage() {
       objectives: [],
       objectiveInput: '',
       image: null,
-      video_url: ''
-    })
-  }
+      video_url: '',
+    });
+  };
 
   const handleOpenDialog = () => {
-    resetForm()
-    setIsDialogOpen(true)
-  }
+    resetForm();
+    setIsDialogOpen(true);
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -370,7 +384,7 @@ export default function CoursesManagementPage() {
           <p className="mt-4 text-lg">Chargement des cours...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -446,8 +460,8 @@ export default function CoursesManagementPage() {
                     <TableCell>
                       <Badge className={
                         course.level === 'Débutant' ? 'bg-green-500' : 
-                        course.level === 'Intermédiaire' ? 'bg-blue-500' : 
-                        'bg-purple-500'
+                          course.level === 'Intermédiaire' ? 'bg-blue-500' : 
+                            'bg-purple-500'
                       }>
                         {course.level}
                       </Badge>
@@ -719,5 +733,5 @@ export default function CoursesManagementPage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 } 

@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 
 type HoverEffectType = 'subtle' | 'glow' | 'none'
 
@@ -16,18 +16,20 @@ export function IconHoverEffect({
   children, 
   isActive = false,
   effect = 'subtle',
-  className = ""
+  className = '',
 }: IconHoverEffectProps) {
-  const [hover, setHover] = useState(false)
+  const [hover, setHover] = useState(false);
   
   // Active state
-  const isActiveState = hover || isActive
+  const isActiveState = hover || isActive;
   
   // Style conditionnel basé sur le type d'effet
   const getBackgroundEffect = () => {
-    if (!isActiveState || effect === 'none') return null;
+    if (!isActiveState || effect === 'none') {
+      return null;
+    }
     
-    const commonClasses = "absolute -z-10 transition-all duration-200";
+    const commonClasses = 'absolute -z-10 transition-all duration-200';
     
     if (effect === 'glow') {
       return (
@@ -37,7 +39,7 @@ export function IconHoverEffect({
           animate={{ opacity: 0.6, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
         />
-      )
+      );
     }
     
     // Effet subtle par défaut
@@ -48,8 +50,8 @@ export function IconHoverEffect({
         animate={{ opacity: 0.7, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
       />
-    )
-  }
+    );
+  };
   
   return (
     <motion.div
@@ -62,7 +64,7 @@ export function IconHoverEffect({
       {getBackgroundEffect()}
       {children}
     </motion.div>
-  )
+  );
 }
 
-export default IconHoverEffect 
+export default IconHoverEffect; 

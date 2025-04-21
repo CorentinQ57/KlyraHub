@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 // Ce composant n'est plus nécessaire car nous utilisons IconHoverEffect.tsx
 // Nous gardons un export simple pour maintenir la compatibilité et éviter les erreurs

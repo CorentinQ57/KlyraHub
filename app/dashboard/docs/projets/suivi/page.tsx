@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import {
   MessageSquare,
   FileText,
@@ -20,23 +20,23 @@ import {
   ClipboardList,
   RefreshCw,
   XCircle,
-} from "lucide-react";
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Cycle de vie d'un projet",
-    href: "/dashboard/docs/projets/cycle-vie",
+    title: 'Cycle de vie d\'un projet',
+    href: '/dashboard/docs/projets/cycle-vie',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Validation des livrables",
-    href: "/dashboard/docs/projets/validation",
+    title: 'Validation des livrables',
+    href: '/dashboard/docs/projets/validation',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Questions fréquentes",
-    href: "/dashboard/docs/faq",
+    title: 'Questions fréquentes',
+    href: '/dashboard/docs/faq',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
@@ -53,65 +53,65 @@ type CommunicationType = {
 
 const communicationTypes: CommunicationType[] = [
   {
-    id: "suivi",
-    title: "Suivi de projet",
-    description: "Mises à jour régulières sur l'avancement de votre projet.",
+    id: 'suivi',
+    title: 'Suivi de projet',
+    description: 'Mises à jour régulières sur l\'avancement de votre projet.',
     icon: <ClipboardList className="h-6 w-6" />,
     when: [
-      "Lors des changements d'étape du projet",
-      "À des jalons prédéfinis dans le calendrier du projet",
-      "Après le traitement des retours client"
+      'Lors des changements d\'étape du projet',
+      'À des jalons prédéfinis dans le calendrier du projet',
+      'Après le traitement des retours client',
     ],
-    how: "Automatiquement disponible dans votre tableau de bord et par email"
+    how: 'Automatiquement disponible dans votre tableau de bord et par email',
   },
   {
-    id: "questions",
-    title: "Questions et clarifications",
-    description: "Lorsque nous avons besoin d'informations supplémentaires pour avancer.",
+    id: 'questions',
+    title: 'Questions et clarifications',
+    description: 'Lorsque nous avons besoin d\'informations supplémentaires pour avancer.',
     icon: <MessageCircle className="h-6 w-6" />,
     when: [
-      "Pendant la phase de briefing",
-      "Lorsque certains éléments ne sont pas clairs",
-      "Si nous rencontrons des problèmes techniques"
+      'Pendant la phase de briefing',
+      'Lorsque certains éléments ne sont pas clairs',
+      'Si nous rencontrons des problèmes techniques',
     ],
-    how: "Via l'espace commentaires du projet ou par email"
+    how: 'Via l\'espace commentaires du projet ou par email',
   },
   {
-    id: "retours",
-    title: "Demande de retours",
-    description: "Lorsque nous avons besoin de vos commentaires sur le travail réalisé.",
+    id: 'retours',
+    title: 'Demande de retours',
+    description: 'Lorsque nous avons besoin de vos commentaires sur le travail réalisé.',
     icon: <RefreshCw className="h-6 w-6" />,
     when: [
-      "Après la livraison des premiers concepts",
-      "Suite à des modifications majeures",
-      "Avant la finalisation du projet"
+      'Après la livraison des premiers concepts',
+      'Suite à des modifications majeures',
+      'Avant la finalisation du projet',
     ],
-    how: "Notification par email avec lien vers l'interface de révision"
+    how: 'Notification par email avec lien vers l\'interface de révision',
   },
   {
-    id: "alerte",
-    title: "Alertes et problèmes",
-    description: "Communication concernant des retards potentiels ou des problèmes.",
+    id: 'alerte',
+    title: 'Alertes et problèmes',
+    description: 'Communication concernant des retards potentiels ou des problèmes.',
     icon: <Bell className="h-6 w-6" />,
     when: [
-      "En cas de retard prévisible",
-      "Si des ressources supplémentaires sont nécessaires",
-      "Lorsqu'un problème technique survient"
+      'En cas de retard prévisible',
+      'Si des ressources supplémentaires sont nécessaires',
+      'Lorsqu\'un problème technique survient',
     ],
-    how: "Email prioritaire et notification dans le tableau de bord"
+    how: 'Email prioritaire et notification dans le tableau de bord',
   },
   {
-    id: "livraison",
-    title: "Notification de livraison",
-    description: "Lorsque vos fichiers sont prêts à être téléchargés.",
+    id: 'livraison',
+    title: 'Notification de livraison',
+    description: 'Lorsque vos fichiers sont prêts à être téléchargés.',
     icon: <CheckCircle className="h-6 w-6" />,
     when: [
-      "À la fin du projet",
-      "Pour des livrables intermédiaires",
-      "Après validation des dernières révisions"
+      'À la fin du projet',
+      'Pour des livrables intermédiaires',
+      'Après validation des dernières révisions',
     ],
-    how: "Email et notification dans le tableau de bord avec lien de téléchargement"
-  }
+    how: 'Email et notification dans le tableau de bord avec lien de téléchargement',
+  },
 ];
 
 export default function ProjectMonitoringPage() {
@@ -120,16 +120,16 @@ export default function ProjectMonitoringPage() {
   // Générer la table des matières
   useEffect(() => {
     const items: TocItem[] = [
-      { id: "introduction", title: "Introduction", level: 2 },
-      { id: "dashboard", title: "Tableau de bord", level: 2 },
-      { id: "communications", title: "Types de communication", level: 2 },
+      { id: 'introduction', title: 'Introduction', level: 2 },
+      { id: 'dashboard', title: 'Tableau de bord', level: 2 },
+      { id: 'communications', title: 'Types de communication', level: 2 },
       ...communicationTypes.map((type) => ({
         id: type.id,
         title: type.title,
         level: 3,
       })),
-      { id: "feedback", title: "Donner des retours efficaces", level: 2 },
-      { id: "channels", title: "Canaux de communication", level: 2 },
+      { id: 'feedback', title: 'Donner des retours efficaces', level: 2 },
+      { id: 'channels', title: 'Canaux de communication', level: 2 },
     ];
     setTocItems(items);
   }, []);

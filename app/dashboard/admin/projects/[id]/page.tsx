@@ -1,21 +1,21 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useAuth } from '@/lib/auth'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/lib/auth';
 import { 
   supabase, 
   fetchProjectById, 
   fetchComments, 
   fetchDeliverables, 
-  addComment 
-} from '@/lib/supabase'
-import { Project, Comment, Deliverable } from '@/lib/supabase'
+  addComment, 
+} from '@/lib/supabase';
+import { Project, Comment, Deliverable } from '@/lib/supabase';
 
 // Type étendu pour le projet avec ses relations
 type ProjectWithRelations = Project & {
@@ -26,7 +26,7 @@ type ProjectWithRelations = Project & {
 
 // Composant pour un commentaire
 const CommentItem = ({ comment, userName }: { comment: Comment & { userName?: string }, userName: string }) => {
-  const date = new Date(comment.created_at)
+  const date = new Date(comment.created_at);
   
   return (
     <div className="border rounded-lg p-4 mb-4">
@@ -38,8 +38,8 @@ const CommentItem = ({ comment, userName }: { comment: Comment & { userName?: st
       </div>
       <p className="text-muted-foreground">{comment.content}</p>
     </div>
-  )
-}
+  );
+};
 
 // Composant pour un livrable
 const DeliverableItem = ({ deliverable }: { deliverable: Deliverable }) => {
@@ -60,62 +60,62 @@ const DeliverableItem = ({ deliverable }: { deliverable: Deliverable }) => {
         Télécharger
       </a>
     </div>
-  )
-}
+  );
+};
 
 export default function AdminProjectPage({ 
-  params 
+  params, 
 }: { 
   params: { id: string } 
 }) {
-  const [project, setProject] = useState<ProjectWithRelations | null>(null)
-  const [comments, setComments] = useState<(Comment & { userName?: string })[]>([])
-  const [deliverables, setDeliverables] = useState<Deliverable[]>([])
-  const [newComment, setNewComment] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isCommenting, setIsCommenting] = useState(false)
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
+  const [project, setProject] = useState<ProjectWithRelations | null>(null);
+  const [comments, setComments] = useState<(Comment & { userName?: string })[]>([]);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCommenting, setIsCommenting] = useState(false);
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
 
   // Status labels
   const statusLabels: Record<string, { label: string, color: string }> = {
     pending: {
-      label: "En attente",
-      color: "bg-yellow-100 text-yellow-800"
+      label: 'En attente',
+      color: 'bg-yellow-100 text-yellow-800',
     },
     validated: {
-      label: "Validé",
-      color: "bg-blue-100 text-blue-800"
+      label: 'Validé',
+      color: 'bg-blue-100 text-blue-800',
     },
     in_progress: {
-      label: "En cours",
-      color: "bg-purple-100 text-purple-800"
+      label: 'En cours',
+      color: 'bg-purple-100 text-purple-800',
     },
     delivered: {
-      label: "Livré",
-      color: "bg-green-100 text-green-800"
+      label: 'Livré',
+      color: 'bg-green-100 text-green-800',
     },
     completed: {
-      label: "Terminé",
-      color: "bg-gray-100 text-gray-800"
+      label: 'Terminé',
+      color: 'bg-gray-100 text-gray-800',
     },
-  }
+  };
 
   useEffect(() => {
     // Redirect if not authenticated or not admin
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadProjectData()
+      loadProjectData();
     }
-  }, [user, authLoading, isAdmin, params.id, router])
+  }, [user, authLoading, isAdmin, params.id, router]);
 
   const loadProjectData = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Fetch project data
       const { data, error } = await supabase
@@ -142,14 +142,16 @@ export default function AdminProjectPage({
           )
         `)
         .eq('id', params.id)
-        .single()
+        .single();
         
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
-      setProject(data as ProjectWithRelations)
+      setProject(data as ProjectWithRelations);
       
       // Fetch comments
-      const commentsData = await fetchComments(params.id)
+      const commentsData = await fetchComments(params.id);
       
       // For each comment, fetch the user name if possible
       const commentsWithUserNames = await Promise.all(
@@ -160,64 +162,66 @@ export default function AdminProjectPage({
                 .from('profiles')
                 .select('full_name, email')
                 .eq('id', comment.user_id)
-                .single()
+                .single();
                 
               if (!error && data) {
                 return {
                   ...comment,
-                  userName: data.full_name || data.email || 'Utilisateur'
-                }
+                  userName: data.full_name || data.email || 'Utilisateur',
+                };
               }
             }
-            return comment
+            return comment;
           } catch (error) {
-            console.error('Error fetching comment user:', error)
-            return comment
+            console.error('Error fetching comment user:', error);
+            return comment;
           }
         })
-      )
+      );
       
-      setComments(commentsWithUserNames)
+      setComments(commentsWithUserNames);
       
       // Fetch deliverables
-      const deliverablesData = await fetchDeliverables(params.id)
-      setDeliverables(deliverablesData)
+      const deliverablesData = await fetchDeliverables(params.id);
+      setDeliverables(deliverablesData);
       
     } catch (error) {
-      console.error('Error loading project data:', error)
+      console.error('Error loading project data:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
   
   const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user || !project || !newComment.trim()) return
+    e.preventDefault();
+    if (!user || !project || !newComment.trim()) {
+      return;
+    }
     
     try {
-      setIsCommenting(true)
-      const comment = await addComment(project.id, user.id, newComment)
+      setIsCommenting(true);
+      const comment = await addComment(project.id, user.id, newComment);
       
       if (comment) {
         // Get user name
-        const userName = user.user_metadata?.full_name || user.email || 'Admin'
+        const userName = user.user_metadata?.full_name || user.email || 'Admin';
         
         // Add optimistically
         setComments([
           ...comments,
           {
             ...comment,
-            userName
-          }
-        ])
-        setNewComment('')
+            userName,
+          },
+        ]);
+        setNewComment('');
       }
     } catch (error) {
-      console.error('Error adding comment:', error)
+      console.error('Error adding comment:', error);
     } finally {
-      setIsCommenting(false)
+      setIsCommenting(false);
     }
-  }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -227,7 +231,7 @@ export default function AdminProjectPage({
           <p className="mt-4 text-lg">Chargement du projet...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!project) {
@@ -241,7 +245,7 @@ export default function AdminProjectPage({
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -282,13 +286,13 @@ export default function AdminProjectPage({
                 <CardContent className="space-y-4">
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
-                    <p className="mt-1">{project.description || "Aucune description fournie."}</p>
+                    <p className="mt-1">{project.description || 'Aucune description fournie.'}</p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Service</h3>
-                      <p className="mt-1 font-medium">{project.services?.name || "Non spécifié"}</p>
+                      <p className="mt-1 font-medium">{project.services?.name || 'Non spécifié'}</p>
                     </div>
                     
                     <div>
@@ -310,7 +314,7 @@ export default function AdminProjectPage({
                       <h3 className="text-sm font-medium text-muted-foreground">Statut</h3>
                       <div className="mt-1">
                         <Badge
-                          className={`px-2 py-1 ${statusLabels[project.status]?.color || "bg-gray-100"}`}
+                          className={`px-2 py-1 ${statusLabels[project.status]?.color || 'bg-gray-100'}`}
                         >
                           {statusLabels[project.status]?.label || project.status}
                         </Badge>
@@ -355,7 +359,7 @@ export default function AdminProjectPage({
                         className="ml-auto bg-klyra hover:bg-klyra/90"
                         disabled={!newComment.trim() || isCommenting}
                       >
-                        {isCommenting ? "Envoi..." : "Ajouter un commentaire"}
+                        {isCommenting ? 'Envoi...' : 'Ajouter un commentaire'}
                       </Button>
                     </div>
                   </form>
@@ -392,7 +396,7 @@ export default function AdminProjectPage({
             <CardContent className="space-y-6">
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Client</h3>
-                <p className="mt-1 font-medium">{project.client?.full_name || "Non spécifié"}</p>
+                <p className="mt-1 font-medium">{project.client?.full_name || 'Non spécifié'}</p>
                 {project.client?.email && (
                   <p className="text-sm text-muted-foreground">{project.client.email}</p>
                 )}
@@ -427,5 +431,5 @@ export default function AdminProjectPage({
         </div>
       </div>
     </div>
-  )
+  );
 } 

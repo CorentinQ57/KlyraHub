@@ -1,46 +1,46 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useToast } from "@/components/ui/use-toast"
-import { Button } from "@/components/ui/button"
-import { CheckCircle2, Loader2 } from "lucide-react"
-import { useAuth } from '@/lib/auth'
-import { createProject } from '@/lib/supabase'
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, Loader2 } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
+import { createProject } from '@/lib/supabase';
 
 export default function SuccessPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { user, isLoading } = useAuth()
-  const { toast } = useToast()
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, isLoading } = useAuth();
+  const { toast } = useToast();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [error, setError] = useState<string | null>(null);
 
   // Récupérer les paramètres de l'URL
-  const sessionId = searchParams.get('session_id')
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login')
-        return
+        router.push('/login');
+        return;
       }
 
       if (sessionId) {
         // Attendre 2 secondes pour laisser le temps au webhook de créer le projet
         setTimeout(() => {
-          setStatus('success')
+          setStatus('success');
           // Rediriger vers le dashboard après 3 secondes supplémentaires
           setTimeout(() => {
-            router.push('/dashboard')
-          }, 3000)
-        }, 2000)
+            router.push('/dashboard');
+          }, 3000);
+        }, 2000);
       } else {
-        setStatus('error')
-        setError("Session de paiement non trouvée.")
+        setStatus('error');
+        setError('Session de paiement non trouvée.');
       }
     }
-  }, [user, isLoading, sessionId, router])
+  }, [user, isLoading, sessionId, router]);
 
   if (isLoading || status === 'loading') {
     return (
@@ -50,7 +50,7 @@ export default function SuccessPage() {
           <p className="text-lg">Finalisation de votre commande...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -97,5 +97,5 @@ export default function SuccessPage() {
         </div>
       </div>
     </div>
-  )
+  );
 } 

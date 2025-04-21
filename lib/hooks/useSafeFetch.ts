@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useAuth } from '@/lib/auth'
-import { verifyTokenExpiration, refreshSession } from '@/lib/supabase'
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '@/lib/auth';
+import { verifyTokenExpiration, refreshSession } from '@/lib/supabase';
 
 // Global counter to track fetch attempts per session
 // This helps prevent infinite loops in development or due to race conditions
@@ -9,7 +9,7 @@ const globalFetchCounter = {
   maxPerSession: 10,
   reset() {
     this.count = 0;
-  }
+  },
 };
 
 // Reset counter on page load
@@ -37,27 +37,27 @@ export function useSafeFetch<T>(
   fetchFunction: () => Promise<T>,
   dependencies: any[] = []
 ) {
-  const [data, setData] = useState<T | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-  const [retryCount, setRetryCount] = useState(0)
-  const { user, isAdmin, reloadAuthState } = useAuth()
+  const [data, setData] = useState<T | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const { user, isAdmin, reloadAuthState } = useAuth();
   
   // Use refs to track fetch status and prevent unnecessary re-fetches
-  const hasFetchedRef = useRef(false)
-  const activeFetchRef = useRef(false)
-  const lastFetchTimeRef = useRef(0)
-  const userIdRef = useRef<string | null>(null)
-  const fetchCountRef = useRef(0)
-  const tokenRefreshedRef = useRef(false)
+  const hasFetchedRef = useRef(false);
+  const activeFetchRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
+  const userIdRef = useRef<string | null>(null);
+  const fetchCountRef = useRef(0);
+  const tokenRefreshedRef = useRef(false);
   
   // Extract only the user ID to avoid re-renders with full user object changes
-  const userId = user?.id || null
+  const userId = user?.id || null;
   
   // Update the userIdRef when userId changes
   useEffect(() => {
-    userIdRef.current = userId
-  }, [userId])
+    userIdRef.current = userId;
+  }, [userId]);
   
   // Écouter les événements de rafraîchissement de token
   useEffect(() => {

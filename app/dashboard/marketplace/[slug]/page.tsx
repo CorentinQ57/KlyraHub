@@ -1,26 +1,26 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { getServiceBySlug, type Service, createStripeSession } from '@/lib/supabase'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { getServiceBySlug, type Service, createStripeSession } from '@/lib/supabase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { motion } from 'framer-motion';
 
 // Processus par défaut si non spécifié dans le service
 const defaultProcess = [
-  "Briefing",
-  "Conception",
-  "Développement",
-  "Tests et validation",
-  "Livraison"
-]
+  'Briefing',
+  'Conception',
+  'Développement',
+  'Tests et validation',
+  'Livraison',
+];
 
 // Fonction de création de slug identique à celle de la page marketplace
-const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
+const getSlug = (title: string) => title.toLowerCase().replace(/\s+/g, '-');
 
 type Props = {
   params: {
@@ -29,45 +29,47 @@ type Props = {
 }
 
 export default function ServicePage({ params }: Props) {
-  const router = useRouter()
-  const { user, isLoading } = useAuth()
-  const { toast } = useToast()
-  const { slug } = params
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+  const { toast } = useToast();
+  const { slug } = params;
   
-  const [service, setService] = useState<Service | null>(null)
-  const [isLoadingService, setIsLoadingService] = useState(true)
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [service, setService] = useState<Service | null>(null);
+  const [isLoadingService, setIsLoadingService] = useState(true);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/login')
+      router.push('/login');
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     const loadService = async () => {
-      const serviceData = await getServiceBySlug(slug)
-      setService(serviceData)
-      setIsLoadingService(false)
+      const serviceData = await getServiceBySlug(slug);
+      setService(serviceData);
+      setIsLoadingService(false);
       
       // Si le service est trouvé mais que le slug ne correspond pas au nom actuel,
       // rediriger vers la bonne URL avec le slug mis à jour
       if (serviceData && getSlug(serviceData.name) !== slug) {
-        const correctSlug = getSlug(serviceData.name)
-        console.log(`Redirection vers le slug correct: ${correctSlug}`)
-        router.replace(`/dashboard/marketplace/${correctSlug}`)
+        const correctSlug = getSlug(serviceData.name);
+        console.log(`Redirection vers le slug correct: ${correctSlug}`);
+        router.replace(`/dashboard/marketplace/${correctSlug}`);
       }
-    }
-    loadService()
-  }, [slug, router])
+    };
+    loadService();
+  }, [slug, router]);
   
   const handleBuyNow = async () => {
-    if (!user || !service) return
+    if (!user || !service) {
+      return;
+    }
     
     try {
-      setIsProcessingPayment(true)
-      setPaymentError(null)
+      setIsProcessingPayment(true);
+      setPaymentError(null);
       
       // Créer une session de paiement Stripe
       const stripeSession = await createStripeSession(
@@ -75,29 +77,29 @@ export default function ServicePage({ params }: Props) {
         service.id,
         service.name,
         service.price
-      )
+      );
       
       if (stripeSession && stripeSession.url) {
         // Rediriger vers la page de paiement Stripe
-        window.location.href = stripeSession.url
+        window.location.href = stripeSession.url;
       } else {
-        throw new Error('Impossible de créer une session de paiement')
+        throw new Error('Impossible de créer une session de paiement');
       }
 
     } catch (error: any) {
-      console.error('Erreur:', error)
-      const errorMessage = error?.message || 'Une erreur est survenue lors de la création de la session de paiement.'
-      setPaymentError(errorMessage)
+      console.error('Erreur:', error);
+      const errorMessage = error?.message || 'Une erreur est survenue lors de la création de la session de paiement.';
+      setPaymentError(errorMessage);
       toast({
-        title: "Erreur",
+        title: 'Erreur',
         description: errorMessage,
         duration: 5000,
-        variant: "destructive"
-      })
+        variant: 'destructive',
+      });
     } finally {
-      setIsProcessingPayment(false)
+      setIsProcessingPayment(false);
     }
-  }
+  };
   
   if (isLoading || isLoadingService) {
     return (
@@ -107,7 +109,7 @@ export default function ServicePage({ params }: Props) {
           <p className="mt-4 text-lg">Chargement...</p>
         </div>
       </div>
-    )
+    );
   }
   
   if (!service) {
@@ -125,7 +127,7 @@ export default function ServicePage({ params }: Props) {
           </div>
         </main>
       </div>
-    )
+    );
   }
 
   return (
@@ -201,16 +203,16 @@ export default function ServicePage({ params }: Props) {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: i * 0.2 }}
-                            viewport={{ once: true, margin: "-100px" }}
+                            viewport={{ once: true, margin: '-100px' }}
                           >
                             {i < (service?.phases || defaultProcess).length - 1 && (
                               <motion.div 
                                 className="absolute left-4 top-8 w-0.5 bg-primary/20" 
-                                style={{ height: "calc(100% + 10px)" }}
+                                style={{ height: 'calc(100% + 10px)' }}
                                 initial={{ height: 0 }}
-                                whileInView={{ height: "calc(100% + 10px)" }}
+                                whileInView={{ height: 'calc(100% + 10px)' }}
                                 transition={{ duration: 0.5, delay: i * 0.2 + 0.3 }}
-                                viewport={{ once: true, margin: "-100px" }}
+                                viewport={{ once: true, margin: '-100px' }}
                               />
                             )}
                             
@@ -219,19 +221,19 @@ export default function ServicePage({ params }: Props) {
                               initial={{ scale: 0 }}
                               whileInView={{ scale: 1 }}
                               transition={{ 
-                                type: "spring", 
+                                type: 'spring', 
                                 stiffness: 300, 
                                 damping: 15, 
-                                delay: i * 0.2 + 0.1 
+                                delay: i * 0.2 + 0.1, 
                               }}
-                              viewport={{ once: true, margin: "-100px" }}
+                              viewport={{ once: true, margin: '-100px' }}
                             >
                               {i + 1}
                             </motion.div>
                             
                             <motion.div 
                               className="bg-primary-50 p-4 rounded-lg shadow-sm border border-primary/10 flex-1"
-                              whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+                              whileHover={{ y: -5, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                               transition={{ duration: 0.2 }}
                             >
                               <h4 className="font-medium text-base">{step}</h4>
@@ -291,5 +293,5 @@ export default function ServicePage({ params }: Props) {
         </Tabs>
       </main>
     </div>
-  )
+  );
 } 

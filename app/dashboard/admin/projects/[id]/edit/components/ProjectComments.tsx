@@ -1,13 +1,13 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useToast } from '@/components/ui/use-toast'
-import { addComment, fetchComments, type Comment as BaseComment } from '@/lib/supabase'
-import { useAuth } from '@/lib/auth'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/components/ui/use-toast';
+import { addComment, fetchComments, type Comment as BaseComment } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
 
 // Définir un type spécifique pour le component avec les informations utilisateur
 interface EnhancedComment extends BaseComment {
@@ -24,19 +24,19 @@ type ProjectCommentsProps = {
 }
 
 export default function ProjectComments({ project, onCommentsUpdated }: ProjectCommentsProps) {
-  const [comments, setComments] = useState<EnhancedComment[]>([])
-  const [newComment, setNewComment] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSending, setIsSending] = useState(false)
-  const { user } = useAuth()
-  const { toast } = useToast()
+  const [comments, setComments] = useState<EnhancedComment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    loadComments()
-  }, [project.id])
+    loadComments();
+  }, [project.id]);
 
   const loadComments = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Si les commentaires sont déjà préchargés dans le projet, les utiliser
       if (project.comments && Array.isArray(project.comments)) {
@@ -56,7 +56,7 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
                 enhancedComment.user = {
                   id: project.client.id,
                   full_name: project.client.full_name,
-                  avatar_url: project.client.avatar_url
+                  avatar_url: project.client.avatar_url,
                 };
               } 
               // Vérifier si c'est le designer
@@ -64,7 +64,7 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
                 enhancedComment.user = {
                   id: project.designer.id,
                   full_name: project.designer.full_name,
-                  avatar_url: project.designer.avatar_url
+                  avatar_url: project.designer.avatar_url,
                 };
               } 
               // Sinon, c'est probablement un admin
@@ -72,7 +72,7 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
                 enhancedComment.user = {
                   id: enhancedComment.user_id,
                   full_name: 'Admin',
-                  avatar_url: ''
+                  avatar_url: '',
                 };
               }
             }
@@ -101,7 +101,7 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
               comment.user = {
                 id: project.client.id,
                 full_name: project.client.full_name,
-                avatar_url: project.client.avatar_url
+                avatar_url: project.client.avatar_url,
               };
             } 
             // Vérifier si c'est le designer
@@ -109,7 +109,7 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
               comment.user = {
                 id: project.designer.id,
                 full_name: project.designer.full_name,
-                avatar_url: project.designer.avatar_url
+                avatar_url: project.designer.avatar_url,
               };
             } 
             // Sinon, c'est probablement un admin
@@ -117,7 +117,7 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
               comment.user = {
                 id: comment.user_id,
                 full_name: 'Admin',
-                avatar_url: ''
+                avatar_url: '',
               };
             }
             return comment;
@@ -134,9 +134,9 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
     } catch (error) {
       console.error('Error loading comments:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les commentaires.",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de charger les commentaires.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -144,61 +144,65 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
   };
 
   const handleSendComment = async () => {
-    if (!newComment.trim() || !user) return
+    if (!newComment.trim() || !user) {
+      return;
+    }
     
-    setIsSending(true)
+    setIsSending(true);
     try {
-      const baseComment = await addComment(project.id, user.id, newComment)
+      const baseComment = await addComment(project.id, user.id, newComment);
       
       if (baseComment) {
         // Optimistic update
         const userInfo = {
           id: user.id,
           full_name: user.user_metadata?.full_name || 'Admin',
-          avatar_url: user.user_metadata?.avatar_url || ''
-        }
+          avatar_url: user.user_metadata?.avatar_url || '',
+        };
         
         const newCommentObject: EnhancedComment = {
           ...baseComment,
-          user: userInfo
-        }
+          user: userInfo,
+        };
         
-        setComments([...comments, newCommentObject])
-        setNewComment('')
-        onCommentsUpdated()
+        setComments([...comments, newCommentObject]);
+        setNewComment('');
+        onCommentsUpdated();
       }
     } catch (error) {
-      console.error('Error sending comment:', error)
+      console.error('Error sending comment:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer le commentaire.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible d\'envoyer le commentaire.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSending(false)
+      setIsSending(false);
     }
-  }
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
-    }).format(date)
-  }
+      minute: '2-digit',
+    }).format(date);
+  };
 
   const getUserInitials = (name: string) => {
-    if (!name) return '?'
+    if (!name) {
+      return '?';
+    }
     return name
       .split(' ')
       .map(part => part.charAt(0))
       .join('')
       .toUpperCase()
-      .substring(0, 2)
-  }
+      .substring(0, 2);
+  };
 
   return (
     <Card>
@@ -286,5 +290,5 @@ export default function ProjectComments({ project, onCommentsUpdated }: ProjectC
         </div>
       </CardContent>
     </Card>
-  )
+  );
 } 

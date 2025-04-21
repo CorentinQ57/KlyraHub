@@ -1,44 +1,44 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import { 
   FileText, 
   ShieldCheck, 
   AlertTriangle, 
   Calendar,
-  Lock
-} from "lucide-react";
+  Lock,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Conditions d'utilisation",
-    href: "/dashboard/docs/legal/conditions",
+    title: 'Conditions d\'utilisation',
+    href: '/dashboard/docs/legal/conditions',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Contacter le support",
-    href: "/dashboard/docs/support/contact",
+    title: 'Contacter le support',
+    href: '/dashboard/docs/support/contact',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
 
 export default function PrivacyPolicyPage() {
   const [tocItems] = useState<TocItem[]>([
-    { id: "introduction", title: "Introduction", level: 2 },
-    { id: "collect", title: "Informations collectées", level: 2 },
-    { id: "use", title: "Utilisation des informations", level: 2 },
-    { id: "share", title: "Partage des informations", level: 2 },
-    { id: "cookies", title: "Cookies et technologies similaires", level: 2 },
-    { id: "security", title: "Sécurité des données", level: 2 },
-    { id: "rights", title: "Vos droits", level: 2 },
-    { id: "retention", title: "Conservation des données", level: 2 },
-    { id: "changes", title: "Modifications de cette politique", level: 2 },
-    { id: "contact", title: "Nous contacter", level: 2 },
+    { id: 'introduction', title: 'Introduction', level: 2 },
+    { id: 'collect', title: 'Informations collectées', level: 2 },
+    { id: 'use', title: 'Utilisation des informations', level: 2 },
+    { id: 'share', title: 'Partage des informations', level: 2 },
+    { id: 'cookies', title: 'Cookies et technologies similaires', level: 2 },
+    { id: 'security', title: 'Sécurité des données', level: 2 },
+    { id: 'rights', title: 'Vos droits', level: 2 },
+    { id: 'retention', title: 'Conservation des données', level: 2 },
+    { id: 'changes', title: 'Modifications de cette politique', level: 2 },
+    { id: 'contact', title: 'Nous contacter', level: 2 },
   ]);
 
   return (

@@ -1,23 +1,23 @@
-"use client"
+'use client';
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth'
-import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { Loader2 } from 'lucide-react';
 
 export default function HomePage() {
-  const router = useRouter()
-  const { user, isLoading } = useAuth()
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
   
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        router.push('/dashboard')
+        router.push('/dashboard');
       } else {
-        router.push('/login')
+        router.push('/login');
       }
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
   
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -26,5 +26,5 @@ export default function HomePage() {
         <p className="text-muted-foreground">Chargement...</p>
       </div>
     </div>
-  )
+  );
 } 

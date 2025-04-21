@@ -3,26 +3,26 @@ import { supabase } from './supabase';
 // Check user role function
 export const checkUserRole = async (userId: string): Promise<string | null> => {
   if (!userId) {
-    console.error("checkUserRole called with invalid userId:", userId);
+    console.error('checkUserRole called with invalid userId:', userId);
     return null;
   }
 
   try {
-    console.log("Checking user role for:", userId);
+    console.log('Checking user role for:', userId);
     
     // List of known admin emails
     const knownAdminEmails = [
       'corentin@klyra.design',
       'dev@klyra.design',
       'admin@klyra.design',
-      'test.admin@example.com'
+      'test.admin@example.com',
     ];
     
     // 1. Check localStorage cache
     if (typeof window !== 'undefined') {
       const cachedRole = localStorage.getItem(`user_role_${userId}`);
       if (cachedRole) {
-        console.log("Using cached role from localStorage:", cachedRole);
+        console.log('Using cached role from localStorage:', cachedRole);
         return cachedRole;
       }
     }
@@ -44,7 +44,7 @@ export const checkUserRole = async (userId: string): Promise<string | null> => {
     
     // If no role but email is in known admin list
     if (!role && data?.email && knownAdminEmails.includes(data.email.toLowerCase())) {
-      console.log("Admin recognized by email from profiles:", data.email);
+      console.log('Admin recognized by email from profiles:', data.email);
       role = 'admin';
     }
     
@@ -55,7 +55,7 @@ export const checkUserRole = async (userId: string): Promise<string | null> => {
     
     return role;
   } catch (dbError) {
-    console.error("Error in checkUserRole:", dbError);
+    console.error('Error in checkUserRole:', dbError);
     return null;
   }
 }; 

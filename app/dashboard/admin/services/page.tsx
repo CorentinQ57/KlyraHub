@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   Table,
   TableBody,
@@ -14,63 +14,63 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Switch } from "@/components/ui/switch"
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { getAllServices, updateService, deleteService } from '@/lib/supabase'
-import { Service } from '@/lib/supabase'
+} from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { getAllServices, updateService, deleteService } from '@/lib/supabase';
+import { Service } from '@/lib/supabase';
 
 export default function ServicesManagementPage() {
-  const [services, setServices] = useState<Service[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
-  const [statusLoading, setStatusLoading] = useState<string | null>(null)
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
-  const { toast } = useToast()
+  const [services, setServices] = useState<Service[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [statusLoading, setStatusLoading] = useState<string | null>(null);
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Redirect if not authenticated or not admin
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadServices()
+      loadServices();
     }
-  }, [user, authLoading, isAdmin, router])
+  }, [user, authLoading, isAdmin, router]);
 
   const loadServices = async () => {
     try {
-      setIsLoading(true)
-      const data = await getAllServices()
+      setIsLoading(true);
+      const data = await getAllServices();
       // Tri par statut (actifs d'abord) puis par nom
       setServices(data.sort((a, b) => {
         if (a.active === b.active) {
-          return a.name.localeCompare(b.name)
+          return a.name.localeCompare(b.name);
         }
-        return a.active ? -1 : 1
-      }))
+        return a.active ? -1 : 1;
+      }));
     } catch (error) {
-      console.error('Error loading services:', error)
+      console.error('Error loading services:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les services.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les services.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleToggleActive = async (service: Service) => {
     try {
-      setStatusLoading(service.id)
+      setStatusLoading(service.id);
       const updatedService = await updateService(service.id, {
-        active: !service.active
-      })
+        active: !service.active,
+      });
       
       if (updatedService) {
         // Mettre à jour localement
@@ -78,56 +78,56 @@ export default function ServicesManagementPage() {
           prevServices.map(s => 
             s.id === service.id ? { ...s, active: !s.active } : s
           )
-        )
+        );
         
         toast({
-          title: "Succès",
+          title: 'Succès',
           description: `Service ${updatedService.active ? 'activé' : 'désactivé'}.`,
-        })
+        });
       }
     } catch (error) {
-      console.error('Error toggling service status:', error)
+      console.error('Error toggling service status:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de modifier le statut du service.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de modifier le statut du service.',
+        variant: 'destructive',
+      });
     } finally {
-      setStatusLoading(null)
+      setStatusLoading(null);
     }
-  }
+  };
 
   const handleDeleteService = async (serviceId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce service ?")) {
-      return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
+      return;
     }
     
     try {
-      setDeleteLoading(serviceId)
-      const success = await deleteService(serviceId)
+      setDeleteLoading(serviceId);
+      const success = await deleteService(serviceId);
       
       if (success) {
         // Rafraîchir la liste après suppression
-        await loadServices()
+        await loadServices();
         
         toast({
-          title: "Succès",
-          description: "Service supprimé avec succès.",
-        })
+          title: 'Succès',
+          description: 'Service supprimé avec succès.',
+        });
       } else {
-        throw new Error('Failed to delete service')
+        throw new Error('Failed to delete service');
       }
     } catch (error) {
-      console.error('Error deleting service:', error)
+      console.error('Error deleting service:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le service. Il peut être utilisé par des projets.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de supprimer le service. Il peut être utilisé par des projets.',
+        variant: 'destructive',
+      });
     } finally {
-      setDeleteLoading(null)
+      setDeleteLoading(null);
     }
-  }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -137,7 +137,7 @@ export default function ServicesManagementPage() {
           <p className="mt-4 text-lg">Chargement des services...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -178,7 +178,7 @@ export default function ServicesManagementPage() {
           <TableBody>
             {services.length > 0 ? (
               services.map((service) => (
-                <TableRow key={service.id} className={!service.active ? "opacity-60" : ""}>
+                <TableRow key={service.id} className={!service.active ? 'opacity-60' : ''}>
                   <TableCell className="font-medium">{service.name}</TableCell>
                   <TableCell>{service.category || 'Non catégorisé'}</TableCell>
                   <TableCell className="text-right">{service.price}€</TableCell>
@@ -223,5 +223,5 @@ export default function ServicesManagementPage() {
         </Table>
       </Card>
     </div>
-  )
+  );
 } 

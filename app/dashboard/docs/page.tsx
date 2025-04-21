@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
-import { docCategories } from "@/components/docs/DocsNav";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
+import { docCategories } from '@/components/docs/DocsNav';
 import { PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
 import {
   BookOpen,
@@ -19,40 +19,40 @@ import {
   Package,
   ShieldCheck,
   CheckCircle,
-  Users
-} from "lucide-react";
+  Users,
+} from 'lucide-react';
 
 // Exemple de ressources complémentaires
 const supportLinks: LinkItem[] = [
   {
-    title: "Support client",
-    href: "/dashboard/docs/support/contact",
-    description: "Notre équipe est disponible pour vous aider",
+    title: 'Support client',
+    href: '/dashboard/docs/support/contact',
+    description: 'Notre équipe est disponible pour vous aider',
     icon: <Mail className="h-4 w-4 text-[#467FF7]" />,
   },
   {
-    title: "FAQ",
-    href: "/dashboard/docs/faq",
-    description: "Questions fréquemment posées",
+    title: 'FAQ',
+    href: '/dashboard/docs/faq',
+    description: 'Questions fréquemment posées',
     icon: <HelpCircle className="h-4 w-4 text-[#467FF7]" />,
   },
 ];
 
 const resourceLinks: LinkItem[] = [
   {
-    title: "Conditions d'utilisation",
-    href: "/dashboard/docs/legal/conditions",
+    title: 'Conditions d\'utilisation',
+    href: '/dashboard/docs/legal/conditions',
     icon: <FileText className="h-4 w-4 text-[#467FF7]" />,
   },
   {
-    title: "Politique de confidentialité",
-    href: "/dashboard/docs/legal/confidentialite",
+    title: 'Politique de confidentialité',
+    href: '/dashboard/docs/legal/confidentialite',
     icon: <ShieldCheck className="h-4 w-4 text-[#467FF7]" />,
   },
   {
-    title: "Site Klyra Design",
-    href: "https://klyra.design",
-    description: "Visitez notre site principal",
+    title: 'Site Klyra Design',
+    href: 'https://klyra.design',
+    description: 'Visitez notre site principal',
     icon: <ExternalLink className="h-4 w-4 text-[#467FF7]" />,
     external: true,
   },
@@ -66,7 +66,7 @@ export default function DocsHomePage() {
     const headings = document.querySelectorAll<HTMLHeadingElement>('h2, h3');
     const items: TocItem[] = Array.from(headings).map((heading) => ({
       id: heading.id,
-      title: heading.textContent || "",
+      title: heading.textContent || '',
       level: parseInt(heading.tagName.substring(1)),
     }));
     setTocItems(items);

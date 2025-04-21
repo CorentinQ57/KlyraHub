@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/components/ui/use-toast'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 interface User {
   id: string
@@ -18,92 +18,98 @@ interface User {
 }
 
 export default function AdminUsers() {
-  const { toast } = useToast()
-  const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [showEditUser, setShowEditUser] = useState(false)
-  const [newRole, setNewRole] = useState('')
+  const { toast } = useToast();
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [newRole, setNewRole] = useState('');
 
   useEffect(() => {
-    fetchUsers()
-  }, [])
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
       
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
-      setUsers(data || [])
+      setUsers(data || []);
     } catch (error) {
-      console.error('Error fetching users:', error)
+      console.error('Error fetching users:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les utilisateurs",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les utilisateurs',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const openEditModal = (user: User) => {
-    setSelectedUser(user)
-    setNewRole(user.role)
-    setShowEditUser(true)
-  }
+    setSelectedUser(user);
+    setNewRole(user.role);
+    setShowEditUser(true);
+  };
 
   const updateUserRole = async () => {
-    if (!selectedUser || !newRole) return
+    if (!selectedUser || !newRole) {
+      return;
+    }
     
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ role: newRole })
-        .eq('id', selectedUser.id)
+        .eq('id', selectedUser.id);
       
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
       
       toast({
-        title: "Rôle mis à jour",
-        description: "Le rôle de l'utilisateur a été mis à jour avec succès"
-      })
+        title: 'Rôle mis à jour',
+        description: 'Le rôle de l\'utilisateur a été mis à jour avec succès',
+      });
       
       // Refresh users
-      fetchUsers()
-      setShowEditUser(false)
+      fetchUsers();
+      setShowEditUser(false);
       
     } catch (error) {
-      console.error('Error updating user role:', error)
+      console.error('Error updating user role:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le rôle",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le rôle',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const getRoleBadgeColor = (role: string) => {
     const colors = {
       admin: 'bg-red-100 text-red-800',
       designer: 'bg-purple-100 text-purple-800',
-      client: 'bg-blue-100 text-blue-800'
-    }
-    return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800'
-  }
+      client: 'bg-blue-100 text-blue-800',
+    };
+    return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
 
   const getRoleLabel = (role: string) => {
     const labels = {
       admin: 'Administrateur',
       designer: 'Designer',
-      client: 'Client'
-    }
-    return labels[role as keyof typeof labels] || role
-  }
+      client: 'Client',
+    };
+    return labels[role as keyof typeof labels] || role;
+  };
 
   if (isLoading) {
     return (
@@ -113,7 +119,7 @@ export default function AdminUsers() {
           <p className="mt-4 text-lg">Chargement des utilisateurs...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -277,5 +283,5 @@ export default function AdminUsers() {
         </Card>
       </div>
     </div>
-  )
+  );
 } 

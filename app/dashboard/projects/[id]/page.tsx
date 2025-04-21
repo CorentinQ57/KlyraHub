@@ -1,16 +1,16 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/lib/auth'
-import { fetchProjectById, fetchComments, addComment, fetchDeliverables, supabase } from '@/lib/supabase'
-import { Project, Comment, Deliverable } from '@/lib/supabase'
-import { motion } from 'framer-motion'
-import DepositSpaces from './components/DepositSpaces'
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { ArrowLeft, MessageSquare, FileText, ChevronRight, Clock, Settings, Download, Tag } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/auth';
+import { fetchProjectById, fetchComments, addComment, fetchDeliverables, supabase } from '@/lib/supabase';
+import { Project, Comment, Deliverable } from '@/lib/supabase';
+import { motion } from 'framer-motion';
+import DepositSpaces from './components/DepositSpaces';
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { ArrowLeft, MessageSquare, FileText, ChevronRight, Clock, Settings, Download, Tag } from 'lucide-react';
 
 // Définition des types étendus
 type ProjectWithRelations = Project & {
@@ -30,7 +30,7 @@ type ProjectWithRelations = Project & {
 
 // Composant pour un commentaire
 const CommentItem = ({ comment, userName }: { comment: Comment & { userName?: string }, userName: string }) => {
-  const date = new Date(comment.created_at)
+  const date = new Date(comment.created_at);
   
   return (
     <motion.div 
@@ -47,8 +47,8 @@ const CommentItem = ({ comment, userName }: { comment: Comment & { userName?: st
       </div>
       <p className="text-[14px] text-[#1A2333]">{comment.content}</p>
     </motion.div>
-  )
-}
+  );
+};
 
 // Composant pour un livrable
 const DeliverableItem = ({ deliverable }: { deliverable: Deliverable }) => {
@@ -75,67 +75,67 @@ const DeliverableItem = ({ deliverable }: { deliverable: Deliverable }) => {
         <span className="text-sm">Télécharger</span>
       </a>
     </motion.div>
-  )
-}
+  );
+};
 
 export default function ProjectPage({ 
-  params 
+  params, 
 }: { 
   params: { id: string } 
 }) {
-  const [project, setProject] = useState<ProjectWithRelations | null>(null)
-  const [comments, setComments] = useState<(Comment & { userName?: string })[]>([])
-  const [deliverables, setDeliverables] = useState<Deliverable[]>([])
-  const [newComment, setNewComment] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isCommenting, setIsCommenting] = useState(false)
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
+  const [project, setProject] = useState<ProjectWithRelations | null>(null);
+  const [comments, setComments] = useState<(Comment & { userName?: string })[]>([]);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCommenting, setIsCommenting] = useState(false);
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
   
   // Status labels
   const statusLabels: Record<string, { label: string, color: string }> = {
     pending: {
-      label: "En attente",
-      color: "bg-yellow-100 text-yellow-800"
+      label: 'En attente',
+      color: 'bg-yellow-100 text-yellow-800',
     },
     validated: {
-      label: "Validé",
-      color: "bg-blue-100 text-blue-800"
+      label: 'Validé',
+      color: 'bg-blue-100 text-blue-800',
     },
     in_progress: {
-      label: "En cours",
-      color: "bg-purple-100 text-purple-800"
+      label: 'En cours',
+      color: 'bg-purple-100 text-purple-800',
     },
     delivered: {
-      label: "Livré",
-      color: "bg-green-100 text-green-800"
+      label: 'Livré',
+      color: 'bg-green-100 text-green-800',
     },
     completed: {
-      label: "Terminé",
-      color: "bg-gray-100 text-gray-800"
+      label: 'Terminé',
+      color: 'bg-gray-100 text-gray-800',
     },
-  }
+  };
 
   useEffect(() => {
     // Redirect if not authenticated
     if (!authLoading && !user) {
-      console.log("Not authenticated, redirecting to login")
-      router.push('/login')
-      return
+      console.log('Not authenticated, redirecting to login');
+      router.push('/login');
+      return;
     }
 
     if (user) {
-      console.log("User authenticated, fetching project", params.id)
-      loadProjectData()
+      console.log('User authenticated, fetching project', params.id);
+      loadProjectData();
     }
-  }, [user, authLoading, params.id, router])
+  }, [user, authLoading, params.id, router]);
 
   const loadProjectData = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Fetch project (based on user role - admin can see any project)
-      let projectData
+      let projectData;
       
       if (isAdmin) {
         // Admins can see any project
@@ -164,24 +164,26 @@ export default function ProjectPage({
             )
           `)
           .eq('id', params.id)
-          .single()
+          .single();
           
-        if (error) throw error
-        projectData = data
+        if (error) {
+          throw error;
+        }
+        projectData = data;
       } else if (user) {
-        projectData = await fetchProjectById(params.id, user.id)
+        projectData = await fetchProjectById(params.id, user.id);
       }
       
       if (!projectData) {
-        console.error('Project not found or access denied')
-        router.push('/dashboard')
-        return
+        console.error('Project not found or access denied');
+        router.push('/dashboard');
+        return;
       }
       
-      setProject(projectData as ProjectWithRelations)
+      setProject(projectData as ProjectWithRelations);
       
       // Fetch comments
-      const commentsData = await fetchComments(projectData.id)
+      const commentsData = await fetchComments(projectData.id);
       
       // For each comment, fetch the user name if possible
       const commentsWithUserNames = await Promise.all(
@@ -192,48 +194,48 @@ export default function ProjectPage({
                 .from('profiles')
                 .select('full_name, email')
                 .eq('id', comment.user_id)
-                .single()
+                .single();
                 
               if (!error && data) {
                 return {
                   ...comment,
-                  userName: data.full_name || data.email || 'Utilisateur'
-                }
+                  userName: data.full_name || data.email || 'Utilisateur',
+                };
               }
             }
-            return comment
+            return comment;
           } catch (error) {
-            console.error('Error fetching comment user:', error)
-            return comment
+            console.error('Error fetching comment user:', error);
+            return comment;
           }
         })
-      )
+      );
       
-      setComments(commentsWithUserNames)
+      setComments(commentsWithUserNames);
       
       // Fetch deliverables
-      const deliverablesData = await fetchDeliverables(projectData.id)
-      setDeliverables(deliverablesData)
+      const deliverablesData = await fetchDeliverables(projectData.id);
+      setDeliverables(deliverablesData);
       
     } catch (error) {
-      console.error('Error loading project data:', error)
+      console.error('Error loading project data:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
     if (!user || !newComment.trim() || !project) {
-      return
+      return;
     }
     
     try {
-      setIsCommenting(true)
+      setIsCommenting(true);
       
       // Add comment - vérifions si la fonction addComment attend des paramètres séparés ou un objet
-      const commentResult = await addComment(project.id, user.id, newComment)
+      const commentResult = await addComment(project.id, user.id, newComment);
       
       if (commentResult) {
         // Update comments list
@@ -241,20 +243,20 @@ export default function ProjectPage({
           ...comments,
           {
             ...commentResult,
-            userName: user.user_metadata?.full_name || user.email || 'Vous'
-          }
-        ])
+            userName: user.user_metadata?.full_name || user.email || 'Vous',
+          },
+        ]);
       }
       
       // Clear input
-      setNewComment('')
+      setNewComment('');
       
     } catch (error) {
-      console.error('Error adding comment:', error)
+      console.error('Error adding comment:', error);
     } finally {
-      setIsCommenting(false)
+      setIsCommenting(false);
     }
-  }
+  };
 
   // Fonction pour obtenir le nom de la catégorie
   const getCategoryName = (project: ProjectWithRelations): string => {
@@ -266,20 +268,20 @@ export default function ProjectPage({
     // Cas 2: Utilisation des ID connus
     if (project.services?.category_id) {
       const categoryKey = String(project.services.category_id).toLowerCase();
-      return categoryKey === "1b041ce2-1f9b-466f-8aa4-b94fec7d94ab" ? "Développement Web" :
-             categoryKey === "ba8f9878-d327-4b2d-8be5-ae95df23e1a0" ? "Branding" :
-             categoryKey === "7227a841-69e8-48bb-85fd-d65d49618245" ? "UI UX Design" :
-             categoryKey === "53b49d36-18c7-467f-89fc-cd78331dc0d7" ? "Social Media" : 
-             "Catégorie";
+      return categoryKey === '1b041ce2-1f9b-466f-8aa4-b94fec7d94ab' ? 'Développement Web' :
+        categoryKey === 'ba8f9878-d327-4b2d-8be5-ae95df23e1a0' ? 'Branding' :
+          categoryKey === '7227a841-69e8-48bb-85fd-d65d49618245' ? 'UI UX Design' :
+            categoryKey === '53b49d36-18c7-467f-89fc-cd78331dc0d7' ? 'Social Media' : 
+              'Catégorie';
     }
     
     // Cas 3: Si on a le nom du service, l'utiliser comme fallback
     if (project.services?.name || project.services?.title) {
-      return project.services.name || project.services.title || "Service";
+      return project.services.name || project.services.title || 'Service';
     }
     
     // Cas par défaut
-    return "Catégorie";
+    return 'Catégorie';
   };
 
   if (isLoading) {
@@ -292,7 +294,7 @@ export default function ProjectPage({
           </div>
         </div>
       </PageContainer>
-    )
+    );
   }
 
   if (!project) {
@@ -310,7 +312,7 @@ export default function ProjectPage({
           </Link>
         </div>
       </PageContainer>
-    )
+    );
   }
 
   return (
@@ -478,7 +480,7 @@ export default function ProjectPage({
         </div>
       </div>
     </PageContainer>
-  )
+  );
 }
 
 function getProgressPercentage(status: string): string {
@@ -488,9 +490,9 @@ function getProgressPercentage(status: string): string {
     in_progress: '60%',
     delivered: '90%',
     completed: '100%',
-  }
+  };
   
-  return progressMap[status] || '0%'
+  return progressMap[status] || '0%';
 }
 
 function renderProjectSteps(currentStatus: string) {
@@ -500,14 +502,14 @@ function renderProjectSteps(currentStatus: string) {
     { key: 'in_progress', label: 'En cours' },
     { key: 'delivered', label: 'Livré' },
     { key: 'completed', label: 'Terminé' },
-  ]
+  ];
   
-  const statusOrder = steps.map(s => s.key)
-  const currentIndex = statusOrder.indexOf(currentStatus)
+  const statusOrder = steps.map(s => s.key);
+  const currentIndex = statusOrder.indexOf(currentStatus);
   
   return steps.map((step, index) => {
-    const isCompleted = index <= currentIndex
-    const isCurrent = step.key === currentStatus
+    const isCompleted = index <= currentIndex;
+    const isCurrent = step.key === currentStatus;
     
     return (
       <div 
@@ -528,6 +530,6 @@ function renderProjectSteps(currentStatus: string) {
           <ChevronRight className="h-4 w-4 text-[#467FF7]" />
         )}
       </div>
-    )
-  })
+    );
+  });
 } 

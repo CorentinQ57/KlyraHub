@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/components/ui/use-toast'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Project {
   id: string
@@ -28,7 +28,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { toast } = useToast()
+  const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     totalProjects: 0,
@@ -36,54 +36,64 @@ export default function AdminDashboard() {
     pendingProjects: 0,
     completedProjects: 0,
     activeServices: 0,
-    recentProjects: []
-  })
-  const [isLoading, setIsLoading] = useState(true)
+    recentProjects: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats()
-  }, [])
+    fetchStats();
+  }, []);
 
   const fetchStats = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Get total users
       const { count: totalUsers, error: usersError } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true });
       
-      if (usersError) throw usersError
+      if (usersError) {
+        throw usersError;
+      }
       
       // Get projects stats
       const { data: projects, error: projectsError } = await supabase
         .from('projects')
-        .select('id, title, status, created_at')
+        .select('id, title, status, created_at');
       
-      if (projectsError) throw projectsError
+      if (projectsError) {
+        throw projectsError;
+      }
       
       // Get pending projects
       const { count: pendingProjects, error: pendingError } = await supabase
         .from('projects')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
+        .eq('status', 'pending');
       
-      if (pendingError) throw pendingError
+      if (pendingError) {
+        throw pendingError;
+      }
       
       // Get completed projects
       const { count: completedProjects, error: completedError } = await supabase
         .from('projects')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed')
+        .eq('status', 'completed');
       
-      if (completedError) throw completedError
+      if (completedError) {
+        throw completedError;
+      }
       
       // Get services stats
       const { data: services, error: servicesError } = await supabase
         .from('services')
-        .select('id, active')
+        .select('id, active');
       
-      if (servicesError) throw servicesError
+      if (servicesError) {
+        throw servicesError;
+      }
       
       // Get recent projects
       const { data: recentProjectsData, error: recentError } = await supabase
@@ -96,9 +106,11 @@ export default function AdminDashboard() {
           client:profiles!projects_client_id_fkey(full_name)
         `)
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(5);
       
-      if (recentError) throw recentError
+      if (recentError) {
+        throw recentError;
+      }
       
       // Format recent projects data to match the expected type
       const recentProjects: Project[] = recentProjectsData ? recentProjectsData.map((project: any) => ({
@@ -107,9 +119,9 @@ export default function AdminDashboard() {
         status: project.status,
         created_at: project.created_at,
         client: {
-          full_name: project.client.full_name
-        }
-      })) : []
+          full_name: project.client.full_name,
+        },
+      })) : [];
       
       setStats({
         totalUsers: totalUsers || 0,
@@ -118,20 +130,20 @@ export default function AdminDashboard() {
         pendingProjects: pendingProjects || 0,
         completedProjects: completedProjects || 0,
         activeServices: services?.filter(s => s.active)?.length || 0,
-        recentProjects
-      })
+        recentProjects,
+      });
       
     } catch (error) {
-      console.error('Error fetching stats:', error)
+      console.error('Error fetching stats:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les statistiques",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les statistiques',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -139,10 +151,10 @@ export default function AdminDashboard() {
       in_progress: 'bg-blue-100 text-blue-800',
       review: 'bg-purple-100 text-purple-800',
       completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
-    }
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
-  }
+      cancelled: 'bg-red-100 text-red-800',
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
 
   const getStatusLabel = (status: string) => {
     const labels = {
@@ -150,10 +162,10 @@ export default function AdminDashboard() {
       in_progress: 'En cours',
       review: 'En révision',
       completed: 'Terminé',
-      cancelled: 'Annulé'
-    }
-    return labels[status as keyof typeof labels] || status
-  }
+      cancelled: 'Annulé',
+    };
+    return labels[status as keyof typeof labels] || status;
+  };
 
   if (isLoading) {
     return (
@@ -163,7 +175,7 @@ export default function AdminDashboard() {
           <p className="mt-4 text-lg">Chargement des statistiques...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -348,5 +360,5 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 } 

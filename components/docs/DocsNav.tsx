@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   ChevronDown,
   ChevronRight,
@@ -17,8 +17,8 @@ import {
   Package,
   Users,
   CreditCard,
-  CheckCircle
-} from "lucide-react";
+  CheckCircle,
+} from 'lucide-react';
 
 // Structure des catégories et documents
 export type DocItem = {
@@ -40,111 +40,111 @@ export type DocCategory = {
 // Définition des catégories de documentation
 export const docCategories: DocCategory[] = [
   {
-    title: "Commencer",
+    title: 'Commencer',
     icon: <Compass className="h-4 w-4" />,
     expanded: true,
     items: [
       {
-        title: "Introduction",
-        href: "/dashboard/docs",
+        title: 'Introduction',
+        href: '/dashboard/docs',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Premiers pas",
-        href: "/dashboard/docs/premiers-pas",
+        title: 'Premiers pas',
+        href: '/dashboard/docs/premiers-pas',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "FAQ",
-        href: "/dashboard/docs/faq",
+        title: 'FAQ',
+        href: '/dashboard/docs/faq',
         icon: <FileQuestion className="h-4 w-4" />,
-        badge: "Nouveau",
-        badgeColor: "bg-green-100 text-green-800",
+        badge: 'Nouveau',
+        badgeColor: 'bg-green-100 text-green-800',
       },
     ],
   },
   {
-    title: "Services",
+    title: 'Services',
     icon: <Package className="h-4 w-4" />,
     items: [
       {
-        title: "Catalogue de services",
-        href: "/dashboard/docs/services/catalogue",
+        title: 'Catalogue de services',
+        href: '/dashboard/docs/services/catalogue',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Processus de livraison",
-        href: "/dashboard/docs/services/processus-livraison",
+        title: 'Processus de livraison',
+        href: '/dashboard/docs/services/processus-livraison',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Livrables et formats",
-        href: "/dashboard/docs/services/livrables",
+        title: 'Livrables et formats',
+        href: '/dashboard/docs/services/livrables',
         icon: <FileText className="h-4 w-4" />,
       },
     ],
   },
   {
-    title: "Projets",
+    title: 'Projets',
     icon: <CheckCircle className="h-4 w-4" />,
     items: [
       {
-        title: "Cycle de vie d'un projet",
-        href: "/dashboard/docs/projets/cycle-vie",
+        title: 'Cycle de vie d\'un projet',
+        href: '/dashboard/docs/projets/cycle-vie',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Suivi et communication",
-        href: "/dashboard/docs/projets/suivi",
+        title: 'Suivi et communication',
+        href: '/dashboard/docs/projets/suivi',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Validation des livrables",
-        href: "/dashboard/docs/projets/validation",
+        title: 'Validation des livrables',
+        href: '/dashboard/docs/projets/validation',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Commissions et paiements",
-        href: "/dashboard/docs/projets/commissions",
+        title: 'Commissions et paiements',
+        href: '/dashboard/docs/projets/commissions',
         icon: <FileText className="h-4 w-4" />,
-        badge: "Nouveau",
-        badgeColor: "bg-green-100 text-green-800",
+        badge: 'Nouveau',
+        badgeColor: 'bg-green-100 text-green-800',
       },
     ],
   },
   {
-    title: "Comptes et facturation",
+    title: 'Comptes et facturation',
     icon: <CreditCard className="h-4 w-4" />,
     items: [
       {
-        title: "Gestion de compte",
-        href: "/dashboard/docs/compte/gestion",
+        title: 'Gestion de compte',
+        href: '/dashboard/docs/compte/gestion',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Facturation",
-        href: "/dashboard/docs/compte/facturation",
+        title: 'Facturation',
+        href: '/dashboard/docs/compte/facturation',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Modes de paiement",
-        href: "/dashboard/docs/compte/paiement",
+        title: 'Modes de paiement',
+        href: '/dashboard/docs/compte/paiement',
         icon: <FileText className="h-4 w-4" />,
       },
     ],
   },
   {
-    title: "Support",
+    title: 'Support',
     icon: <LifeBuoy className="h-4 w-4" />,
     items: [
       {
-        title: "Contacter le support",
-        href: "/dashboard/docs/support/contact",
+        title: 'Contacter le support',
+        href: '/dashboard/docs/support/contact',
         icon: <FileText className="h-4 w-4" />,
       },
       {
-        title: "Rapporter un problème",
-        href: "/dashboard/docs/support/probleme",
+        title: 'Rapporter un problème',
+        href: '/dashboard/docs/support/probleme',
         icon: <FileText className="h-4 w-4" />,
       },
     ],
@@ -180,10 +180,10 @@ export function DocsNav() {
             <Button
               variant="ghost"
               className={cn(
-                "w-full justify-between font-medium text-sm",
+                'w-full justify-between font-medium text-sm',
                 categoryContainsActive(category)
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                  ? 'text-primary'
+                  : 'text-muted-foreground'
               )}
               onClick={() => toggleCategory(index)}
             >
@@ -212,8 +212,8 @@ export function DocsNav() {
                       {item.badge && (
                         <Badge
                           className={cn(
-                            "text-xs",
-                            item.badgeColor || "bg-primary/10 text-primary"
+                            'text-xs',
+                            item.badgeColor || 'bg-primary/10 text-primary'
                           )}
                         >
                           {item.badge}
@@ -225,10 +225,10 @@ export function DocsNav() {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "flex items-center justify-between py-1.5 px-3 text-sm rounded-md",
+                        'flex items-center justify-between py-1.5 px-3 text-sm rounded-md',
                         isActive(item.href)
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                       )}
                     >
                       <div className="flex items-center">
@@ -238,8 +238,8 @@ export function DocsNav() {
                       {item.badge && (
                         <Badge
                           className={cn(
-                            "text-xs",
-                            item.badgeColor || "bg-primary/10 text-primary"
+                            'text-xs',
+                            item.badgeColor || 'bg-primary/10 text-primary'
                           )}
                         >
                           {item.badge}

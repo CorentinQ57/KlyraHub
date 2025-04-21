@@ -1,10 +1,10 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -13,11 +13,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { useToast } from '@/components/ui/use-toast'
-import { fetchDeliverables, addDeliverable, deleteDeliverable, uploadFile } from '@/lib/supabase'
-import { useAuth } from '@/lib/auth'
-import type { Deliverable } from '@/lib/supabase'
+} from '@/components/ui/table';
+import { useToast } from '@/components/ui/use-toast';
+import { fetchDeliverables, addDeliverable, deleteDeliverable, uploadFile } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
+import type { Deliverable } from '@/lib/supabase';
 
 type ProjectDeliverablesProps = {
   project: any
@@ -25,21 +25,21 @@ type ProjectDeliverablesProps = {
 }
 
 export default function ProjectDeliverables({ project, onDeliverablesUpdated }: ProjectDeliverablesProps) {
-  const [deliverables, setDeliverables] = useState<Deliverable[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isUploading, setIsUploading] = useState(false)
-  const [newDeliverableName, setNewDeliverableName] = useState('')
-  const [newDeliverableDescription, setNewDeliverableDescription] = useState('')
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const { user } = useAuth()
-  const { toast } = useToast()
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [newDeliverableName, setNewDeliverableName] = useState('');
+  const [newDeliverableDescription, setNewDeliverableDescription] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    loadDeliverables()
-  }, [project.id])
+    loadDeliverables();
+  }, [project.id]);
 
   const loadDeliverables = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Si les livrables sont déjà préchargés dans le projet, les utiliser
       if (project.deliverables && Array.isArray(project.deliverables)) {
@@ -53,9 +53,9 @@ export default function ProjectDeliverables({ project, onDeliverablesUpdated }: 
     } catch (error) {
       console.error('Error loading deliverables:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les livrables.",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de charger les livrables.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -64,27 +64,29 @@ export default function ProjectDeliverables({ project, onDeliverablesUpdated }: 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0])
+      setSelectedFile(e.target.files[0]);
     }
-  }
+  };
 
   const handleAddDeliverable = async () => {
-    if (!selectedFile || !newDeliverableName.trim() || !user) return
+    if (!selectedFile || !newDeliverableName.trim() || !user) {
+      return;
+    }
     
-    setIsUploading(true)
+    setIsUploading(true);
     try {
-      console.log(`Uploading file: ${selectedFile.name} (${selectedFile.size} bytes)`)
+      console.log(`Uploading file: ${selectedFile.name} (${selectedFile.size} bytes)`);
       
       // 1. Upload the file
-      const fileUrl = await uploadFile(selectedFile, project.id)
+      const fileUrl = await uploadFile(selectedFile, project.id);
       
       if (!fileUrl) {
         toast({
-          title: "Erreur de téléchargement",
-          description: "Le fichier n'a pas pu être téléchargé. Vérifiez que le bucket 'files' existe dans Supabase.",
-          variant: "destructive",
-        })
-        return
+          title: 'Erreur de téléchargement',
+          description: 'Le fichier n\'a pas pu être téléchargé. Vérifiez que le bucket \'files\' existe dans Supabase.',
+          variant: 'destructive',
+        });
+        return;
       }
       
       // 2. Create the deliverable record
@@ -94,87 +96,101 @@ export default function ProjectDeliverables({ project, onDeliverablesUpdated }: 
         fileUrl,
         selectedFile.type || 'unknown',
         user.id
-      )
+      );
       
       if (deliverable) {
         // Refresh the list
-        loadDeliverables()
+        loadDeliverables();
         
         // Reset form
-        setNewDeliverableName('')
-        setNewDeliverableDescription('')
-        setSelectedFile(null)
+        setNewDeliverableName('');
+        setNewDeliverableDescription('');
+        setSelectedFile(null);
         
         toast({
-          title: "Succès",
-          description: "Le livrable a été ajouté.",
-        })
+          title: 'Succès',
+          description: 'Le livrable a été ajouté.',
+        });
         
-        onDeliverablesUpdated()
+        onDeliverablesUpdated();
       } else {
-        throw new Error('Failed to add deliverable record')
+        throw new Error('Failed to add deliverable record');
       }
     } catch (error) {
-      console.error('Error adding deliverable:', error)
+      console.error('Error adding deliverable:', error);
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible d'ajouter le livrable.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Impossible d\'ajouter le livrable.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   const handleDeleteDeliverable = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce livrable ?')) return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce livrable ?')) {
+      return;
+    }
     
     try {
-      const success = await deleteDeliverable(id)
+      const success = await deleteDeliverable(id);
       
       if (success) {
         // Optimistic update
-        setDeliverables(deliverables.filter(item => item.id !== id))
+        setDeliverables(deliverables.filter(item => item.id !== id));
         
         toast({
-          title: "Succès",
-          description: "Le livrable a été supprimé.",
-        })
+          title: 'Succès',
+          description: 'Le livrable a été supprimé.',
+        });
         
-        onDeliverablesUpdated()
+        onDeliverablesUpdated();
       } else {
-        throw new Error('Failed to delete deliverable')
+        throw new Error('Failed to delete deliverable');
       }
     } catch (error) {
-      console.error('Error deleting deliverable:', error)
+      console.error('Error deleting deliverable:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le livrable.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de supprimer le livrable.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
-    }).format(date)
-  }
+      minute: '2-digit',
+    }).format(date);
+  };
 
   const getFileTypeIcon = (type: string) => {
-    if (type.includes('image')) return '🖼️'
-    if (type.includes('pdf')) return '📄'
-    if (type.includes('zip') || type.includes('rar')) return '🗜️'
-    if (type.includes('excel') || type.includes('spreadsheet')) return '📊'
-    if (type.includes('word') || type.includes('document')) return '📝'
-    if (type.includes('presentation') || type.includes('powerpoint')) return '📊'
-    return '📁'
-  }
+    if (type.includes('image')) {
+      return '🖼️';
+    }
+    if (type.includes('pdf')) {
+      return '📄';
+    }
+    if (type.includes('zip') || type.includes('rar')) {
+      return '🗜️';
+    }
+    if (type.includes('excel') || type.includes('spreadsheet')) {
+      return '📊';
+    }
+    if (type.includes('word') || type.includes('document')) {
+      return '📝';
+    }
+    if (type.includes('presentation') || type.includes('powerpoint')) {
+      return '📊';
+    }
+    return '📁';
+  };
 
   return (
     <Card>
@@ -299,5 +315,5 @@ export default function ProjectDeliverables({ project, onDeliverablesUpdated }: 
         )}
       </CardContent>
     </Card>
-  )
+  );
 } 

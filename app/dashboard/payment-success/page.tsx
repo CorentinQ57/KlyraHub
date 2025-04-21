@@ -1,51 +1,51 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/lib/auth'
-import { createProject } from '@/lib/supabase'
-import { motion } from 'framer-motion'
-import { HeaderNav } from '@/components/HeaderNav'
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/auth';
+import { createProject } from '@/lib/supabase';
+import { motion } from 'framer-motion';
+import { HeaderNav } from '@/components/HeaderNav';
 
 export default function PaymentSuccessPage() {
-  const [isCreatingProject, setIsCreatingProject] = useState(false)
-  const [projectCreated, setProjectCreated] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { user, isLoading } = useAuth()
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [projectCreated, setProjectCreated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, isLoading } = useAuth();
   
   // Récupérer les paramètres de l'URL
-  const sessionId = searchParams.get('session_id')
-  const serviceId = searchParams.get('service_id')
-  const title = searchParams.get('title')
-  const price = searchParams.get('price')
+  const sessionId = searchParams.get('session_id');
+  const serviceId = searchParams.get('service_id');
+  const title = searchParams.get('title');
+  const price = searchParams.get('price');
   
   useEffect(() => {
     // Vérifier si l'utilisateur est authentifié
     if (!isLoading && !user) {
-      console.log("Utilisateur non authentifié, redirection vers login");
-      router.push('/login')
-      return
+      console.log('Utilisateur non authentifié, redirection vers login');
+      router.push('/login');
+      return;
     }
     
     // Log pour le debug
-    console.log("PaymentSuccess - Paramètres:", { 
+    console.log('PaymentSuccess - Paramètres:', { 
       sessionId, 
       serviceId, 
       title, 
       price, 
-      userId: user?.id 
+      userId: user?.id, 
     });
     
     // Créer le projet si nécessaire (au cas où le webhook n'aurait pas été traité)
     const handleProjectCreation = async () => {
       if (user && sessionId && serviceId && title && price && !projectCreated && !isCreatingProject) {
         try {
-          setIsCreatingProject(true)
-          console.log("Tentative de création du projet...");
+          setIsCreatingProject(true);
+          console.log('Tentative de création du projet...');
           
           // Créer le projet dans Supabase
           const project = await createProject(
@@ -53,39 +53,39 @@ export default function PaymentSuccessPage() {
             serviceId,
             title,
             parseInt(price)
-          )
+          );
           
           if (project) {
-            setProjectCreated(true)
-            console.log('Projet créé avec succès:', project)
+            setProjectCreated(true);
+            console.log('Projet créé avec succès:', project);
           } else {
             // Le projet peut déjà avoir été créé par le webhook
-            console.log('Le projet n\'a pas été créé, il existe peut-être déjà')
-            setProjectCreated(true)
+            console.log('Le projet n\'a pas été créé, il existe peut-être déjà');
+            setProjectCreated(true);
           }
         } catch (err) {
-          console.error('Erreur lors de la création du projet:', err)
-          setError('Une erreur est survenue lors de la création de votre projet.')
+          console.error('Erreur lors de la création du projet:', err);
+          setError('Une erreur est survenue lors de la création de votre projet.');
         } finally {
-          setIsCreatingProject(false)
+          setIsCreatingProject(false);
         }
       } else {
-        console.log("Conditions non remplies pour la création:", {
+        console.log('Conditions non remplies pour la création:', {
           hasUser: !!user,
           hasSessionId: !!sessionId,
           hasServiceId: !!serviceId,
           hasTitle: !!title,
           hasPrice: !!price,
           alreadyCreated: projectCreated,
-          isCreating: isCreatingProject
+          isCreating: isCreatingProject,
         });
       }
-    }
+    };
     
     if (user && sessionId) {
-      handleProjectCreation()
+      handleProjectCreation();
     }
-  }, [user, isLoading, sessionId, serviceId, title, price, projectCreated, isCreatingProject, router])
+  }, [user, isLoading, sessionId, serviceId, title, price, projectCreated, isCreatingProject, router]);
   
   if (isLoading) {
     return (
@@ -95,7 +95,7 @@ export default function PaymentSuccessPage() {
           <p className="mt-4 text-lg">Chargement...</p>
         </div>
       </div>
-    )
+    );
   }
   
   return (
@@ -107,10 +107,10 @@ export default function PaymentSuccessPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ 
-              type: "spring", 
+              type: 'spring', 
               stiffness: 260, 
               damping: 20, 
-              delay: 0.1 
+              delay: 0.1, 
             }}
             className="w-24 h-24 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto mb-8 text-4xl"
           >
@@ -179,5 +179,5 @@ export default function PaymentSuccessPage() {
         </div>
       </main>
     </div>
-  )
+  );
 } 

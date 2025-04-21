@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -23,102 +23,102 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { getServiceById, updateService, getAllCategories } from '@/lib/supabase'
-import { Category, Service } from '@/lib/supabase'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
+} from '@/components/ui/form';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { getServiceById, updateService, getAllCategories } from '@/lib/supabase';
+import { Category, Service } from '@/lib/supabase';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 // Schema de validation pour le formulaire
 const serviceFormSchema = z.object({
   name: z.string().min(2, {
-    message: "Le nom doit comporter au moins 2 caractères.",
+    message: 'Le nom doit comporter au moins 2 caractères.',
   }),
   description: z.string().min(10, {
-    message: "La description doit comporter au moins 10 caractères.",
+    message: 'La description doit comporter au moins 10 caractères.',
   }),
   long_description: z.string().optional(),
   category_id: z.string({
-    required_error: "Veuillez sélectionner une catégorie.",
+    required_error: 'Veuillez sélectionner une catégorie.',
   }),
   price: z.coerce.number().min(0, {
-    message: "Le prix ne peut pas être négatif.",
+    message: 'Le prix ne peut pas être négatif.',
   }),
   duration: z.coerce.number().int().min(1, {
-    message: "La durée doit être d'au moins 1 jour.",
+    message: 'La durée doit être d\'au moins 1 jour.',
   }),
   active: z.boolean(),
   features: z.string(),
-  phases: z.string()
-})
+  phases: z.string(),
+});
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>
 
 export default function EditServicePage({ 
-  params 
+  params, 
 }: { 
   params: { id: string } 
 }) {
-  const [service, setService] = useState<Service | null>(null)
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
-  const { toast } = useToast()
+  const [service, setService] = useState<Service | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   // Initialisation du formulaire
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      long_description: "",
-      category_id: "",
+      name: '',
+      description: '',
+      long_description: '',
+      category_id: '',
       price: 0,
       duration: 7,
       active: true,
-      features: "",
-      phases: "",
+      features: '',
+      phases: '',
     },
-  })
+  });
 
   useEffect(() => {
     // Redirect if not authenticated or not admin
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadServiceAndCategories()
+      loadServiceAndCategories();
     }
-  }, [user, authLoading, isAdmin, params.id, router])
+  }, [user, authLoading, isAdmin, params.id, router]);
 
   const loadServiceAndCategories = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Chargement des données du service
-      const serviceData = await getServiceById(params.id)
+      const serviceData = await getServiceById(params.id);
       if (!serviceData) {
         toast({
-          title: "Erreur",
-          description: "Service non trouvé.",
-          variant: "destructive",
-        })
-        router.push('/dashboard/admin/services')
-        return
+          title: 'Erreur',
+          description: 'Service non trouvé.',
+          variant: 'destructive',
+        });
+        router.push('/dashboard/admin/services');
+        return;
       }
       
-      setService(serviceData)
+      setService(serviceData);
       
       // Chargement des catégories
-      const categoriesData = await getAllCategories()
-      setCategories(categoriesData)
+      const categoriesData = await getAllCategories();
+      setCategories(categoriesData);
       
       // Remplissage du formulaire avec les données du service
       form.reset({
@@ -130,25 +130,27 @@ export default function EditServicePage({
         duration: serviceData.duration,
         active: serviceData.active,
         features: Array.isArray(serviceData.features) ? serviceData.features.join('\n') : '',
-        phases: Array.isArray(serviceData.phases) ? serviceData.phases.join('\n') : ''
-      })
+        phases: Array.isArray(serviceData.phases) ? serviceData.phases.join('\n') : '',
+      });
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('Error loading data:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les données.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les données.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const onSubmit = async (data: ServiceFormValues) => {
-    if (!service) return
+    if (!service) {
+      return;
+    }
     
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
       
       // Prépare les features et les phases comme des tableaux
       const featuresArray = data.features
@@ -157,7 +159,7 @@ export default function EditServicePage({
         
       const phasesArray = data.phases
         ? data.phases.split('\n').map(line => line.trim()).filter(line => line.length > 0)
-        : ["Briefing", "Conception", "Développement", "Tests et validation", "Livraison"];
+        : ['Briefing', 'Conception', 'Développement', 'Tests et validation', 'Livraison'];
       
       // Mise à jour du service sans le champ features qui n'existe pas dans la base de données
       const serviceUpdate = {
@@ -169,33 +171,33 @@ export default function EditServicePage({
         duration: data.duration,
         active: data.active,
         features: featuresArray,
-        phases: phasesArray
+        phases: phasesArray,
       };
       
       const updatedService = await updateService(service.id, serviceUpdate);
       
       if (updatedService) {
         toast({
-          title: "Succès",
-          description: "Service mis à jour avec succès.",
-        })
+          title: 'Succès',
+          description: 'Service mis à jour avec succès.',
+        });
         
         // Redirection vers la liste des services
-        router.push('/dashboard/admin/services')
+        router.push('/dashboard/admin/services');
       } else {
-        throw new Error('Échec de la mise à jour du service')
+        throw new Error('Échec de la mise à jour du service');
       }
     } catch (error) {
-      console.error('Error updating service:', error)
+      console.error('Error updating service:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le service.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le service.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -205,7 +207,7 @@ export default function EditServicePage({
           <p className="mt-4 text-lg">Chargement...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!service) {
@@ -219,7 +221,7 @@ export default function EditServicePage({
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -452,5 +454,5 @@ export default function EditServicePage({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 } 

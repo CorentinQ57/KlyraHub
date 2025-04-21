@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/components/ui/use-toast'
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Project {
   id: string
@@ -68,33 +68,33 @@ interface Designer {
 }
 
 export default function AdminProjectDetail() {
-  const params = useParams()
-  const router = useRouter()
-  const { toast } = useToast()
-  const projectId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
+  const projectId = params.id as string;
 
-  const [project, setProject] = useState<Project | null>(null)
-  const [comments, setComments] = useState<Comment[]>([])
-  const [deliverables, setDeliverables] = useState<Deliverable[]>([])
-  const [designers, setDesigners] = useState<Designer[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [newComment, setNewComment] = useState('')
-  const [newDeliverableTitle, setNewDeliverableTitle] = useState('')
-  const [newDeliverableDescription, setNewDeliverableDescription] = useState('')
-  const [newDeliverableFile, setNewDeliverableFile] = useState<File | null>(null)
-  const [selectedDesignerId, setSelectedDesignerId] = useState<string | null>(null)
-  const [isAssigning, setIsAssigning] = useState(false)
-  const [isCommenting, setIsCommenting] = useState(false)
-  const [isAddingDeliverable, setIsAddingDeliverable] = useState(false)
+  const [project, setProject] = useState<Project | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [designers, setDesigners] = useState<Designer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newComment, setNewComment] = useState('');
+  const [newDeliverableTitle, setNewDeliverableTitle] = useState('');
+  const [newDeliverableDescription, setNewDeliverableDescription] = useState('');
+  const [newDeliverableFile, setNewDeliverableFile] = useState<File | null>(null);
+  const [selectedDesignerId, setSelectedDesignerId] = useState<string | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [isCommenting, setIsCommenting] = useState(false);
+  const [isAddingDeliverable, setIsAddingDeliverable] = useState(false);
 
   useEffect(() => {
-    fetchProjectData()
-    fetchDesigners()
-  }, [])
+    fetchProjectData();
+    fetchDesigners();
+  }, []);
 
   const fetchProjectData = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Fetch project details
       const { data: projectData, error: projectError } = await supabase
@@ -106,9 +106,11 @@ export default function AdminProjectDetail() {
           service:services(id, name, description)
         `)
         .eq('id', projectId)
-        .single()
+        .single();
 
-      if (projectError) throw projectError
+      if (projectError) {
+        throw projectError;
+      }
 
       // Fetch comments
       const { data: commentsData, error: commentsError } = await supabase
@@ -118,35 +120,39 @@ export default function AdminProjectDetail() {
           user:profiles(full_name, avatar_url)
         `)
         .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
 
-      if (commentsError) throw commentsError
+      if (commentsError) {
+        throw commentsError;
+      }
 
       // Fetch deliverables
       const { data: deliverablesData, error: deliverablesError } = await supabase
         .from('deliverables')
         .select('*')
         .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
 
-      if (deliverablesError) throw deliverablesError
+      if (deliverablesError) {
+        throw deliverablesError;
+      }
 
-      setProject(projectData)
-      setComments(commentsData || [])
-      setDeliverables(deliverablesData || [])
-      setSelectedDesignerId(projectData?.designer_id || null)
+      setProject(projectData);
+      setComments(commentsData || []);
+      setDeliverables(deliverablesData || []);
+      setSelectedDesignerId(projectData?.designer_id || null);
       
     } catch (error) {
-      console.error('Error fetching project data:', error)
+      console.error('Error fetching project data:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les données du projet",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les données du projet',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const fetchDesigners = async () => {
     try {
@@ -154,139 +160,157 @@ export default function AdminProjectDetail() {
         .from('profiles')
         .select('id, full_name, email, avatar_url')
         .eq('role', 'designer')
-        .order('full_name')
+        .order('full_name');
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
-      setDesigners(data || [])
+      setDesigners(data || []);
     } catch (error) {
-      console.error('Error fetching designers:', error)
+      console.error('Error fetching designers:', error);
     }
-  }
+  };
 
   const assignDesigner = async () => {
-    if (!selectedDesignerId) return
+    if (!selectedDesignerId) {
+      return;
+    }
 
     try {
-      setIsAssigning(true)
+      setIsAssigning(true);
       
       const { error } = await supabase
         .from('projects')
         .update({ 
           designer_id: selectedDesignerId,
-          status: project?.status === 'pending' ? 'in_progress' : project?.status
+          status: project?.status === 'pending' ? 'in_progress' : project?.status,
         })
-        .eq('id', projectId)
+        .eq('id', projectId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
       toast({
-        title: "Designer assigné",
-        description: "Le designer a été assigné au projet avec succès"
-      })
+        title: 'Designer assigné',
+        description: 'Le designer a été assigné au projet avec succès',
+      });
 
       // Refresh project data
-      fetchProjectData()
+      fetchProjectData();
     } catch (error) {
-      console.error('Error assigning designer:', error)
+      console.error('Error assigning designer:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'assigner le designer",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible d\'assigner le designer',
+        variant: 'destructive',
+      });
     } finally {
-      setIsAssigning(false)
+      setIsAssigning(false);
     }
-  }
+  };
 
   const addComment = async () => {
-    if (!newComment.trim()) return
+    if (!newComment.trim()) {
+      return;
+    }
 
     try {
-      setIsCommenting(true)
+      setIsCommenting(true);
       
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) throw new Error('User not authenticated')
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
 
       const { error } = await supabase
         .from('comments')
         .insert({
           project_id: projectId,
           user_id: user.id,
-          content: newComment
-        })
+          content: newComment,
+        });
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
-      setNewComment('')
+      setNewComment('');
       toast({
-        title: "Commentaire ajouté",
-        description: "Votre commentaire a été ajouté avec succès"
-      })
+        title: 'Commentaire ajouté',
+        description: 'Votre commentaire a été ajouté avec succès',
+      });
 
       // Refresh comments
-      fetchProjectData()
+      fetchProjectData();
     } catch (error) {
-      console.error('Error adding comment:', error)
+      console.error('Error adding comment:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter le commentaire",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter le commentaire',
+        variant: 'destructive',
+      });
     } finally {
-      setIsCommenting(false)
+      setIsCommenting(false);
     }
-  }
+  };
 
   const updateProjectStatus = async (newStatus: string) => {
     try {
       const { error } = await supabase
         .from('projects')
         .update({ status: newStatus })
-        .eq('id', projectId)
+        .eq('id', projectId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
       toast({
-        title: "Statut mis à jour",
-        description: "Le statut du projet a été mis à jour avec succès"
-      })
+        title: 'Statut mis à jour',
+        description: 'Le statut du projet a été mis à jour avec succès',
+      });
 
       // Refresh project data
-      fetchProjectData()
+      fetchProjectData();
     } catch (error) {
-      console.error('Error updating status:', error)
+      console.error('Error updating status:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le statut",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le statut',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const addDeliverable = async () => {
-    if (!newDeliverableTitle.trim() || !newDeliverableFile) return
+    if (!newDeliverableTitle.trim() || !newDeliverableFile) {
+      return;
+    }
 
     try {
-      setIsAddingDeliverable(true)
+      setIsAddingDeliverable(true);
       
       // Upload file
-      const fileExt = newDeliverableFile.name.split('.').pop()
-      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-      const filePath = `deliverables/${projectId}/${fileName}`
+      const fileExt = newDeliverableFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `deliverables/${projectId}/${fileName}`;
       
       const { error: uploadError } = await supabase.storage
         .from('files')
-        .upload(filePath, newDeliverableFile)
+        .upload(filePath, newDeliverableFile);
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        throw uploadError;
+      }
 
       // Get file URL
       const { data: urlData } = supabase.storage
         .from('files')
-        .getPublicUrl(filePath)
+        .getPublicUrl(filePath);
 
       // Add deliverable to database
       const { error } = await supabase
@@ -295,59 +319,63 @@ export default function AdminProjectDetail() {
           project_id: projectId,
           title: newDeliverableTitle,
           description: newDeliverableDescription,
-          file_url: urlData.publicUrl
-        })
+          file_url: urlData.publicUrl,
+        });
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
-      setNewDeliverableTitle('')
-      setNewDeliverableDescription('')
-      setNewDeliverableFile(null)
+      setNewDeliverableTitle('');
+      setNewDeliverableDescription('');
+      setNewDeliverableFile(null);
       
       toast({
-        title: "Livrable ajouté",
-        description: "Le livrable a été ajouté avec succès"
-      })
+        title: 'Livrable ajouté',
+        description: 'Le livrable a été ajouté avec succès',
+      });
 
       // Refresh deliverables
-      fetchProjectData()
+      fetchProjectData();
     } catch (error) {
-      console.error('Error adding deliverable:', error)
+      console.error('Error adding deliverable:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter le livrable",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter le livrable',
+        variant: 'destructive',
+      });
     } finally {
-      setIsAddingDeliverable(false)
+      setIsAddingDeliverable(false);
     }
-  }
+  };
 
   const deleteDeliverable = async (deliverableId: string) => {
     try {
       const { error } = await supabase
         .from('deliverables')
         .delete()
-        .eq('id', deliverableId)
+        .eq('id', deliverableId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
       toast({
-        title: "Livrable supprimé",
-        description: "Le livrable a été supprimé avec succès"
-      })
+        title: 'Livrable supprimé',
+        description: 'Le livrable a été supprimé avec succès',
+      });
 
       // Refresh deliverables
-      fetchProjectData()
+      fetchProjectData();
     } catch (error) {
-      console.error('Error deleting deliverable:', error)
+      console.error('Error deleting deliverable:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le livrable",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de supprimer le livrable',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -355,10 +383,10 @@ export default function AdminProjectDetail() {
       in_progress: 'bg-blue-100 text-blue-800',
       review: 'bg-purple-100 text-purple-800',
       completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
-    }
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
-  }
+      cancelled: 'bg-red-100 text-red-800',
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
 
   const getStatusLabel = (status: string) => {
     const labels = {
@@ -366,10 +394,10 @@ export default function AdminProjectDetail() {
       in_progress: 'En cours',
       review: 'En révision',
       completed: 'Terminé',
-      cancelled: 'Annulé'
-    }
-    return labels[status as keyof typeof labels] || status
-  }
+      cancelled: 'Annulé',
+    };
+    return labels[status as keyof typeof labels] || status;
+  };
 
   if (isLoading) {
     return (
@@ -379,7 +407,7 @@ export default function AdminProjectDetail() {
           <p className="mt-4 text-lg">Chargement du projet...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!project) {
@@ -393,7 +421,7 @@ export default function AdminProjectDetail() {
           </Button>
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -449,7 +477,7 @@ export default function AdminProjectDetail() {
               </div>
               <div>
                 <h3 className="font-medium">Description</h3>
-                <p>{project.description || "Aucune description"}</p>
+                <p>{project.description || 'Aucune description'}</p>
               </div>
             </CardContent>
           </Card>
@@ -468,7 +496,7 @@ export default function AdminProjectDetail() {
                     <div key={deliverable.id} className="p-4 border rounded-lg flex justify-between items-center">
                       <div>
                         <h4 className="font-medium">{deliverable.title}</h4>
-                        <p className="text-sm text-gray-500">{deliverable.description || "Aucune description"}</p>
+                        <p className="text-sm text-gray-500">{deliverable.description || 'Aucune description'}</p>
                         <p className="text-xs text-gray-400 mt-1">
                           {new Date(deliverable.created_at).toLocaleDateString()}
                         </p>
@@ -519,7 +547,7 @@ export default function AdminProjectDetail() {
                     onClick={addDeliverable}
                     disabled={!newDeliverableTitle || !newDeliverableFile || isAddingDeliverable}
                   >
-                    {isAddingDeliverable ? "Ajout en cours..." : "Ajouter"}
+                    {isAddingDeliverable ? 'Ajout en cours...' : 'Ajouter'}
                   </Button>
                 </div>
               </div>
@@ -545,7 +573,7 @@ export default function AdminProjectDetail() {
                   disabled={!newComment.trim() || isCommenting}
                   className="mt-2"
                 >
-                  {isCommenting ? "Envoi en cours..." : "Envoyer"}
+                  {isCommenting ? 'Envoi en cours...' : 'Envoyer'}
                 </Button>
               </div>
 
@@ -645,7 +673,7 @@ export default function AdminProjectDetail() {
                     disabled={!selectedDesignerId || isAssigning}
                     className="w-full"
                   >
-                    {isAssigning ? "Attribution en cours..." : "Assigner"}
+                    {isAssigning ? 'Attribution en cours...' : 'Assigner'}
                   </Button>
                 </div>
               </div>
@@ -654,5 +682,5 @@ export default function AdminProjectDetail() {
         </div>
       </div>
     </div>
-  )
+  );
 } 

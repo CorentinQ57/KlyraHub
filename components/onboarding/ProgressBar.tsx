@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { motion } from 'framer-motion'
+import { motion } from 'framer-motion';
 
 interface ProgressBarProps {
   steps: string[]
@@ -22,16 +22,16 @@ export default function ProgressBar({ steps, currentStep }: ProgressBarProps) {
             <motion.div 
               className={`w-10 h-10 rounded-full flex items-center justify-center z-10 
                 ${index < currentStep 
-                  ? 'bg-primary text-white'
-                  : index === currentStep 
-                    ? 'bg-primary text-white' 
-                    : 'bg-slate-100 text-slate-400 border border-slate-200'
-                }`}
+            ? 'bg-primary text-white'
+            : index === currentStep 
+              ? 'bg-primary text-white' 
+              : 'bg-slate-100 text-slate-400 border border-slate-200'
+          }`}
               initial={{ scale: 0.8 }}
               animate={{ 
                 scale: index === currentStep ? 1.1 : 1,
                 backgroundColor: index <= currentStep ? '#467FF7' : '#EBF2FF',
-                color: index <= currentStep ? '#FFFFFF' : '#94A3B8'
+                color: index <= currentStep ? '#FFFFFF' : '#94A3B8',
               }}
               transition={{ duration: 0.3 }}
             >
@@ -64,11 +64,11 @@ export default function ProgressBar({ steps, currentStep }: ProgressBarProps) {
             {index < steps.length - 1 && (
               <motion.div 
                 className="absolute top-5 left-1/2 h-[2px] bg-primary"
-                style={{ width: "calc(100% - 10px)" }}
-                initial={{ width: 0, left: "50%" }}
+                style={{ width: 'calc(100% - 10px)' }}
+                initial={{ width: 0, left: '50%' }}
                 animate={{ 
-                  width: index < currentStep ? "calc(100% - 10px)" : "0%",
-                  left: index < currentStep ? "50%" : "50%"
+                  width: index < currentStep ? 'calc(100% - 10px)' : '0%',
+                  left: index < currentStep ? '50%' : '50%',
                 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               />
@@ -77,5 +77,5 @@ export default function ProgressBar({ steps, currentStep }: ProgressBarProps) {
         ))}
       </div>
     </div>
-  )
+  );
 } 

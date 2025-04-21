@@ -1,6 +1,6 @@
-"use client";
-import { cn } from "@/lib/utils";
-import React, { ReactNode } from "react";
+'use client';
+import { cn } from '@/lib/utils';
+import React, { ReactNode } from 'react';
 
 interface AuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
   children: ReactNode;
@@ -17,13 +17,13 @@ export const AuroraBackground = ({
 }: AuroraBackgroundProps) => {
   const opacityClass = 
     intensity === 'subtle' ? 'opacity-30' : 
-    intensity === 'medium' ? 'opacity-50' : 
-    'opacity-70';
+      intensity === 'medium' ? 'opacity-50' : 
+        'opacity-70';
 
   return (
     <div
       className={cn(
-        "relative min-h-full w-full flex-1 flex flex-col bg-gradient-to-b from-klyra-bg to-white dark:from-zinc-900 dark:to-zinc-950 text-slate-950 transition-bg",
+        'relative min-h-full w-full flex-1 flex flex-col bg-gradient-to-b from-klyra-bg to-white dark:from-zinc-900 dark:to-zinc-950 text-slate-950 transition-bg',
         className
       )}
       {...props}
@@ -48,7 +48,7 @@ export const AuroraBackground = ({
           absolute -inset-[10px] will-change-transform`,
             opacityClass,
             showRadialGradient &&
-              `[mask-image:radial-gradient(ellipse_at_100%_0%,black_10%,var(--transparent)_70%)]`
+              '[mask-image:radial-gradient(ellipse_at_100%_0%,black_10%,var(--transparent)_70%)]'
           )}
         ></div>
       </div>

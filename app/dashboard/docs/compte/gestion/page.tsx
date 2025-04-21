@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import {
   FileText,
   User,
@@ -22,24 +22,24 @@ import {
   AlertTriangle,
   Shield,
   BadgeInfo,
-  Share2
-} from "lucide-react";
+  Share2,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Facturation",
-    href: "/dashboard/docs/compte/facturation",
+    title: 'Facturation',
+    href: '/dashboard/docs/compte/facturation',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Modes de paiement",
-    href: "/dashboard/docs/compte/paiement",
+    title: 'Modes de paiement',
+    href: '/dashboard/docs/compte/paiement',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Politique de confidentialité",
-    href: "/dashboard/docs/legal/confidentialite",
+    title: 'Politique de confidentialité',
+    href: '/dashboard/docs/legal/confidentialite',
     icon: <Shield className="h-4 w-4 text-primary" />,
   },
 ];
@@ -55,83 +55,83 @@ type AccountSection = {
 
 const accountSections: AccountSection[] = [
   {
-    id: "profile",
-    title: "Informations personnelles",
-    description: "Gérez vos informations de profil et vos préférences de contact.",
+    id: 'profile',
+    title: 'Informations personnelles',
+    description: 'Gérez vos informations de profil et vos préférences de contact.',
     icon: <User className="h-6 w-6 text-primary" />,
     features: [
-      "Modifier votre nom et prénom",
-      "Mettre à jour votre photo de profil",
-      "Changer votre adresse email",
-      "Mettre à jour votre numéro de téléphone",
-      "Gérer vos coordonnées postales"
-    ]
+      'Modifier votre nom et prénom',
+      'Mettre à jour votre photo de profil',
+      'Changer votre adresse email',
+      'Mettre à jour votre numéro de téléphone',
+      'Gérer vos coordonnées postales',
+    ],
   },
   {
-    id: "security",
-    title: "Sécurité et authentification",
-    description: "Protégez votre compte avec des options de sécurité avancées.",
+    id: 'security',
+    title: 'Sécurité et authentification',
+    description: 'Protégez votre compte avec des options de sécurité avancées.',
     icon: <Lock className="h-6 w-6 text-primary" />,
     features: [
-      "Modifier votre mot de passe",
-      "Activer l'authentification à deux facteurs (2FA)",
-      "Consulter l'historique des connexions",
-      "Gérer les appareils connectés",
-      "Révoquer les sessions actives"
-    ]
+      'Modifier votre mot de passe',
+      'Activer l\'authentification à deux facteurs (2FA)',
+      'Consulter l\'historique des connexions',
+      'Gérer les appareils connectés',
+      'Révoquer les sessions actives',
+    ],
   },
   {
-    id: "notifications",
-    title: "Préférences de notification",
-    description: "Personnalisez les alertes et communications que vous recevez.",
+    id: 'notifications',
+    title: 'Préférences de notification',
+    description: 'Personnalisez les alertes et communications que vous recevez.',
     icon: <Bell className="h-6 w-6 text-primary" />,
     features: [
-      "Notifications par email",
-      "Notifications dans l'application",
-      "Alertes de projet",
-      "Bulletins d'information et mises à jour",
-      "Rappels et échéances"
-    ]
+      'Notifications par email',
+      'Notifications dans l\'application',
+      'Alertes de projet',
+      'Bulletins d\'information et mises à jour',
+      'Rappels et échéances',
+    ],
   },
   {
-    id: "team",
-    title: "Gestion d'équipe",
-    description: "Invitez et gérez les membres de votre équipe ayant accès à vos projets.",
+    id: 'team',
+    title: 'Gestion d\'équipe',
+    description: 'Invitez et gérez les membres de votre équipe ayant accès à vos projets.',
     icon: <UserPlus className="h-6 w-6 text-primary" />,
     features: [
-      "Inviter de nouveaux membres",
-      "Attribuer des rôles et permissions",
-      "Gérer l'accès aux projets",
-      "Suivre l'activité des membres",
-      "Supprimer des utilisateurs"
-    ]
+      'Inviter de nouveaux membres',
+      'Attribuer des rôles et permissions',
+      'Gérer l\'accès aux projets',
+      'Suivre l\'activité des membres',
+      'Supprimer des utilisateurs',
+    ],
   },
   {
-    id: "data",
-    title: "Données et confidentialité",
-    description: "Contrôlez vos données personnelles et gérez votre vie privée.",
+    id: 'data',
+    title: 'Données et confidentialité',
+    description: 'Contrôlez vos données personnelles et gérez votre vie privée.',
     icon: <Shield className="h-6 w-6 text-primary" />,
     features: [
-      "Télécharger vos données personnelles",
-      "Gérer les consentements",
-      "Supprimer des informations spécifiques",
-      "Comprendre comment vos données sont utilisées",
-      "Désactiver certaines fonctionnalités de suivi"
-    ]
+      'Télécharger vos données personnelles',
+      'Gérer les consentements',
+      'Supprimer des informations spécifiques',
+      'Comprendre comment vos données sont utilisées',
+      'Désactiver certaines fonctionnalités de suivi',
+    ],
   },
   {
-    id: "account-status",
-    title: "Statut du compte",
-    description: "Gérez l'état de votre compte et effectuez des opérations importantes.",
+    id: 'account-status',
+    title: 'Statut du compte',
+    description: 'Gérez l\'état de votre compte et effectuez des opérations importantes.',
     icon: <Settings className="h-6 w-6 text-primary" />,
     features: [
-      "Mettre à jour le type de compte",
-      "Suspendre temporairement votre compte",
-      "Réactiver un compte suspendu",
-      "Supprimer définitivement votre compte",
-      "Consulter les limitations actuelles"
-    ]
-  }
+      'Mettre à jour le type de compte',
+      'Suspendre temporairement votre compte',
+      'Réactiver un compte suspendu',
+      'Supprimer définitivement votre compte',
+      'Consulter les limitations actuelles',
+    ],
+  },
 ];
 
 export default function AccountManagementPage() {
@@ -140,14 +140,14 @@ export default function AccountManagementPage() {
   // Générer la table des matières
   useEffect(() => {
     const items: TocItem[] = [
-      { id: "introduction", title: "Introduction", level: 2 },
+      { id: 'introduction', title: 'Introduction', level: 2 },
       ...accountSections.map((section) => ({
         id: section.id,
         title: section.title,
         level: 2,
       })),
-      { id: "data-protection", title: "Protection des données", level: 2 },
-      { id: "account-deletion", title: "Suppression de compte", level: 2 },
+      { id: 'data-protection', title: 'Protection des données', level: 2 },
+      { id: 'account-deletion', title: 'Suppression de compte', level: 2 },
     ];
     setTocItems(items);
   }, []);

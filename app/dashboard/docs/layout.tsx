@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { DocsNav } from "@/components/docs/DocsNav";
-import { ChevronLeft, Menu, X } from "lucide-react";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { DocsNav } from '@/components/docs/DocsNav';
+import { ChevronLeft, Menu, X } from 'lucide-react';
 
 export default function DocsLayout({
   children,
@@ -24,10 +24,10 @@ export default function DocsLayout({
     };
 
     checkIfMobile();
-    window.addEventListener("resize", checkIfMobile);
+    window.addEventListener('resize', checkIfMobile);
 
     return () => {
-      window.removeEventListener("resize", checkIfMobile);
+      window.removeEventListener('resize', checkIfMobile);
     };
   }, []);
 
@@ -45,7 +45,7 @@ export default function DocsLayout({
           variant="ghost"
           size="icon"
           onClick={() => setIsNavOpen(!isNavOpen)}
-          aria-label={isNavOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-label={isNavOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
         >
           {isNavOpen ? (
             <X className="h-5 w-5" />
@@ -59,10 +59,10 @@ export default function DocsLayout({
         {/* Navigation latérale gauche (desktop) */}
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-[20] w-full max-w-xs transform overflow-auto border-r bg-background",
-            "lg:static lg:block lg:w-64 lg:min-w-[16rem] lg:max-w-[16rem] lg:translate-x-0",
-            isNavOpen ? "translate-x-0" : "-translate-x-full",
-            "transition-transform duration-200 ease-in-out"
+            'fixed inset-y-0 left-0 z-[20] w-full max-w-xs transform overflow-auto border-r bg-background',
+            'lg:static lg:block lg:w-64 lg:min-w-[16rem] lg:max-w-[16rem] lg:translate-x-0',
+            isNavOpen ? 'translate-x-0' : '-translate-x-full',
+            'transition-transform duration-200 ease-in-out'
           )}
         >
           <div className="hidden lg:flex items-center border-b px-6 py-3 h-16">

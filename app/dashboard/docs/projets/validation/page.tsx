@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import {
   FileText,
   CheckCircle,
@@ -18,23 +18,23 @@ import {
   RefreshCw,
   ChevronRight,
   Zap,
-} from "lucide-react";
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Cycle de vie d'un projet",
-    href: "/dashboard/docs/projets/cycle-vie",
+    title: 'Cycle de vie d\'un projet',
+    href: '/dashboard/docs/projets/cycle-vie',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Suivi et communication",
-    href: "/dashboard/docs/projets/suivi",
+    title: 'Suivi et communication',
+    href: '/dashboard/docs/projets/suivi',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Questions fréquentes",
-    href: "/dashboard/docs/faq",
+    title: 'Questions fréquentes',
+    href: '/dashboard/docs/faq',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
@@ -49,33 +49,33 @@ type ValidationStep = {
 
 const validationSteps: ValidationStep[] = [
   {
-    id: "notification",
-    title: "Notification de livraison",
-    description: "Vous recevez une notification par email et dans votre tableau de bord vous informant qu'un livrable est prêt pour révision.",
+    id: 'notification',
+    title: 'Notification de livraison',
+    description: 'Vous recevez une notification par email et dans votre tableau de bord vous informant qu\'un livrable est prêt pour révision.',
     icon: <Bell className="h-6 w-6" />,
   },
   {
-    id: "review",
-    title: "Examen du livrable",
-    description: "Consultez le livrable dans l'interface de révision et examinez attentivement tous les aspects du travail.",
+    id: 'review',
+    title: 'Examen du livrable',
+    description: 'Consultez le livrable dans l\'interface de révision et examinez attentivement tous les aspects du travail.',
     icon: <Search className="h-6 w-6" />,
   },
   {
-    id: "feedback",
-    title: "Soumission des retours",
-    description: "Fournissez vos commentaires, suggestions et demandes de modification directement dans l'interface.",
+    id: 'feedback',
+    title: 'Soumission des retours',
+    description: 'Fournissez vos commentaires, suggestions et demandes de modification directement dans l\'interface.',
     icon: <MessageSquare className="h-6 w-6" />,
   },
   {
-    id: "revisions",
-    title: "Cycle de révisions",
-    description: "Notre équipe effectue les modifications demandées et vous soumet une version révisée pour approbation.",
+    id: 'revisions',
+    title: 'Cycle de révisions',
+    description: 'Notre équipe effectue les modifications demandées et vous soumet une version révisée pour approbation.',
     icon: <RefreshCw className="h-6 w-6" />,
   },
   {
-    id: "approval",
-    title: "Validation finale",
-    description: "Une fois satisfait du résultat, vous validez formellement le livrable qui passe en statut 'Approuvé'.",
+    id: 'approval',
+    title: 'Validation finale',
+    description: 'Une fois satisfait du résultat, vous validez formellement le livrable qui passe en statut \'Approuvé\'.',
     icon: <ThumbsUp className="h-6 w-6" />,
   },
 ];
@@ -94,60 +94,60 @@ type ValidationType = {
 
 const validationTypes: ValidationType[] = [
   {
-    id: "standard",
-    title: "Validation standard",
-    description: "Processus de validation habituel avec revue attentive et soumission de commentaires détaillés.",
+    id: 'standard',
+    title: 'Validation standard',
+    description: 'Processus de validation habituel avec revue attentive et soumission de commentaires détaillés.',
     icon: <CheckCircle className="h-6 w-6" />,
     prosCons: {
       pros: [
-        "Permet une revue complète et détaillée",
-        "Garantit un résultat final parfaitement aligné avec vos attentes",
-        "Inclut jusqu'à 2 cycles de révisions"
+        'Permet une revue complète et détaillée',
+        'Garantit un résultat final parfaitement aligné avec vos attentes',
+        'Inclut jusqu\'à 2 cycles de révisions',
       ],
       cons: [
-        "Demande du temps pour une revue approfondie",
-        "Peut prolonger légèrement le délai de livraison finale"
-      ]
-    }
+        'Demande du temps pour une revue approfondie',
+        'Peut prolonger légèrement le délai de livraison finale',
+      ],
+    },
   },
   {
-    id: "express",
-    title: "Validation express",
-    description: "Processus accéléré avec un délai de révision réduit pour les projets urgents.",
+    id: 'express',
+    title: 'Validation express',
+    description: 'Processus accéléré avec un délai de révision réduit pour les projets urgents.',
     icon: <Zap className="h-6 w-6" />,
     prosCons: {
       pros: [
-        "Délai de validation de 24-48h maximum",
-        "Maintient le projet dans un calendrier serré",
-        "Idéal pour les projets avec deadline proche"
+        'Délai de validation de 24-48h maximum',
+        'Maintient le projet dans un calendrier serré',
+        'Idéal pour les projets avec deadline proche',
       ],
       cons: [
-        "Limite le temps disponible pour une revue détaillée",
-        "Réduit le nombre potentiel de révisions à 1 cycle"
-      ]
-    }
+        'Limite le temps disponible pour une revue détaillée',
+        'Réduit le nombre potentiel de révisions à 1 cycle',
+      ],
+    },
   },
   {
-    id: "auto",
-    title: "Validation automatique",
-    description: "Validation automatique après un délai prédéfini si aucun retour n'est soumis.",
+    id: 'auto',
+    title: 'Validation automatique',
+    description: 'Validation automatique après un délai prédéfini si aucun retour n\'est soumis.',
     icon: <Clock className="h-6 w-6" />,
     prosCons: {
       pros: [
-        "Évite les blocages du projet en cas d'indisponibilité du client",
-        "Garantit la progression du projet même sans action du client",
-        "Option activable/désactivable selon vos préférences"
+        'Évite les blocages du projet en cas d\'indisponibilité du client',
+        'Garantit la progression du projet même sans action du client',
+        'Option activable/désactivable selon vos préférences',
       ],
       cons: [
-        "Risque de valider un livrable qui nécessiterait des ajustements",
-        "Recommandé uniquement pour les livrables mineurs ou intermédiaires"
-      ]
-    }
-  }
+        'Risque de valider un livrable qui nécessiterait des ajustements',
+        'Recommandé uniquement pour les livrables mineurs ou intermédiaires',
+      ],
+    },
+  },
 ];
 
 // Importation de l'icône Bell manquante
-import { Bell } from "lucide-react";
+import { Bell } from 'lucide-react';
 
 export default function DeliverableValidationPage() {
   const [tocItems, setTocItems] = useState<TocItem[]>([]);
@@ -155,21 +155,21 @@ export default function DeliverableValidationPage() {
   // Générer la table des matières
   useEffect(() => {
     const items: TocItem[] = [
-      { id: "introduction", title: "Introduction", level: 2 },
-      { id: "process", title: "Processus de validation", level: 2 },
+      { id: 'introduction', title: 'Introduction', level: 2 },
+      { id: 'process', title: 'Processus de validation', level: 2 },
       ...validationSteps.map((step) => ({
         id: step.id,
         title: step.title,
         level: 3,
       })),
-      { id: "types", title: "Types de validation", level: 2 },
+      { id: 'types', title: 'Types de validation', level: 2 },
       ...validationTypes.map((type) => ({
         id: type.id,
         title: type.title,
         level: 3,
       })),
-      { id: "best-practices", title: "Bonnes pratiques", level: 2 },
-      { id: "revisions", title: "Gestion des révisions", level: 2 },
+      { id: 'best-practices', title: 'Bonnes pratiques', level: 2 },
+      { id: 'revisions', title: 'Gestion des révisions', level: 2 },
     ];
     setTocItems(items);
   }, []);
@@ -242,7 +242,7 @@ export default function DeliverableValidationPage() {
                       <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
                       <p className="text-muted-foreground">{step.description}</p>
                       
-                      {step.id === "notification" && (
+                      {step.id === 'notification' && (
                         <div className="mt-4 p-4 border rounded-lg bg-blue-50">
                           <p className="text-blue-700 text-sm">
                             <strong>Astuce :</strong> Activez les notifications dans vos paramètres pour recevoir une alerte sur votre téléphone dès qu'un nouveau livrable est disponible.
@@ -250,7 +250,7 @@ export default function DeliverableValidationPage() {
                         </div>
                       )}
                       
-                      {step.id === "review" && (
+                      {step.id === 'review' && (
                         <div className="mt-4 space-y-3">
                           <p className="text-sm text-muted-foreground">
                             Notre interface de révision vous permet de :
@@ -272,7 +272,7 @@ export default function DeliverableValidationPage() {
                         </div>
                       )}
                       
-                      {step.id === "feedback" && (
+                      {step.id === 'feedback' && (
                         <div className="mt-4 space-y-3">
                           <p className="text-sm text-muted-foreground">
                             Vous pouvez laisser des commentaires de différentes manières :
@@ -294,7 +294,7 @@ export default function DeliverableValidationPage() {
                         </div>
                       )}
                       
-                      {step.id === "revisions" && (
+                      {step.id === 'revisions' && (
                         <div className="mt-4 p-4 border rounded-lg bg-amber-50">
                           <p className="text-amber-700 text-sm">
                             <strong>Important :</strong> Chaque service inclut un nombre spécifique de cycles de révisions. Consultez les détails de votre offre pour connaître le nombre de révisions incluses dans votre forfait.
@@ -302,7 +302,7 @@ export default function DeliverableValidationPage() {
                         </div>
                       )}
                       
-                      {step.id === "approval" && (
+                      {step.id === 'approval' && (
                         <div className="mt-4 space-y-3">
                           <p className="text-sm text-muted-foreground">
                             La validation finale peut se faire de trois façons :

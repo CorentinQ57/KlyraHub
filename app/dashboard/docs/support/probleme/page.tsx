@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
-import DocSection from "@/components/docs/DocSection";
-import DocNote from "@/components/docs/DocNote";
+import { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
+import DocSection from '@/components/docs/DocSection';
+import DocNote from '@/components/docs/DocNote';
 import { 
   FileText, 
   Mail, 
@@ -21,31 +21,31 @@ import {
   Smartphone,
   Globe,
   Laptop,
-  MessageSquare
-} from "lucide-react";
+  MessageSquare,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Contacter le support",
-    href: "/dashboard/docs/support/contact",
+    title: 'Contacter le support',
+    href: '/dashboard/docs/support/contact',
     icon: <Mail className="h-4 w-4 text-primary" />,
   },
   {
-    title: "FAQ",
-    href: "/dashboard/docs/faq",
+    title: 'FAQ',
+    href: '/dashboard/docs/faq',
     icon: <MessageSquare className="h-4 w-4 text-primary" />,
   },
 ];
 
 export default function ProblemReportPage() {
   const [tocItems] = useState<TocItem[]>([
-    { id: "introduction", title: "Introduction", level: 2 },
-    { id: "types", title: "Types de problèmes", level: 2 },
-    { id: "report-steps", title: "Comment signaler un problème", level: 2 },
-    { id: "browser-info", title: "Informations techniques à fournir", level: 2 },
-    { id: "resolution", title: "Processus de résolution", level: 2 },
-    { id: "urgent", title: "Problèmes urgents", level: 2 },
+    { id: 'introduction', title: 'Introduction', level: 2 },
+    { id: 'types', title: 'Types de problèmes', level: 2 },
+    { id: 'report-steps', title: 'Comment signaler un problème', level: 2 },
+    { id: 'browser-info', title: 'Informations techniques à fournir', level: 2 },
+    { id: 'resolution', title: 'Processus de résolution', level: 2 },
+    { id: 'urgent', title: 'Problèmes urgents', level: 2 },
   ]);
 
   return (

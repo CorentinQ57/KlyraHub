@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
-import DocSection from "@/components/docs/DocSection";
-import DocNote from "@/components/docs/DocNote";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
+import DocSection from '@/components/docs/DocSection';
+import DocNote from '@/components/docs/DocNote';
 import { 
   FileText, 
   ChevronRight,
@@ -23,24 +23,24 @@ import {
   ArrowRight,
   AlertTriangle,
   Download,
-  BarChart
-} from "lucide-react";
+  BarChart,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Catalogue de services",
-    href: "/dashboard/docs/services/catalogue",
+    title: 'Catalogue de services',
+    href: '/dashboard/docs/services/catalogue',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Livrables et formats",
-    href: "/dashboard/docs/services/livrables",
+    title: 'Livrables et formats',
+    href: '/dashboard/docs/services/livrables',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Cycle de vie d'un projet",
-    href: "/dashboard/docs/projets/cycle-vie",
+    title: 'Cycle de vie d\'un projet',
+    href: '/dashboard/docs/projets/cycle-vie',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
 ];
@@ -48,122 +48,122 @@ const relatedLinks: LinkItem[] = [
 // Structure du processus de livraison
 const deliverySteps = [
   {
-    id: "commande",
-    title: "Commande et confirmation",
-    description: "Vous sélectionnez un service et procédez au paiement. Une confirmation automatique vous est envoyée.",
+    id: 'commande',
+    title: 'Commande et confirmation',
+    description: 'Vous sélectionnez un service et procédez au paiement. Une confirmation automatique vous est envoyée.',
     icon: <Briefcase className="h-6 w-6" />,
     details: [
-      "Sélection du service depuis la marketplace",
-      "Paiement sécurisé en ligne",
-      "Réception d'un email de confirmation",
-      "Création automatique du projet dans votre tableau de bord"
-    ]
+      'Sélection du service depuis la marketplace',
+      'Paiement sécurisé en ligne',
+      'Réception d\'un email de confirmation',
+      'Création automatique du projet dans votre tableau de bord',
+    ],
   },
   {
-    id: "validation",
-    title: "Validation et planification",
-    description: "Notre équipe valide votre commande, vous contacte pour clarifier certains points si nécessaire, et planifie le projet.",
+    id: 'validation',
+    title: 'Validation et planification',
+    description: 'Notre équipe valide votre commande, vous contacte pour clarifier certains points si nécessaire, et planifie le projet.',
     icon: <CheckCircle className="h-6 w-6" />,
     details: [
-      "Revue de votre commande par notre équipe",
-      "Prise de contact pour éclaircissements si nécessaire",
-      "Attribution du projet à un designer ou une équipe",
-      "Planification des jalons du projet",
-      "Communication du calendrier prévisionnel"
-    ]
+      'Revue de votre commande par notre équipe',
+      'Prise de contact pour éclaircissements si nécessaire',
+      'Attribution du projet à un designer ou une équipe',
+      'Planification des jalons du projet',
+      'Communication du calendrier prévisionnel',
+    ],
   },
   {
-    id: "brief",
-    title: "Brief et recueil d'informations",
-    description: "Nous collectons toutes les informations nécessaires pour comprendre parfaitement vos besoins et attentes.",
+    id: 'brief',
+    title: 'Brief et recueil d\'informations',
+    description: 'Nous collectons toutes les informations nécessaires pour comprendre parfaitement vos besoins et attentes.',
     icon: <MessageSquare className="h-6 w-6" />,
     details: [
-      "Questionnaire détaillé adapté à votre service",
-      "Collecte de vos références et exemples",
-      "Réunion de lancement (selon le service choisi)",
-      "Transfert d'éléments (logo, charte graphique, etc.)",
-      "Clarification des objectifs et contraintes"
-    ]
+      'Questionnaire détaillé adapté à votre service',
+      'Collecte de vos références et exemples',
+      'Réunion de lancement (selon le service choisi)',
+      'Transfert d\'éléments (logo, charte graphique, etc.)',
+      'Clarification des objectifs et contraintes',
+    ],
   },
   {
-    id: "production",
-    title: "Production",
-    description: "Nos experts travaillent sur votre projet selon le calendrier établi, en vous tenant informé de l'avancement.",
+    id: 'production',
+    title: 'Production',
+    description: 'Nos experts travaillent sur votre projet selon le calendrier établi, en vous tenant informé de l\'avancement.',
     icon: <BarChart className="h-6 w-6" />,
     details: [
-      "Création des premières ébauches",
-      "Travail de conception selon le brief",
-      "Suivi de l'avancement visible dans votre dashboard",
-      "Mises à jour régulières sur le statut du projet",
-      "Points d'étape pour les projets complexes"
-    ]
+      'Création des premières ébauches',
+      'Travail de conception selon le brief',
+      'Suivi de l\'avancement visible dans votre dashboard',
+      'Mises à jour régulières sur le statut du projet',
+      'Points d\'étape pour les projets complexes',
+    ],
   },
   {
-    id: "livraison",
-    title: "Livraison des premières versions",
-    description: "Nous vous présentons les premières versions de vos livrables pour recueillir vos retours.",
+    id: 'livraison',
+    title: 'Livraison des premières versions',
+    description: 'Nous vous présentons les premières versions de vos livrables pour recueillir vos retours.',
     icon: <Download className="h-6 w-6" />,
     details: [
-      "Mise à disposition des livrables dans votre espace client",
-      "Notification par email et sur la plateforme",
-      "Présentation du travail réalisé",
-      "Explications sur les choix de conception",
-      "Ouverture de la phase de feedback"
-    ]
+      'Mise à disposition des livrables dans votre espace client',
+      'Notification par email et sur la plateforme',
+      'Présentation du travail réalisé',
+      'Explications sur les choix de conception',
+      'Ouverture de la phase de feedback',
+    ],
   },
   {
-    id: "retours",
-    title: "Retours et révisions",
-    description: "Vous examinez les livrables et nous faites part de vos commentaires pour d'éventuelles modifications.",
+    id: 'retours',
+    title: 'Retours et révisions',
+    description: 'Vous examinez les livrables et nous faites part de vos commentaires pour d\'éventuelles modifications.',
     icon: <ArrowRight className="h-6 w-6" />,
     details: [
-      "Interface dédiée pour laisser vos commentaires",
-      "Possibilité d'annotations directement sur les livrables",
-      "Discussion constructive sur les ajustements nécessaires",
-      "Nombre de cycles de révision selon votre forfait",
-      "Délai de retour pour chaque cycle"
-    ]
+      'Interface dédiée pour laisser vos commentaires',
+      'Possibilité d\'annotations directement sur les livrables',
+      'Discussion constructive sur les ajustements nécessaires',
+      'Nombre de cycles de révision selon votre forfait',
+      'Délai de retour pour chaque cycle',
+    ],
   },
   {
-    id: "finalisation",
-    title: "Finalisation et livraison finale",
-    description: "Après vos validations, nous finalisons le projet et vous livrons tous les éléments définitifs.",
+    id: 'finalisation',
+    title: 'Finalisation et livraison finale',
+    description: 'Après vos validations, nous finalisons le projet et vous livrons tous les éléments définitifs.',
     icon: <CheckCircle className="h-6 w-6" />,
     details: [
-      "Intégration de tous vos retours validés",
-      "Préparation des fichiers dans les formats requis",
-      "Contrôle qualité final",
-      "Livraison de tous les fichiers sources et livrables",
-      "Transfert des droits conformément aux conditions"
-    ]
+      'Intégration de tous vos retours validés',
+      'Préparation des fichiers dans les formats requis',
+      'Contrôle qualité final',
+      'Livraison de tous les fichiers sources et livrables',
+      'Transfert des droits conformément aux conditions',
+    ],
   },
   {
-    id: "cloture",
-    title: "Clôture et suivi",
-    description: "Le projet est clôturé, mais notre relation continue avec un suivi et un support post-livraison.",
+    id: 'cloture',
+    title: 'Clôture et suivi',
+    description: 'Le projet est clôturé, mais notre relation continue avec un suivi et un support post-livraison.',
     icon: <Calendar className="h-6 w-6" />,
     details: [
-      "Archivage organisé de tous vos livrables dans votre espace",
-      "Envoi d'un questionnaire de satisfaction",
-      "Support technique post-livraison",
-      "Conseils d'utilisation des livrables",
-      "Opportunités de collaboration future"
-    ]
-  }
+      'Archivage organisé de tous vos livrables dans votre espace',
+      'Envoi d\'un questionnaire de satisfaction',
+      'Support technique post-livraison',
+      'Conseils d\'utilisation des livrables',
+      'Opportunités de collaboration future',
+    ],
+  },
 ];
 
 export default function ProcessusLivraisonPage() {
   const [tocItems] = useState<TocItem[]>([
-    { id: "introduction", title: "Introduction", level: 2 },
-    { id: "processus", title: "Le processus de livraison", level: 2 },
+    { id: 'introduction', title: 'Introduction', level: 2 },
+    { id: 'processus', title: 'Le processus de livraison', level: 2 },
     ...deliverySteps.map(step => ({
       id: step.id,
       title: step.title,
-      level: 3
+      level: 3,
     })),
-    { id: "delais", title: "Délais de livraison", level: 2 },
-    { id: "communication", title: "Communication pendant le processus", level: 2 },
-    { id: "best-practices", title: "Bonnes pratiques", level: 2 },
+    { id: 'delais', title: 'Délais de livraison', level: 2 },
+    { id: 'communication', title: 'Communication pendant le processus', level: 2 },
+    { id: 'best-practices', title: 'Bonnes pratiques', level: 2 },
   ]);
 
   return (
@@ -239,7 +239,7 @@ export default function ProcessusLivraisonPage() {
                         </ul>
                       </div>
                       
-                      {step.id === "commande" && (
+                      {step.id === 'commande' && (
                         <div className="mt-4 p-4 border rounded-lg bg-blue-50">
                           <p className="text-blue-700 text-sm">
                             <strong>Astuce :</strong> Avant de passer commande, n'hésitez pas à consulter attentivement les descriptions de service pour choisir celui qui correspond le mieux à vos besoins.
@@ -247,7 +247,7 @@ export default function ProcessusLivraisonPage() {
                         </div>
                       )}
                       
-                      {step.id === "brief" && (
+                      {step.id === 'brief' && (
                         <div className="mt-4 p-4 border rounded-lg bg-blue-50">
                           <p className="text-blue-700 text-sm">
                             <strong>Important :</strong> Plus votre brief est détaillé, plus nous pourrons vous livrer un travail qui correspond exactement à vos attentes. Prenez le temps de répondre à toutes les questions du questionnaire.
@@ -255,7 +255,7 @@ export default function ProcessusLivraisonPage() {
                         </div>
                       )}
                       
-                      {step.id === "retours" && (
+                      {step.id === 'retours' && (
                         <div className="mt-4 p-4 border rounded-lg bg-yellow-50">
                           <p className="text-yellow-700 text-sm">
                             <strong>À noter :</strong> Le nombre de cycles de révision dépend du forfait que vous avez choisi. Consultez la page <Link href="/dashboard/docs/projets/validation" className="underline">Validation des livrables</Link> pour plus d'informations.

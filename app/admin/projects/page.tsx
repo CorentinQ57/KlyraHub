@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { supabase } from '@/lib/supabase'
-import { useToast } from '@/components/ui/use-toast'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Project {
   id: string
@@ -21,13 +21,13 @@ interface Project {
 }
 
 export default function AdminProjects() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const { toast } = useToast()
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchProjects()
-  }, [])
+    fetchProjects();
+  }, []);
 
   const fetchProjects = async () => {
     try {
@@ -37,48 +37,52 @@ export default function AdminProjects() {
           *,
           client:profiles!projects_client_id_fkey(full_name, email)
         `)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
-      setProjects(data || [])
+      setProjects(data || []);
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      console.error('Error fetching projects:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les projets",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les projets',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const updateProjectStatus = async (projectId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('projects')
         .update({ status: newStatus })
-        .eq('id', projectId)
+        .eq('id', projectId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
       toast({
-        title: "Succès",
-        description: "Statut du projet mis à jour"
-      })
+        title: 'Succès',
+        description: 'Statut du projet mis à jour',
+      });
 
       // Refresh projects list
-      fetchProjects()
+      fetchProjects();
     } catch (error) {
-      console.error('Error updating project:', error)
+      console.error('Error updating project:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le statut",
-        variant: "destructive"
-      })
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le statut',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -86,10 +90,10 @@ export default function AdminProjects() {
       in_progress: 'bg-blue-100 text-blue-800',
       review: 'bg-purple-100 text-purple-800',
       completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
-    }
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
-  }
+      cancelled: 'bg-red-100 text-red-800',
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
 
   const getStatusLabel = (status: string) => {
     const labels = {
@@ -97,10 +101,10 @@ export default function AdminProjects() {
       in_progress: 'En cours',
       review: 'En révision',
       completed: 'Terminé',
-      cancelled: 'Annulé'
-    }
-    return labels[status as keyof typeof labels] || status
-  }
+      cancelled: 'Annulé',
+    };
+    return labels[status as keyof typeof labels] || status;
+  };
 
   if (isLoading) {
     return (
@@ -110,7 +114,7 @@ export default function AdminProjects() {
           <p className="mt-4 text-lg">Chargement des projets...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -201,5 +205,5 @@ export default function AdminProjects() {
         </div>
       </div>
     </div>
-  )
+  );
 } 

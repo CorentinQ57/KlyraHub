@@ -1,27 +1,27 @@
-"use client"
+'use client';
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   BookOpen, 
   FileText, 
   ChevronLeft,
-  ChevronRight
-} from 'lucide-react'
+  ChevronRight,
+} from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/lib/auth'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/lib/auth';
 
 export default function AcademyManagementPage() {
-  const router = useRouter()
-  const { user, isLoading, isAdmin } = useAuth()
+  const router = useRouter();
+  const { user, isLoading, isAdmin } = useAuth();
 
   useEffect(() => {
     if (!isLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
+      router.push('/dashboard');
     }
-  }, [user, isLoading, isAdmin, router])
+  }, [user, isLoading, isAdmin, router]);
 
   if (isLoading) {
     return (
@@ -31,7 +31,7 @@ export default function AcademyManagementPage() {
           <p className="mt-4 text-lg">Chargement...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -108,5 +108,5 @@ export default function AcademyManagementPage() {
         </p>
       </div>
     </div>
-  )
+  );
 } 

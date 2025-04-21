@@ -1,87 +1,87 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import ProjectDetails from './components/ProjectDetails'
-import ProjectPhases from './components/ProjectPhases'
-import ProjectComments from './components/ProjectComments'
-import ProjectDeliverables from './components/ProjectDeliverables'
-import ProjectUploadRequests from './components/ProjectUploadRequests'
-import { fetchProjectDetailsForAdmin } from '@/lib/supabase'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import ProjectDetails from './components/ProjectDetails';
+import ProjectPhases from './components/ProjectPhases';
+import ProjectComments from './components/ProjectComments';
+import ProjectDeliverables from './components/ProjectDeliverables';
+import ProjectUploadRequests from './components/ProjectUploadRequests';
+import { fetchProjectDetailsForAdmin } from '@/lib/supabase';
 
 export default function EditProjectPage({ 
-  params 
+  params, 
 }: { 
   params: { id: string } 
 }) {
-  const [project, setProject] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
-  const { toast } = useToast()
+  const [project, setProject] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadProjectData()
+      loadProjectData();
     }
-  }, [user, authLoading, isAdmin, params.id, router])
+  }, [user, authLoading, isAdmin, params.id, router]);
 
   const loadProjectData = async () => {
     try {
-      setIsLoading(true)
-      const data = await fetchProjectDetailsForAdmin(params.id)
+      setIsLoading(true);
+      const data = await fetchProjectDetailsForAdmin(params.id);
       
       if (!data) {
         toast({
-          title: "Erreur",
-          description: "Impossible de charger le projet.",
-          variant: "destructive",
-        })
-        return
+          title: 'Erreur',
+          description: 'Impossible de charger le projet.',
+          variant: 'destructive',
+        });
+        return;
       }
       
-      setProject(data)
+      setProject(data);
     } catch (error) {
-      console.error('Error loading project:', error)
+      console.error('Error loading project:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger le projet.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger le projet.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      pending: { label: "En attente", variant: "outline" },
-      validated: { label: "Validé", variant: "secondary" },
-      in_progress: { label: "En cours", variant: "default" },
-      delivered: { label: "Livré", variant: "default" },
-      completed: { label: "Terminé", variant: "default" }
-    }
+    const statusMap: Record<string, { label: string, variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+      pending: { label: 'En attente', variant: 'outline' },
+      validated: { label: 'Validé', variant: 'secondary' },
+      in_progress: { label: 'En cours', variant: 'default' },
+      delivered: { label: 'Livré', variant: 'default' },
+      completed: { label: 'Terminé', variant: 'default' },
+    };
     
-    const statusInfo = statusMap[status] || { label: status, variant: "outline" }
+    const statusInfo = statusMap[status] || { label: status, variant: 'outline' };
     
     return (
       <Badge variant={statusInfo.variant}>
         {statusInfo.label}
       </Badge>
-    )
-  }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -91,7 +91,7 @@ export default function EditProjectPage({
           <p className="mt-4 text-lg">Chargement du projet...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!project) {
@@ -105,7 +105,7 @@ export default function EditProjectPage({
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -171,5 +171,5 @@ export default function EditProjectPage({
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 } 

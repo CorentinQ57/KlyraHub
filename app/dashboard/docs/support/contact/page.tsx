@@ -1,65 +1,65 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
-import { ArrowLeft } from "lucide-react";
-import DocSection from "@/components/docs/DocSection";
-import DocNote from "@/components/docs/DocNote";
+} from '@/components/ui/select';
+import { Card } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
+import { ArrowLeft } from 'lucide-react';
+import DocSection from '@/components/docs/DocSection';
+import DocNote from '@/components/docs/DocNote';
 import { 
   Mail, 
   Phone, 
   MessageSquare, 
   Clock, 
   CheckCircle,
-  AlertTriangle
-} from "lucide-react";
+  AlertTriangle,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const relatedLinks: LinkItem[] = [
   {
-    title: "Rapporter un problème",
-    href: "/dashboard/docs/support/probleme",
+    title: 'Rapporter un problème',
+    href: '/dashboard/docs/support/probleme',
     icon: <AlertTriangle className="h-4 w-4 text-primary" />,
   },
   {
-    title: "FAQ",
-    href: "/dashboard/docs/faq",
+    title: 'FAQ',
+    href: '/dashboard/docs/faq',
     icon: <MessageSquare className="h-4 w-4 text-primary" />,
   },
 ];
 
 export default function ContactSupportPage() {
   const [tocItems] = useState<TocItem[]>([
-    { id: "introduction", title: "Notre support client", level: 2 },
-    { id: "contact-info", title: "Informations de contact", level: 2 },
-    { id: "form", title: "Formulaire de contact", level: 2 },
-    { id: "hours", title: "Heures d'ouverture", level: 2 },
-    { id: "response-time", title: "Délais de réponse", level: 2 },
+    { id: 'introduction', title: 'Notre support client', level: 2 },
+    { id: 'contact-info', title: 'Informations de contact', level: 2 },
+    { id: 'form', title: 'Formulaire de contact', level: 2 },
+    { id: 'hours', title: 'Heures d\'ouverture', level: 2 },
+    { id: 'response-time', title: 'Délais de réponse', level: 2 },
   ]);
 
   // État du formulaire de contact
   const [formState, setFormState] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    category: "",
-    message: "",
+    name: '',
+    email: '',
+    subject: '',
+    category: '',
+    message: '',
     submitted: false,
     loading: false,
-    error: false
+    error: false,
   });
 
   // Gérer la soumission du formulaire
@@ -72,7 +72,7 @@ export default function ContactSupportPage() {
       setFormState({
         ...formState,
         submitted: true,
-        loading: false
+        loading: false,
       });
     }, 1500);
   };
@@ -222,7 +222,7 @@ export default function ContactSupportPage() {
               </DocNote>
 
               <Button type="submit" disabled={formState.loading} className="w-full sm:w-auto">
-                {formState.loading ? "Envoi en cours..." : "Envoyer le message"}
+                {formState.loading ? 'Envoi en cours...' : 'Envoyer le message'}
               </Button>
             </form>
           ) : (
@@ -238,14 +238,14 @@ export default function ContactSupportPage() {
                     variant="outline" 
                     className="mt-4"
                     onClick={() => setFormState({
-                      name: "",
-                      email: "",
-                      subject: "",
-                      category: "",
-                      message: "",
+                      name: '',
+                      email: '',
+                      subject: '',
+                      category: '',
+                      message: '',
                       submitted: false,
                       loading: false,
-                      error: false
+                      error: false,
                     })}
                   >
                     Envoyer un nouveau message

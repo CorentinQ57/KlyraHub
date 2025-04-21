@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import React from 'react'
-import { cn } from '@/lib/utils'
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface PageContainerProps {
   children: React.ReactNode
@@ -12,27 +12,27 @@ interface PageContainerProps {
 export function PageContainer({ 
   children, 
   className,
-  fullWidth = false 
+  fullWidth = false, 
 }: PageContainerProps) {
   return (
     <div className="bg-[#f9fafc] min-h-[calc(100vh-64px)] pt-8">
       <div 
         className={cn(
-          "mx-auto bg-white rounded-2xl shadow-sm pb-8 relative z-[2]",
-          fullWidth ? "max-w-[calc(100%-64px)]" : "max-w-[1280px] px-8",
+          'mx-auto bg-white rounded-2xl shadow-sm pb-8 relative z-[2]',
+          fullWidth ? 'max-w-[calc(100%-64px)]' : 'max-w-[1280px] px-8',
           className
         )}
       >
         {children}
       </div>
     </div>
-  )
+  );
 }
 
 export function PageHeader({
   title,
   description,
-  children
+  children,
 }: {
   title: string
   description?: string
@@ -52,14 +52,14 @@ export function PageHeader({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export function PageSection({
   title,
   description,
   className,
-  children
+  children,
 }: {
   title?: string
   description?: string
@@ -67,7 +67,7 @@ export function PageSection({
   children: React.ReactNode
 }) {
   return (
-    <div className={cn("mb-8", className)}>
+    <div className={cn('mb-8', className)}>
       {(title || description) && (
         <div className="mb-4">
           {title && <h2 className="text-[18px] font-semibold text-[#1A2333] mb-1">{title}</h2>}
@@ -78,22 +78,22 @@ export function PageSection({
         {children}
       </div>
     </div>
-  )
+  );
 }
 
 export function ContentCard({
   className,
-  children
+  children,
 }: {
   className?: string
   children: React.ReactNode
 }) {
   return (
     <div className={cn(
-      "bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.05)]",
+      'bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.05)]',
       className
     )}>
       {children}
     </div>
-  )
+  );
 }

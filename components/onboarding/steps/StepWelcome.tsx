@@ -1,13 +1,13 @@
-"use client"
+'use client';
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent } from '@/components/ui/card'
-import { User, Building, Mail, Phone } from 'lucide-react'
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { User, Building, Mail, Phone } from 'lucide-react';
 
 interface StepWelcomeProps {
   data: any
@@ -20,20 +20,20 @@ export default function StepWelcome({ data, onComplete }: StepWelcomeProps) {
     companyName: data.companyName || '',
     email: data.email || '',
     phone: data.phone || '',
-    goals: data.goals || ''
-  })
+    goals: data.goals || '',
+  });
 
   const handleChange = (field: string, value: string) => {
     setFormData({
       ...formData,
-      [field]: value
-    })
-  }
+      [field]: value,
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onComplete(formData)
-  }
+    e.preventDefault();
+    onComplete(formData);
+  };
 
   return (
     <motion.div
@@ -153,5 +153,5 @@ export default function StepWelcome({ data, onComplete }: StepWelcomeProps) {
         </Button>
       </form>
     </motion.div>
-  )
+  );
 } 

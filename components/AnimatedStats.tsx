@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
 
 interface StatProps {
   label: string
@@ -21,39 +21,39 @@ export function AnimatedStat({
   color = 'var(--primary)', 
   icon, 
   suffix = '', 
-  animationDelay = 0 
+  animationDelay = 0, 
 }: StatProps) {
-  const [count, setCount] = useState(0)
-  const percentage = Math.round((value / total) * 100)
+  const [count, setCount] = useState(0);
+  const percentage = Math.round((value / total) * 100);
   
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
-  })
+  });
 
   useEffect(() => {
     if (inView) {
       const timeout = setTimeout(() => {
-        let start = 0
-        const duration = 1500 // ms
-        const step = Math.max(1, Math.floor(value / (duration / 16))) // Assuming 60fps
+        let start = 0;
+        const duration = 1500; // ms
+        const step = Math.max(1, Math.floor(value / (duration / 16))); // Assuming 60fps
         
         const timer = setInterval(() => {
-          start += step
+          start += step;
           if (start > value) {
-            setCount(value)
-            clearInterval(timer)
+            setCount(value);
+            clearInterval(timer);
           } else {
-            setCount(start)
+            setCount(start);
           }
-        }, 16)
+        }, 16);
         
-        return () => clearInterval(timer)
-      }, animationDelay)
+        return () => clearInterval(timer);
+      }, animationDelay);
       
-      return () => clearTimeout(timeout)
+      return () => clearTimeout(timeout);
     }
-  }, [inView, value, animationDelay])
+  }, [inView, value, animationDelay]);
 
   return (
     <div ref={ref} className="flex flex-col space-y-2">
@@ -76,12 +76,12 @@ export function AnimatedStat({
           transition={{ 
             duration: 1, 
             delay: animationDelay / 1000,
-            ease: "easeOut" 
+            ease: 'easeOut', 
           }}
         />
       </div>
     </div>
-  )
+  );
 }
 
 export function StatsGrid({ children }: { children: React.ReactNode }) {
@@ -89,9 +89,9 @@ export function StatsGrid({ children }: { children: React.ReactNode }) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {children}
     </div>
-  )
+  );
 }
 
 export default function AnimatedStats() {
-  return <></>
+  return <></>;
 } 

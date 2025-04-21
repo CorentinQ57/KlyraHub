@@ -1,54 +1,54 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AuroraBackground } from '@/components/ui/aurora-background'
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Video, FileText, Award, Clock, Users, Layers, ArrowRight, PlayCircle, Download, MessageSquare } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { BookOpen, Video, FileText, Award, Clock, Users, Layers, ArrowRight, PlayCircle, Download, MessageSquare } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Services
-import { Course, Resource, getCourses, getResources } from '@/lib/academy-service'
+import { Course, Resource, getCourses, getResources } from '@/lib/academy-service';
 
 export default function AcademyPage() {
-  const { user } = useAuth()
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState('courses')
-  const [loading, setLoading] = useState(true)
-  const [courses, setCourses] = useState<Course[]>([])
-  const [resources, setResources] = useState<Resource[]>([])
+  const { user } = useAuth();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('courses');
+  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         // Récupère les cours et ressources en parallèle
         const [coursesData, resourcesData] = await Promise.all([
           getCourses(),
-          getResources()
-        ])
+          getResources(),
+        ]);
         
-        setCourses(coursesData)
-        setResources(resourcesData)
+        setCourses(coursesData);
+        setResources(resourcesData);
       } catch (error) {
-        console.error('Erreur lors du chargement des données Academy:', error)
+        console.error('Erreur lors du chargement des données Academy:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   // Composant pour afficher une carte de cours
   const CourseCard = ({ course }: { course: Course }) => (
@@ -85,7 +85,7 @@ export default function AcademyPage() {
         <div className="absolute top-2 right-2">
           <Badge className={
             course.level === 'Débutant' ? 'bg-green-500' : 
-            course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
+              course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
           }>
             {course.level}
           </Badge>
@@ -127,7 +127,7 @@ export default function AcademyPage() {
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 
   // Composant pour afficher une carte de ressource
   const ResourceCard = ({ resource }: { resource: Resource }) => (
@@ -150,8 +150,8 @@ export default function AcademyPage() {
         <div className="absolute top-2 right-2">
           <Badge className={
             resource.type === 'eBook' ? 'bg-purple-500' :
-            resource.type === 'Vidéo' ? 'bg-red-500' :
-            resource.type === 'Template' ? 'bg-green-500' : 'bg-blue-500'
+              resource.type === 'Vidéo' ? 'bg-red-500' :
+                resource.type === 'Template' ? 'bg-green-500' : 'bg-blue-500'
           }>
             {resource.type}
           </Badge>
@@ -165,7 +165,7 @@ export default function AcademyPage() {
       </CardContent>
       <CardFooter>
         <Button 
-          variant={resource.download_link ? "default" : "outline"}
+          variant={resource.download_link ? 'default' : 'outline'}
           className="w-full"
         >
           {resource.download_link ? (
@@ -182,7 +182,7 @@ export default function AcademyPage() {
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 
   // Composant pour les squelettes de chargement
   const CardSkeleton = () => (
@@ -205,7 +205,7 @@ export default function AcademyPage() {
         <Skeleton className="h-10 w-full" />
       </CardFooter>
     </Card>
-  )
+  );
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
@@ -541,5 +541,5 @@ export default function AcademyPage() {
         </div>
       </div>
     </AuroraBackground>
-  )
+  );
 } 

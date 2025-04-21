@@ -1,90 +1,90 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, Download, FileText, Filter, PlayCircle, Search, BookOpen, File, Zap } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { ArrowLeft, Download, FileText, Filter, PlayCircle, Search, BookOpen, File, Zap } from 'lucide-react';
 
 // Components
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { AuroraBackground } from '@/components/ui/aurora-background'
-import { Separator } from '@/components/ui/separator'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { AuroraBackground } from '@/components/ui/aurora-background';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/ui/tabs'
-import { Skeleton } from '@/components/ui/skeleton'
+} from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Services
-import { Resource, getResources, getResourcesByCategory, getResourcesByType } from '@/lib/academy-service'
+import { Resource, getResources, getResourcesByCategory, getResourcesByType } from '@/lib/academy-service';
 
 export default function ResourcesPage() {
-  const searchParams = useSearchParams()
-  const categoryParam = searchParams.get('category')
-  const typeParam = searchParams.get('type')
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get('category');
+  const typeParam = searchParams.get('type');
   
-  const [activeTab, setActiveTab] = useState(categoryParam?.toLowerCase() || 'all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedType, setSelectedType] = useState<string>(typeParam?.toLowerCase() || 'all')
-  const [resources, setResources] = useState<Resource[]>([])
-  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState(categoryParam?.toLowerCase() || 'all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<string>(typeParam?.toLowerCase() || 'all');
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchResources = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         let resourcesData;
         
         if (categoryParam) {
-          resourcesData = await getResourcesByCategory(categoryParam)
+          resourcesData = await getResourcesByCategory(categoryParam);
         } else if (typeParam) {
-          resourcesData = await getResourcesByType(typeParam)
+          resourcesData = await getResourcesByType(typeParam);
         } else {
-          resourcesData = await getResources()
+          resourcesData = await getResources();
         }
         
-        setResources(resourcesData)
+        setResources(resourcesData);
       } catch (error) {
-        console.error('Erreur lors du chargement des ressources:', error)
+        console.error('Erreur lors du chargement des ressources:', error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchResources()
-  }, [categoryParam, typeParam])
+    fetchResources();
+  }, [categoryParam, typeParam]);
 
   // Filtrer les ressources en fonction des critères
   const filteredResources = resources.filter(resource => {
     const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         (resource.description && resource.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                         (resource.description && resource.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesType = selectedType === 'all' || resource.type.toLowerCase() === selectedType.toLowerCase()
+    const matchesType = selectedType === 'all' || resource.type.toLowerCase() === selectedType.toLowerCase();
     
-    const matchesCategory = activeTab === 'all' || (resource.category && resource.category.toLowerCase() === activeTab.toLowerCase())
+    const matchesCategory = activeTab === 'all' || (resource.category && resource.category.toLowerCase() === activeTab.toLowerCase());
     
-    return matchesSearch && matchesType && matchesCategory
-  })
+    return matchesSearch && matchesType && matchesCategory;
+  });
 
   // Composant pour la carte de ressource
   const ResourceCard = ({ resource }: { resource: Resource }) => (
@@ -122,8 +122,8 @@ export default function ResourcesPage() {
           <div className="absolute top-2 right-2">
             <Badge className={
               resource.type === 'eBook' ? 'bg-purple-500' :
-              resource.type === 'Vidéo' ? 'bg-red-500' :
-              resource.type === 'Template' ? 'bg-green-500' : 'bg-blue-500'
+                resource.type === 'Vidéo' ? 'bg-red-500' :
+                  resource.type === 'Template' ? 'bg-green-500' : 'bg-blue-500'
             }>
               {resource.type}
             </Badge>
@@ -137,7 +137,7 @@ export default function ResourcesPage() {
         </CardContent>
         <CardFooter>
           <Button 
-            variant={resource.download_link ? "default" : "outline"}
+            variant={resource.download_link ? 'default' : 'outline'}
             className="w-full"
           >
             {resource.download_link ? (
@@ -155,7 +155,7 @@ export default function ResourcesPage() {
         </CardFooter>
       </Card>
     </Link>
-  )
+  );
 
   // Composant pour le squelette de chargement
   const ResourceCardSkeleton = () => (
@@ -174,7 +174,7 @@ export default function ResourcesPage() {
         <Skeleton className="h-10 w-full" />
       </CardFooter>
     </Card>
-  )
+  );
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
@@ -394,5 +394,5 @@ export default function ResourcesPage() {
         </div>
       </div>
     </AuroraBackground>
-  )
+  );
 } 

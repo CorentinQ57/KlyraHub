@@ -1,35 +1,35 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   addMonths, 
   parseISO, 
   format, 
-  subMonths 
-} from "date-fns";
-import { fr } from "date-fns/locale";
+  subMonths, 
+} from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { 
   Gantt, 
   Task, 
   ViewMode, 
-  createTask 
-} from "@/components/ui/gantt";
-import { useAuth } from "@/lib/auth";
-import { fetchProjects, fetchAllProjects } from "@/lib/supabase";
-import { PageContainer, PageHeader, PageSection } from "@/components/ui/page-container";
-import { Card } from "@/components/ui/card";
+  createTask, 
+} from '@/components/ui/gantt';
+import { useAuth } from '@/lib/auth';
+import { fetchProjects, fetchAllProjects } from '@/lib/supabase';
+import { PageContainer, PageHeader, PageSection } from '@/components/ui/page-container';
+import { Card } from '@/components/ui/card';
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "@/components/ui/use-toast";
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+  SelectValue, 
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { toast } from '@/components/ui/use-toast';
+import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 
 // Types
 type ProjectWithRelations = {
@@ -61,8 +61,8 @@ export default function ProjectTimeline() {
   const [categories, setCategories] = useState<{ [key: string]: ProjectWithRelations[] }>({});
   const [ganttTasks, setGanttTasks] = useState<Task[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Month);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
@@ -73,24 +73,24 @@ export default function ProjectTimeline() {
   // Couleurs des statuts pour le Gantt
   const statusColors: Record<string, { bg: string; progressColor: string }> = {
     pending: {
-      bg: "#FFF8E6",
-      progressColor: "#FBBF24",
+      bg: '#FFF8E6',
+      progressColor: '#FBBF24',
     },
     validated: {
-      bg: "#EEF4FF",
-      progressColor: "#467FF7",
+      bg: '#EEF4FF',
+      progressColor: '#467FF7',
     },
     in_progress: {
-      bg: "#F2EBFE",
-      progressColor: "#8B5CF6",
+      bg: '#F2EBFE',
+      progressColor: '#8B5CF6',
     },
     delivered: {
-      bg: "#ECFDF5",
-      progressColor: "#10B981",
+      bg: '#ECFDF5',
+      progressColor: '#10B981',
     },
     completed: {
-      bg: "#F9FAFB",
-      progressColor: "#6B7280",
+      bg: '#F9FAFB',
+      progressColor: '#6B7280',
     },
   };
 
@@ -125,9 +125,9 @@ export default function ProjectTimeline() {
       // Vérifier que user n'est pas null avant d'accéder à user.id
       if (!user) {
         toast({
-          title: "Erreur",
-          description: "Vous devez être connecté pour voir les projets",
-          variant: "destructive",
+          title: 'Erreur',
+          description: 'Vous devez être connecté pour voir les projets',
+          variant: 'destructive',
         });
         return;
       }
@@ -154,11 +154,11 @@ export default function ProjectTimeline() {
 
       setProjects(projectsWithDates);
     } catch (error) {
-      console.error("Error loading projects:", error);
+      console.error('Error loading projects:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les projets",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de charger les projets',
+        variant: 'destructive',
       });
     } finally {
       setIsLoadingProjects(false);
@@ -170,14 +170,14 @@ export default function ProjectTimeline() {
     let filtered = [...projects];
 
     // Filtre par statut
-    if (statusFilter !== "all") {
+    if (statusFilter !== 'all') {
       filtered = filtered.filter(
         (project) => project.status === statusFilter
       );
     }
 
     // Filtre par catégorie
-    if (categoryFilter !== "all") {
+    if (categoryFilter !== 'all') {
       filtered = filtered.filter(
         (project) => project.services?.category_id === categoryFilter
       );
@@ -191,7 +191,7 @@ export default function ProjectTimeline() {
     const groupedProjects: { [key: string]: ProjectWithRelations[] } = {};
     
     filteredProjects.forEach((project) => {
-      const categoryName = project.services?.category?.name || "Non catégorisé";
+      const categoryName = project.services?.category?.name || 'Non catégorisé';
       if (!groupedProjects[categoryName]) {
         groupedProjects[categoryName] = [];
       }
@@ -215,11 +215,11 @@ export default function ProjectTimeline() {
         start: new Date(Math.min(...categoryProjects.map(p => new Date(p.start_date || p.created_at).getTime()))),
         end: new Date(Math.max(...categoryProjects.map(p => new Date(p.end_date || addMonths(parseISO(p.created_at), 1)).getTime()))),
         progress: 0,
-        type: "project",
+        type: 'project',
         hideChildren: false,
         styles: {
-          progressColor: "#467FF7",
-          progressSelectedColor: "#467FF7",
+          progressColor: '#467FF7',
+          progressSelectedColor: '#467FF7',
         },
       });
 
@@ -230,13 +230,13 @@ export default function ProjectTimeline() {
         
         // Calculer le pourcentage de progression
         let progress = 0;
-        if (project.status === "completed") {
+        if (project.status === 'completed') {
           progress = 100;
-        } else if (project.status === "delivered") {
+        } else if (project.status === 'delivered') {
           progress = 90;
-        } else if (project.status === "in_progress") {
+        } else if (project.status === 'in_progress') {
           progress = 50;
-        } else if (project.status === "validated") {
+        } else if (project.status === 'validated') {
           progress = 20;
         } else {
           progress = 10;
@@ -248,7 +248,7 @@ export default function ProjectTimeline() {
           start: startDate,
           end: endDate,
           progress,
-          type: "task",
+          type: 'task',
           project: categoryId,
           styles: {
             backgroundColor: statusColors[project.status].bg,
@@ -266,63 +266,63 @@ export default function ProjectTimeline() {
   // Changer le mode d'affichage
   const handleViewModeChange = (mode: string) => {
     switch (mode) {
-      case "day":
-        setViewMode(ViewMode.Day);
-        break;
-      case "week":
-        setViewMode(ViewMode.Week);
-        break;
-      case "month":
-        setViewMode(ViewMode.Month);
-        break;
-      case "quarter":
-        setViewMode(ViewMode.QuarterDay);
-        break;
-      case "year":
-        setViewMode(ViewMode.Year);
-        break;
-      default:
-        setViewMode(ViewMode.Month);
+    case 'day':
+      setViewMode(ViewMode.Day);
+      break;
+    case 'week':
+      setViewMode(ViewMode.Week);
+      break;
+    case 'month':
+      setViewMode(ViewMode.Month);
+      break;
+    case 'quarter':
+      setViewMode(ViewMode.QuarterDay);
+      break;
+    case 'year':
+      setViewMode(ViewMode.Year);
+      break;
+    default:
+      setViewMode(ViewMode.Month);
     }
   };
 
   // Naviguer d'une période en avant ou en arrière
-  const navigatePeriod = (direction: "forward" | "backward") => {
-    if (direction === "forward") {
+  const navigatePeriod = (direction: 'forward' | 'backward') => {
+    if (direction === 'forward') {
       switch (viewMode) {
-        case ViewMode.Day:
-          setCurrentDate((prev) => addMonths(prev, 1));
-          break;
-        case ViewMode.Week:
-          setCurrentDate((prev) => addMonths(prev, 1));
-          break;
-        case ViewMode.Month:
-          setCurrentDate((prev) => addMonths(prev, 3));
-          break;
-        case ViewMode.QuarterDay:
-          setCurrentDate((prev) => addMonths(prev, 3));
-          break;
-        case ViewMode.Year:
-          setCurrentDate((prev) => addMonths(prev, 12));
-          break;
+      case ViewMode.Day:
+        setCurrentDate((prev) => addMonths(prev, 1));
+        break;
+      case ViewMode.Week:
+        setCurrentDate((prev) => addMonths(prev, 1));
+        break;
+      case ViewMode.Month:
+        setCurrentDate((prev) => addMonths(prev, 3));
+        break;
+      case ViewMode.QuarterDay:
+        setCurrentDate((prev) => addMonths(prev, 3));
+        break;
+      case ViewMode.Year:
+        setCurrentDate((prev) => addMonths(prev, 12));
+        break;
       }
     } else {
       switch (viewMode) {
-        case ViewMode.Day:
-          setCurrentDate((prev) => subMonths(prev, 1));
-          break;
-        case ViewMode.Week:
-          setCurrentDate((prev) => subMonths(prev, 1));
-          break;
-        case ViewMode.Month:
-          setCurrentDate((prev) => subMonths(prev, 3));
-          break;
-        case ViewMode.QuarterDay:
-          setCurrentDate((prev) => subMonths(prev, 3));
-          break;
-        case ViewMode.Year:
-          setCurrentDate((prev) => subMonths(prev, 12));
-          break;
+      case ViewMode.Day:
+        setCurrentDate((prev) => subMonths(prev, 1));
+        break;
+      case ViewMode.Week:
+        setCurrentDate((prev) => subMonths(prev, 1));
+        break;
+      case ViewMode.Month:
+        setCurrentDate((prev) => subMonths(prev, 3));
+        break;
+      case ViewMode.QuarterDay:
+        setCurrentDate((prev) => subMonths(prev, 3));
+        break;
+      case ViewMode.Year:
+        setCurrentDate((prev) => subMonths(prev, 12));
+        break;
       }
     }
   };
@@ -330,7 +330,9 @@ export default function ProjectTimeline() {
   // Gérer le clic sur une tâche
   const handleTaskClick = (task: Task) => {
     // Ne pas naviguer si c'est une catégorie
-    if (task.type === "project") return;
+    if (task.type === 'project') {
+      return;
+    }
 
     // Naviguer vers la page du projet
     router.push(`/dashboard/projects/${task.id}`);
@@ -389,17 +391,17 @@ export default function ProjectTimeline() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigatePeriod("backward")}
+                onClick={() => navigatePeriod('backward')}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-sm font-medium mx-2">
-                {format(currentDate, "MMMM yyyy", { locale: fr })}
+                {format(currentDate, 'MMMM yyyy', { locale: fr })}
               </span>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigatePeriod("forward")}
+                onClick={() => navigatePeriod('forward')}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -407,14 +409,14 @@ export default function ProjectTimeline() {
 
             <Select 
               value={viewMode === ViewMode.Day 
-                ? "day" 
+                ? 'day' 
                 : viewMode === ViewMode.Week 
-                ? "week" 
-                : viewMode === ViewMode.Month 
-                ? "month" 
-                : viewMode === ViewMode.QuarterDay 
-                ? "quarter" 
-                : "year"
+                  ? 'week' 
+                  : viewMode === ViewMode.Month 
+                    ? 'month' 
+                    : viewMode === ViewMode.QuarterDay 
+                      ? 'quarter' 
+                      : 'year'
               } 
               onValueChange={handleViewModeChange}
             >
@@ -471,7 +473,7 @@ export default function ProjectTimeline() {
                 tasks={ganttTasks}
                 options={{
                   viewMode: viewMode,
-                  locale: "fr",
+                  locale: 'fr',
                   onClick: handleTaskClick,
                   headerHeight: 50,
                 }}

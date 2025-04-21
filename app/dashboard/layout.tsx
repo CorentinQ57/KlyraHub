@@ -1,62 +1,62 @@
-"use client"
+'use client';
 
-import { useEffect, useState, useRef } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { useAuth } from '@/lib/auth'
-import { SidebarNav } from '@/components/SidebarNav'
-import { Button } from '@/components/ui/button'
-import { AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { SidebarNav } from '@/components/SidebarNav';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const { user, isLoading, signOut, reloadAuthState } = useAuth()
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, isLoading, signOut, reloadAuthState } = useAuth();
   
   // État pour gérer un timeout de sécurité
-  const [safetyTimeout, setSafetyTimeout] = useState(false)
-  const [forceDisplay, setForceDisplay] = useState(false)
-  const [userTypeError, setUserTypeError] = useState(false)
-  const [isReloading, setIsReloading] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [safetyTimeout, setSafetyTimeout] = useState(false);
+  const [forceDisplay, setForceDisplay] = useState(false);
+  const [userTypeError, setUserTypeError] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // NOUVEAU: État pour éviter un double affichage de l'UI pendant la transition
-  const [contentReady, setContentReady] = useState(false)
-  const hasInitialized = useRef(false)
+  const [contentReady, setContentReady] = useState(false);
+  const hasInitialized = useRef(false);
   
   // Vérifier si le chemin actuel est dans la section documentation
-  const isDocsRoute = pathname.startsWith('/dashboard/docs')
+  const isDocsRoute = pathname.startsWith('/dashboard/docs');
   
   // Vérifier si la sidebar est repliée
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // Vérifier l'état initial
       const checkCollapsedState = () => {
-        const savedState = localStorage.getItem('sidebar-collapsed')
-        setIsSidebarCollapsed(savedState === 'true')
-      }
+        const savedState = localStorage.getItem('sidebar-collapsed');
+        setIsSidebarCollapsed(savedState === 'true');
+      };
       
       // Vérifier à l'initialisation
-      checkCollapsedState()
+      checkCollapsedState();
       
       // Ajouter un écouteur d'événements pour les changements de localStorage
       const handleStorageChange = (e: StorageEvent) => {
         if (e.key === 'sidebar-collapsed') {
-          setIsSidebarCollapsed(e.newValue === 'true')
+          setIsSidebarCollapsed(e.newValue === 'true');
         }
-      }
+      };
       
-      window.addEventListener('storage', handleStorageChange)
+      window.addEventListener('storage', handleStorageChange);
       
       // Créer une fonction qui vérifie périodiquement l'état
-      const interval = setInterval(checkCollapsedState, 1000)
+      const interval = setInterval(checkCollapsedState, 1000);
       
       return () => {
-        window.removeEventListener('storage', handleStorageChange)
-        clearInterval(interval)
-      }
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
     }
-  }, [])
+  }, []);
   
   // NOUVEAU: Écouter les événements d'authentification personnalisés
   useEffect(() => {
@@ -81,97 +81,101 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Vérifier que l'utilisateur est valide et rediriger si nécessaire
   useEffect(() => {
     // Si on est dans la documentation, pas besoin de vérification d'authentification
-    if (isDocsRoute) return
+    if (isDocsRoute) {
+      return;
+    }
     
     // Vérifier si user est un objet ou une chaîne
-    const userType = typeof user
-    const isValidUser = user && userType === 'object' && 'id' in user
+    const userType = typeof user;
+    const isValidUser = user && userType === 'object' && 'id' in user;
     
     if (userType === 'string' || (user && !isValidUser)) {
-      console.error("Erreur critique: user n'est pas un objet valide dans le dashboard layout", { 
+      console.error('Erreur critique: user n\'est pas un objet valide dans le dashboard layout', { 
         userType, 
         user,
-        hasId: user && userType === 'object' ? 'id' in user : false
-      })
-      setUserTypeError(true)
+        hasId: user && userType === 'object' ? 'id' in user : false,
+      });
+      setUserTypeError(true);
     } else {
-      setUserTypeError(false)
+      setUserTypeError(false);
     }
     
     // Rediriger vers la page de connexion si l'utilisateur n'est pas authentifié
     // et qu'il n'est pas sur une route de documentation
     if (!isLoading && !user) {
-      router.push('/login')
+      router.push('/login');
     }
     
     // NOUVEAU: Si l'authentification est terminée et que l'utilisateur est valide, marquer comme prêt
     if (!isLoading && user && isValidUser && !contentReady) {
-      setContentReady(true)
-      hasInitialized.current = true
+      setContentReady(true);
+      hasInitialized.current = true;
     }
-  }, [user, isLoading, router, pathname, isDocsRoute, contentReady])
+  }, [user, isLoading, router, pathname, isDocsRoute, contentReady]);
   
   // Timeout de sécurité pour éviter un loading infini - RÉDUIT À 4 SECONDES
   useEffect(() => {
     // Ignorer le timeout pour les pages de documentation
-    if (isDocsRoute) return
+    if (isDocsRoute) {
+      return;
+    }
     
     // Log détaillé pour déboguer le type de user
-    console.log("Dashboard layout - loading state:", {
+    console.log('Dashboard layout - loading state:', {
       isLoading,
       userType: typeof user,
       userEmail: user && typeof user === 'object' ? user.email : null,
       hasId: user && typeof user === 'object' ? 'id' in user : false,
-      pathname
-    })
+      pathname,
+    });
     
     if (isLoading && !contentReady) {
       // Après 4 secondes, montrer un bouton pour forcer l'affichage
       const timeoutId = setTimeout(() => {
-        console.log("Safety timeout triggered in dashboard layout (4s)")
-        setSafetyTimeout(true)
+        console.log('Safety timeout triggered in dashboard layout (4s)');
+        setSafetyTimeout(true);
         
         // NOUVEAU: Même sans action utilisateur, autoriser l'affichage après le timeout
         if (!hasInitialized.current) {
-          console.log("Auto-initializing content display after timeout");
+          console.log('Auto-initializing content display after timeout');
           setContentReady(true);
           hasInitialized.current = true;
         }
         
         // Vérifier l'état des tokens
-        const accessToken = localStorage.getItem('sb-access-token')
-        const refreshToken = localStorage.getItem('sb-refresh-token')
-        console.log("Token state at timeout:", {
+        const accessToken = localStorage.getItem('sb-access-token');
+        const refreshToken = localStorage.getItem('sb-refresh-token');
+        console.log('Token state at timeout:', {
           hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken
-        })
+          hasRefreshToken: !!refreshToken,
+        });
         
         // Si aucun token n'est présent, rediriger vers la page de connexion
         if (!accessToken && !refreshToken) {
-          console.log("No tokens found, redirecting to login")
-          router.push('/login')
+          console.log('No tokens found, redirecting to login');
+          router.push('/login');
         }
-      }, 4000) // RÉDUIT DE 8 À 4 SECONDES
+      }, 4000); // RÉDUIT DE 8 À 4 SECONDES
       
-      return () => clearTimeout(timeoutId)
+      return () => clearTimeout(timeoutId);
     }
-  }, [isLoading, user, isDocsRoute, router, pathname, contentReady])
+  }, [isLoading, user, isDocsRoute, router, pathname, contentReady]);
   
   // Fonction pour forcer la déconnexion en cas d'erreur de type
   const handleForceSignOut = async () => {
-    console.log("Forcing sign out due to user type error")
+    console.log('Forcing sign out due to user type error');
     try {
-      await signOut()
+      await signOut();
     } catch (error) {
-      console.error("Error during forced sign out:", error)
+      console.error('Error during forced sign out:', error);
       // Redirection manuelle en cas d'échec du signOut
-      router.push('/login')
+      router.push('/login');
     }
-  }
+  };
   
   // Fonction pour forcer l'affichage du dashboard
   const handleForceDisplay = () => {
-    console.log("User forced display of dashboard");
+    console.log('User forced display of dashboard');
     // Activer l'affichage forcé
     setForceDisplay(true);
     // Autoriser le rendu du contenu
@@ -179,24 +183,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     hasInitialized.current = true;
     // Si l'utilisateur est défini mais n'a pas de rôle, définir isAdmin par défaut à false
     if (user && typeof user === 'object' && 'id' in user) {
-      console.log("Forcing default role assignment");
+      console.log('Forcing default role assignment');
     }
-  }
+  };
   
   // Fonction pour forcer le rafraîchissement de l'état d'authentification
   const handleForceReload = async () => {
     try {
-      console.log("User requested auth state reload");
+      console.log('User requested auth state reload');
       setIsReloading(true);
       await reloadAuthState();
     } catch (error) {
-      console.error("Error during force reload:", error);
+      console.error('Error during force reload:', error);
       // En cas d'échec, forcer l'affichage quand même
       handleForceDisplay();
     } finally {
       setIsReloading(false);
     }
-  }
+  };
   
   // MODIFIÉ: Afficher un indicateur de chargement non bloquant si on vérifie encore l'authentification
   const LoadingOverlay = () => (
@@ -223,7 +227,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               variant="outline"
               disabled={isReloading}
             >
-              {isReloading ? "..." : "Rafraîchir"}
+              {isReloading ? '...' : 'Rafraîchir'}
             </Button>
             <Button 
               onClick={handleForceDisplay}
@@ -268,8 +272,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <SidebarNav />
           <main 
             className={cn(
-              "flex-1 pt-16 lg:pt-0 transition-all duration-300 ease-in-out",
-              isSidebarCollapsed ? "lg:pl-[70px]" : "lg:pl-[240px]"
+              'flex-1 pt-16 lg:pt-0 transition-all duration-300 ease-in-out',
+              isSidebarCollapsed ? 'lg:pl-[70px]' : 'lg:pl-[240px]'
             )}
           >
             {children}

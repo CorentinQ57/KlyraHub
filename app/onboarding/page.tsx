@@ -1,157 +1,159 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { PageContainer, PageHeader, PageSection } from '@/components/ui/page-container'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '@/lib/auth'
-import { useToast } from '@/components/ui/use-toast'
-import { saveOnboardingData } from '@/lib/supabase'
-import ProgressBar from '@/components/onboarding/ProgressBar'
-import StepWelcome from '@/components/onboarding/steps/StepWelcome'
-import StepProfile from '@/components/onboarding/steps/StepProfile'
-import StepStyle from '@/components/onboarding/steps/StepStyle'
-import StepSummary from '@/components/onboarding/steps/StepSummary'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { PageContainer, PageHeader, PageSection } from '@/components/ui/page-container';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/lib/auth';
+import { useToast } from '@/components/ui/use-toast';
+import { saveOnboardingData } from '@/lib/supabase';
+import ProgressBar from '@/components/onboarding/ProgressBar';
+import StepWelcome from '@/components/onboarding/steps/StepWelcome';
+import StepProfile from '@/components/onboarding/steps/StepProfile';
+import StepStyle from '@/components/onboarding/steps/StepStyle';
+import StepSummary from '@/components/onboarding/steps/StepSummary';
+import { supabase } from '@/lib/supabase';
 
 const steps = [
-  "Bienvenue",
-  "Profil & Besoins",
-  "Préférences",
-  "Récapitulatif"
-]
+  'Bienvenue',
+  'Profil & Besoins',
+  'Préférences',
+  'Récapitulatif',
+];
 
 export default function OnboardingPage() {
-  const router = useRouter()
-  const { user, isLoading, reloadAuthState } = useAuth()
-  const { toast } = useToast()
+  const router = useRouter();
+  const { user, isLoading, reloadAuthState } = useAuth();
+  const { toast } = useToast();
   
-  const [currentStep, setCurrentStep] = useState(0)
-  const [formData, setFormData] = useState({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Check if user is authenticated
   useEffect(() => {
-    console.log("Onboarding page - User state:", { 
+    console.log('Onboarding page - User state:', { 
       isLoading, 
       isAuthenticated: !!user, 
-      metadata: user?.user_metadata 
+      metadata: user?.user_metadata, 
     });
     
     if (!isLoading && !user) {
-      router.push('/login')
+      router.push('/login');
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
   
   const goToNextStep = () => {
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
   
   const goToPreviousStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
   
   const handleStepComplete = (stepData: any) => {
     // Update formData with the new data from the current step
     setFormData({
       ...formData,
-      ...stepData
-    })
+      ...stepData,
+    });
     
     // If it's the last step, submit the onboarding data
     if (currentStep === steps.length - 1) {
       handleSubmitOnboarding({
         ...formData,
-        ...stepData
-      })
+        ...stepData,
+      });
     } else {
       // Otherwise, go to the next step
-      goToNextStep()
+      goToNextStep();
     }
-  }
+  };
   
   const handleSubmitOnboarding = async (data: any) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     
     try {
       // Vérifier si l'utilisateur est authentifié
       if (!user) {
-        throw new Error("Utilisateur non authentifié")
+        throw new Error('Utilisateur non authentifié');
       }
       
-      console.log("Saving onboarding data for user:", user.email, "with data:", data);
+      console.log('Saving onboarding data for user:', user.email, 'with data:', data);
       
       // Sauvegarder les données d'onboarding
-      await saveOnboardingData(user.id, data)
+      await saveOnboardingData(user.id, data);
       
       // Force a reload of the auth state to get the updated user metadata
       await reloadAuthState();
       
-      console.log("Onboarding data saved successfully, updated user:", user);
+      console.log('Onboarding data saved successfully, updated user:', user);
       
       // Afficher un toast de succès
       toast({
-        title: "Profil complété !",
-        description: "Bienvenue sur Klyra Hub. Vos préférences ont été enregistrées.",
+        title: 'Profil complété !',
+        description: 'Bienvenue sur Klyra Hub. Vos préférences ont été enregistrées.',
         duration: 5000,
-      })
+      });
       
       // Ajouter un délai avant la redirection pour s'assurer que les données sont bien synchronisées
       setTimeout(() => {
         // Rediriger vers le dashboard
-        router.push('/dashboard')
+        router.push('/dashboard');
       }, 500);
     } catch (error) {
-      console.error('Error saving onboarding data:', error)
+      console.error('Error saving onboarding data:', error);
       toast({
-        title: "Une erreur est survenue",
-        description: "Impossible d'enregistrer vos informations. Veuillez réessayer.",
-        variant: "destructive",
+        title: 'Une erreur est survenue',
+        description: 'Impossible d\'enregistrer vos informations. Veuillez réessayer.',
+        variant: 'destructive',
         duration: 5000,
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
   
   const renderStep = () => {
     switch (currentStep) {
-      case 0:
-        return <StepWelcome data={formData} onComplete={handleStepComplete} />
-      case 1:
-        return <StepProfile data={formData} onComplete={handleStepComplete} />
-      case 2:
-        return <StepStyle data={formData} onComplete={handleStepComplete} />
-      case 3:
-        return <StepSummary data={formData} onComplete={handleStepComplete} />
-      default:
-        return null
+    case 0:
+      return <StepWelcome data={formData} onComplete={handleStepComplete} />;
+    case 1:
+      return <StepProfile data={formData} onComplete={handleStepComplete} />;
+    case 2:
+      return <StepStyle data={formData} onComplete={handleStepComplete} />;
+    case 3:
+      return <StepSummary data={formData} onComplete={handleStepComplete} />;
+    default:
+      return null;
     }
-  }
+  };
   
   // Fonction pour réinitialiser l'état d'onboarding (utile pour tester)
   const resetOnboardingStatus = async () => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
     
     try {
       const { error } = await supabase.auth.updateUser({
         data: { 
-          onboarded: false
-        }
+          onboarded: false,
+        },
       });
       
       if (error) {
-        console.error("Erreur lors de la réinitialisation du statut d'onboarding:", error);
+        console.error('Erreur lors de la réinitialisation du statut d\'onboarding:', error);
         toast({
-          title: "Erreur",
-          description: "Impossible de réinitialiser le statut d'onboarding.",
-          variant: "destructive"
+          title: 'Erreur',
+          description: 'Impossible de réinitialiser le statut d\'onboarding.',
+          variant: 'destructive',
         });
         return;
       }
@@ -160,14 +162,14 @@ export default function OnboardingPage() {
       await reloadAuthState();
       
       toast({
-        title: "Statut réinitialisé",
-        description: "Le statut d'onboarding a été réinitialisé avec succès.",
+        title: 'Statut réinitialisé',
+        description: 'Le statut d\'onboarding a été réinitialisé avec succès.',
       });
       
       // Recharger la page pour refléter les changements
       window.location.reload();
     } catch (error) {
-      console.error("Exception lors de la réinitialisation du statut d'onboarding:", error);
+      console.error('Exception lors de la réinitialisation du statut d\'onboarding:', error);
     }
   };
   
@@ -181,7 +183,7 @@ export default function OnboardingPage() {
           </div>
         </div>
       </PageContainer>
-    )
+    );
   }
   
   return (
@@ -248,5 +250,5 @@ export default function OnboardingPage() {
         </PageSection>
       </div>
     </PageContainer>
-  )
+  );
 } 

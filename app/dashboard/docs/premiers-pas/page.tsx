@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { TableOfContents, TocItem } from "@/components/docs/TableOfContents";
-import { LinkCard, LinkItem } from "@/components/docs/LinkCard";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { TableOfContents, TocItem } from '@/components/docs/TableOfContents';
+import { LinkCard, LinkItem } from '@/components/docs/LinkCard';
 import { 
   ArrowRight, 
   CheckCircle, 
@@ -15,25 +15,25 @@ import {
   Users,
   Mail,
   MessageSquare,
-  HelpCircle
-} from "lucide-react";
+  HelpCircle,
+} from 'lucide-react';
 
 // Liens recommandés dans la barre latérale
 const recommendedLinks: LinkItem[] = [
   {
-    title: "FAQ",
-    href: "/dashboard/docs/faq",
-    description: "Questions fréquemment posées",
+    title: 'FAQ',
+    href: '/dashboard/docs/faq',
+    description: 'Questions fréquemment posées',
     icon: <HelpCircle className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Catalogue de services",
-    href: "/dashboard/docs/services/catalogue",
+    title: 'Catalogue de services',
+    href: '/dashboard/docs/services/catalogue',
     icon: <FileText className="h-4 w-4 text-primary" />,
   },
   {
-    title: "Support client",
-    href: "/dashboard/docs/support/contact",
+    title: 'Support client',
+    href: '/dashboard/docs/support/contact',
     icon: <Mail className="h-4 w-4 text-primary" />,
   },
 ];
@@ -46,7 +46,7 @@ export default function GettingStartedPage() {
     const headings = document.querySelectorAll<HTMLHeadingElement>('h2, h3');
     const items: TocItem[] = Array.from(headings).map((heading) => ({
       id: heading.id,
-      title: heading.textContent || "",
+      title: heading.textContent || '',
       level: parseInt(heading.tagName.substring(1)),
     }));
     setTocItems(items);

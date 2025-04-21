@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 // Type pour les headings utilisés dans la génération de tables des matières
@@ -18,6 +18,6 @@ export function generateToc(headings: Heading[]) {
   return headings.map(heading => ({
     id: heading.id,
     title: heading.title,
-    level: heading.level || 2
+    level: heading.level || 2,
   }));
 }

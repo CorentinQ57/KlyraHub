@@ -1,19 +1,19 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { useToast } from '@/components/ui/use-toast'
-import { updateProject, supabase } from '@/lib/supabase'
+} from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+import { updateProject, supabase } from '@/lib/supabase';
 
 type ProjectDetailsProps = {
   project: any
@@ -21,16 +21,16 @@ type ProjectDetailsProps = {
 }
 
 export default function ProjectDetails({ project, onProjectUpdated }: ProjectDetailsProps) {
-  const [isSaving, setIsSaving] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     title: project.title || '',
     description: project.description || '',
     status: project.status || 'pending',
-    designer_id: project.designer_id || 'none'
-  })
-  const [availableDesigners, setAvailableDesigners] = useState<any[]>([])
-  const [isLoadingDesigners, setIsLoadingDesigners] = useState(true)
-  const { toast } = useToast()
+    designer_id: project.designer_id || 'none',
+  });
+  const [availableDesigners, setAvailableDesigners] = useState<any[]>([]);
+  const [isLoadingDesigners, setIsLoadingDesigners] = useState(true);
+  const { toast } = useToast();
 
   // Status options
   const statusOptions = [
@@ -38,93 +38,95 @@ export default function ProjectDetails({ project, onProjectUpdated }: ProjectDet
     { value: 'validated', label: 'Validé' },
     { value: 'in_progress', label: 'En cours' },
     { value: 'delivered', label: 'Livré' },
-    { value: 'completed', label: 'Terminé' }
-  ]
+    { value: 'completed', label: 'Terminé' },
+  ];
 
   // Fetch available designers
   useEffect(() => {
     const loadDesigners = async () => {
-      setIsLoadingDesigners(true)
+      setIsLoadingDesigners(true);
       try {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, email')
-          .eq('role', 'designer')
+          .eq('role', 'designer');
 
-        if (error) throw error
-        setAvailableDesigners(data || [])
+        if (error) {
+          throw error;
+        }
+        setAvailableDesigners(data || []);
       } catch (error) {
-        console.error('Error loading designers:', error)
+        console.error('Error loading designers:', error);
         toast({
-          title: "Erreur",
-          description: "Impossible de charger la liste des designers.",
-          variant: "destructive",
-        })
+          title: 'Erreur',
+          description: 'Impossible de charger la liste des designers.',
+          variant: 'destructive',
+        });
       } finally {
-        setIsLoadingDesigners(false)
+        setIsLoadingDesigners(false);
       }
-    }
+    };
 
-    loadDesigners()
-  }, [toast])
+    loadDesigners();
+  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
-    }))
-  }
+      [name]: value,
+    }));
+  };
 
   const handleStatusChange = (newStatus: string) => {
     setFormData(prev => ({
       ...prev,
-      status: newStatus
-    }))
-  }
+      status: newStatus,
+    }));
+  };
 
   const handleDesignerChange = (designerId: string) => {
     setFormData(prev => ({
       ...prev,
-      designer_id: designerId
-    }))
-  }
+      designer_id: designerId,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       // Traiter la valeur "none" comme undefined
-      const designerId = formData.designer_id === "none" ? undefined : formData.designer_id || undefined
+      const designerId = formData.designer_id === 'none' ? undefined : formData.designer_id || undefined;
       
       const updatedProject = await updateProject(project.id, {
         title: formData.title,
         description: formData.description,
         status: formData.status as any,
-        designer_id: designerId
-      })
+        designer_id: designerId,
+      });
 
       if (updatedProject) {
         toast({
-          title: "Succès",
-          description: "Le projet a été mis à jour.",
-        })
-        onProjectUpdated()
+          title: 'Succès',
+          description: 'Le projet a été mis à jour.',
+        });
+        onProjectUpdated();
       } else {
-        throw new Error('Failed to update project')
+        throw new Error('Failed to update project');
       }
     } catch (error) {
-      console.error('Error updating project:', error)
+      console.error('Error updating project:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le projet.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le projet.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   return (
     <Card>
@@ -205,7 +207,7 @@ export default function ProjectDetails({ project, onProjectUpdated }: ProjectDet
                 disabled={isSaving || isLoadingDesigners}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={isLoadingDesigners ? "Chargement..." : "Sélectionner un designer"} />
+                  <SelectValue placeholder={isLoadingDesigners ? 'Chargement...' : 'Sélectionner un designer'} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Aucun designer assigné</SelectItem>
@@ -227,5 +229,5 @@ export default function ProjectDetails({ project, onProjectUpdated }: ProjectDet
         </form>
       </CardContent>
     </Card>
-  )
+  );
 } 

@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useAuth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth';
 
 export function DebugAuth() {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin } = useAuth();
   
   return (
     <div className="p-4 bg-gray-100 rounded-lg">
@@ -12,9 +12,9 @@ export function DebugAuth() {
         {JSON.stringify({
           userId: user?.id,
           email: user?.email,
-          isAdmin: isAdmin
+          isAdmin: isAdmin,
         }, null, 2)}
       </pre>
     </div>
-  )
+  );
 } 

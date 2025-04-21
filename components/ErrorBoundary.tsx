@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import React from 'react'
-import { Button } from '@/components/ui/button'
+import React from 'react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: React.ReactNode
@@ -14,16 +14,16 @@ interface State {
 
 export class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
-    super(props)
-    this.state = { hasError: false, error: null }
+    super(props);
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   render() {
@@ -38,8 +38,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <div className="space-y-4">
               <Button
                 onClick={() => {
-                  this.setState({ hasError: false, error: null })
-                  window.location.reload()
+                  this.setState({ hasError: false, error: null });
+                  window.location.reload();
                 }}
               >
                 Recharger l'application
@@ -48,8 +48,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    localStorage.clear()
-                    window.location.href = '/login'
+                    localStorage.clear();
+                    window.location.href = '/login';
                   }}
                 >
                   Réinitialiser et se reconnecter
@@ -58,9 +58,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
             </div>
           </div>
         </div>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 } 

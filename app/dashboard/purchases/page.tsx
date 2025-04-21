@@ -1,14 +1,14 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { ShoppingBag, Download, ExternalLink } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { ShoppingBag, Download, ExternalLink } from 'lucide-react';
 
 type Purchase = {
   id: string
@@ -21,20 +21,20 @@ type Purchase = {
 }
 
 export default function PurchasesPage() {
-  const [purchases, setPurchases] = useState<Purchase[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-  const { user } = useAuth()
-  const { toast } = useToast()
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
-      loadPurchases()
+      loadPurchases();
     }
-  }, [user])
+  }, [user]);
 
   const loadPurchases = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Cette fonction serait remplacée par un appel à Supabase dans une implémentation réelle
       // Simulation de chargement des achats
@@ -47,7 +47,7 @@ export default function PurchasesPage() {
             date: '2024-03-15',
             status: 'completed',
             invoice_url: '#',
-            project_id: 1
+            project_id: 1,
           },
           {
             id: '2',
@@ -56,7 +56,7 @@ export default function PurchasesPage() {
             date: '2024-02-28',
             status: 'completed',
             invoice_url: '#',
-            project_id: 2
+            project_id: 2,
           },
           {
             id: '3',
@@ -65,58 +65,58 @@ export default function PurchasesPage() {
             date: '2024-01-10',
             status: 'completed',
             invoice_url: '#',
-            project_id: 3
-          }
-        ]
-        setPurchases(mockPurchases)
-        setIsLoading(false)
-      }, 1000)
+            project_id: 3,
+          },
+        ];
+        setPurchases(mockPurchases);
+        setIsLoading(false);
+      }, 1000);
     } catch (error) {
-      console.error('Erreur lors du chargement des achats:', error)
+      console.error('Erreur lors du chargement des achats:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger vos achats",
-        variant: "destructive",
-      })
-      setIsLoading(false)
+        title: 'Erreur',
+        description: 'Impossible de charger vos achats',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
     }
-  }
+  };
 
   // Fonction pour formater les prix
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
-    }).format(price)
-  }
+    }).format(price);
+  };
 
   // Fonction pour obtenir la couleur du statut
   const getStatusColor = (status: Purchase['status']) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800'
-      case 'processing':
-        return 'bg-blue-100 text-blue-800'
-      case 'refunded':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+    case 'completed':
+      return 'bg-green-100 text-green-800';
+    case 'processing':
+      return 'bg-blue-100 text-blue-800';
+    case 'refunded':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   // Fonction pour obtenir le libellé du statut
   const getStatusLabel = (status: Purchase['status']) => {
     switch (status) {
-      case 'completed':
-        return 'Terminé'
-      case 'processing':
-        return 'En cours'
-      case 'refunded':
-        return 'Remboursé'
-      default:
-        return status
+    case 'completed':
+      return 'Terminé';
+    case 'processing':
+      return 'En cours';
+    case 'refunded':
+      return 'Remboursé';
+    default:
+      return status;
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -128,7 +128,7 @@ export default function PurchasesPage() {
           </div>
         </div>
       </PageContainer>
-    )
+    );
   }
 
   return (
@@ -245,5 +245,5 @@ export default function PurchasesPage() {
         </PageSection>
       )}
     </PageContainer>
-  )
+  );
 } 

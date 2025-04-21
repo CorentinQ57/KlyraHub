@@ -37,7 +37,7 @@ async function uploadFile(filePath, bucketName, targetPath) {
       .from(bucketName)
       .upload(finalPath, fileBuffer, {
         contentType: `image/${fileExtension.replace('.', '')}`,
-        upsert: true
+        upsert: true,
       });
 
     if (error) {
@@ -66,7 +66,7 @@ async function main() {
   const buckets = [
     { name: 'academy-images', public: true },
     { name: 'courses', public: true },
-    { name: 'resources', public: true }
+    { name: 'resources', public: true },
   ];
 
   for (const bucket of buckets) {
@@ -83,12 +83,12 @@ async function main() {
     { 
       path: './public/images/academy/courses/branding.jpg', 
       bucket: 'academy-images', 
-      targetPath: 'courses/branding-course.jpg' 
+      targetPath: 'courses/branding-course.jpg', 
     },
     { 
       path: './public/images/academy/resources/ebook.jpg', 
       bucket: 'academy-images', 
-      targetPath: 'resources/branding-ebook.jpg' 
+      targetPath: 'resources/branding-ebook.jpg', 
     },
     // Ajoutez d'autres images ici
   ];

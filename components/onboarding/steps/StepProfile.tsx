@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Briefcase, Users, BarChart3 } from 'lucide-react'
-import CardSelector from '@/components/onboarding/CardSelector'
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Briefcase, Users, BarChart3 } from 'lucide-react';
+import CardSelector from '@/components/onboarding/CardSelector';
 
 interface StepProfileProps {
   data: any
@@ -21,23 +21,23 @@ const sectors = [
   { id: 'education', name: 'Éducation', icon: '📚' },
   { id: 'manufacturing', name: 'Industrie', icon: '🏭' },
   { id: 'services', name: 'Services', icon: '🤝' },
-  { id: 'other', name: 'Autre', icon: '🔍' }
-]
+  { id: 'other', name: 'Autre', icon: '🔍' },
+];
 
 // Company sizes
 const companySizes = [
   { id: 'solo', name: 'Indépendant', icon: <Users className="h-6 w-6" />, description: 'Vous travaillez seul' },
   { id: 'small', name: 'Petite équipe', icon: <Users className="h-6 w-6" />, description: '2 à 10 employés' },
   { id: 'medium', name: 'PME', icon: <Briefcase className="h-6 w-6" />, description: '11 à 50 employés' },
-  { id: 'large', name: 'Grande entreprise', icon: <BarChart3 className="h-6 w-6" />, description: '50+ employés' }
-]
+  { id: 'large', name: 'Grande entreprise', icon: <BarChart3 className="h-6 w-6" />, description: '50+ employés' },
+];
 
 // Needs options
 const needsOptions = [
   { id: 'needsBranding', name: 'Branding', icon: '🎨', description: 'Logo, identité visuelle' },
   { id: 'needsWebsite', name: 'Site Web', icon: '🌐', description: 'Landing page, site vitrine' },
-  { id: 'needsMarketing', name: 'Marketing', icon: '📣', description: 'Stratégie, réseaux sociaux' }
-]
+  { id: 'needsMarketing', name: 'Marketing', icon: '📣', description: 'Stratégie, réseaux sociaux' },
+];
 
 export default function StepProfile({ data, onComplete }: StepProfileProps) {
   const [formData, setFormData] = useState({
@@ -45,34 +45,34 @@ export default function StepProfile({ data, onComplete }: StepProfileProps) {
     companySize: data.companySize || '',
     needsBranding: data.needsBranding || false,
     needsWebsite: data.needsWebsite || false,
-    needsMarketing: data.needsMarketing || false
-  })
+    needsMarketing: data.needsMarketing || false,
+  });
 
   const selectSector = (sectorId: string) => {
     setFormData({
       ...formData,
-      sector: sectorId
-    })
-  }
+      sector: sectorId,
+    });
+  };
 
   const selectCompanySize = (sizeId: string) => {
     setFormData({
       ...formData,
-      companySize: sizeId
-    })
-  }
+      companySize: sizeId,
+    });
+  };
 
   const toggleNeed = (need: string) => {
     setFormData({
       ...formData,
-      [need]: !formData[need as keyof typeof formData]
-    })
-  }
+      [need]: !formData[need as keyof typeof formData],
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onComplete(formData)
-  }
+    e.preventDefault();
+    onComplete(formData);
+  };
 
   return (
     <motion.div
@@ -140,5 +140,5 @@ export default function StepProfile({ data, onComplete }: StepProfileProps) {
         </Button>
       </form>
     </motion.div>
-  )
+  );
 } 

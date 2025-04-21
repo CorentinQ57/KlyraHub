@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { 
   FileEdit, 
   Trash2, 
@@ -13,21 +13,21 @@ import {
   Video,
   FileText,
   CheckCircle,
-  ChevronLeft 
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+  ChevronLeft, 
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Dialog,
   DialogContent,
@@ -36,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -45,19 +45,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Switch } from '@/components/ui/switch'
-import { useToast } from '@/components/ui/use-toast'
-import { useAuth } from '@/lib/auth'
-import { Resource, getCategories, getResources } from '@/lib/academy-service'
-import { supabase } from '@/lib/supabase'
+} from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/auth';
+import { Resource, getCategories, getResources } from '@/lib/academy-service';
+import { supabase } from '@/lib/supabase';
 
 export default function ResourcesManagementPage() {
-  const [resources, setResources] = useState<Resource[]>([])
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingResource, setEditingResource] = useState<Resource | null>(null)
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -66,105 +66,107 @@ export default function ResourcesManagementPage() {
     download_link: '',
     is_popular: false,
     is_new: false,
-    image: null as File | null
-  })
+    image: null as File | null,
+  });
   
-  const router = useRouter()
-  const { user, isLoading: authLoading, isAdmin } = useAuth()
-  const { toast } = useToast()
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadData()
+      loadData();
     }
-  }, [user, authLoading, isAdmin, router])
+  }, [user, authLoading, isAdmin, router]);
 
   const loadData = async () => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       
       // Charger les ressources
-      const resourcesData = await getResources()
-      setResources(resourcesData)
+      const resourcesData = await getResources();
+      setResources(resourcesData);
       
       // Charger les catégories pour le formulaire
-      const categoriesData = await getCategories()
-      setCategories(categoriesData)
+      const categoriesData = await getCategories();
+      setCategories(categoriesData);
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('Error loading data:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les données.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de charger les données.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, image: e.target.files![0] }))
+      setFormData(prev => ({ ...prev, image: e.target.files![0] }));
     }
-  }
+  };
 
   const getResourceTypeIcon = (type: string) => {
     switch (type) {
-      case 'eBook':
-        return <BookOpen className="h-5 w-5 text-purple-500" />
-      case 'Vidéo':
-        return <Video className="h-5 w-5 text-red-500" />
-      case 'Template':
-        return <FileText className="h-5 w-5 text-green-500" />
-      case 'Checklist':
-        return <CheckCircle className="h-5 w-5 text-blue-500" />
-      default:
-        return <FileText className="h-5 w-5 text-gray-500" />
+    case 'eBook':
+      return <BookOpen className="h-5 w-5 text-purple-500" />;
+    case 'Vidéo':
+      return <Video className="h-5 w-5 text-red-500" />;
+    case 'Template':
+      return <FileText className="h-5 w-5 text-green-500" />;
+    case 'Checklist':
+      return <CheckCircle className="h-5 w-5 text-blue-500" />;
+    default:
+      return <FileText className="h-5 w-5 text-gray-500" />;
     }
-  }
+  };
 
   const getResourceTypeColor = (type: string) => {
     switch (type) {
-      case 'eBook':
-        return 'bg-purple-500'
-      case 'Vidéo':
-        return 'bg-red-500'
-      case 'Template':
-        return 'bg-green-500'
-      case 'Checklist':
-        return 'bg-blue-500'
-      default:
-        return 'bg-gray-500'
+    case 'eBook':
+      return 'bg-purple-500';
+    case 'Vidéo':
+      return 'bg-red-500';
+    case 'Template':
+      return 'bg-green-500';
+    case 'Checklist':
+      return 'bg-blue-500';
+    default:
+      return 'bg-gray-500';
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      let imageUrl = editingResource?.image_url
+      let imageUrl = editingResource?.image_url;
 
       // Upload new image if provided
       if (formData.image) {
-        const fileExt = formData.image.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-        const filePath = fileName
+        const fileExt = formData.image.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = fileName;
 
         const { error: uploadError } = await supabase.storage
           .from('klyra-academy')
-          .upload(filePath, formData.image)
+          .upload(filePath, formData.image);
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          throw uploadError;
+        }
 
         const { data: urlData } = supabase.storage
           .from('klyra-academy')
-          .getPublicUrl(filePath)
+          .getPublicUrl(filePath);
 
-        imageUrl = urlData.publicUrl
+        imageUrl = urlData.publicUrl;
       }
 
       const resourceData = {
@@ -176,17 +178,19 @@ export default function ResourcesManagementPage() {
         image_url: imageUrl,
         is_popular: formData.is_popular,
         is_new: formData.is_new,
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      };
 
       if (editingResource) {
         // Update existing resource
         const { error } = await supabase
           .from('resources')
           .update(resourceData)
-          .eq('id', editingResource.id)
+          .eq('id', editingResource.id);
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
       } else {
         // Create new resource
         const { error } = await supabase
@@ -194,60 +198,64 @@ export default function ResourcesManagementPage() {
           .insert({
             ...resourceData,
             created_at: new Date().toISOString(),
-          })
+          });
 
-        if (error) throw error
+        if (error) {
+          throw error;
+        }
       }
 
       toast({
-        title: "Succès",
+        title: 'Succès',
         description: `Ressource ${editingResource ? 'modifiée' : 'créée'} avec succès.`,
-      })
+      });
 
-      setIsDialogOpen(false)
-      resetForm()
-      loadData()
+      setIsDialogOpen(false);
+      resetForm();
+      loadData();
     } catch (error) {
-      console.error('Error saving resource:', error)
+      console.error('Error saving resource:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder la ressource.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de sauvegarder la ressource.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleDeleteResource = async (resourceId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette ressource ?")) {
-      return
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette ressource ?')) {
+      return;
     }
 
     try {
       const { error } = await supabase
         .from('resources')
         .delete()
-        .eq('id', resourceId)
+        .eq('id', resourceId);
 
-      if (error) throw error
+      if (error) {
+        throw error;
+      }
 
       toast({
-        title: "Succès",
-        description: "Ressource supprimée avec succès.",
-      })
+        title: 'Succès',
+        description: 'Ressource supprimée avec succès.',
+      });
 
-      loadData()
+      loadData();
     } catch (error) {
-      console.error('Error deleting resource:', error)
+      console.error('Error deleting resource:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer la ressource.",
-        variant: "destructive",
-      })
+        title: 'Erreur',
+        description: 'Impossible de supprimer la ressource.',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
   const handleEditResource = (resource: Resource) => {
-    setEditingResource(resource)
+    setEditingResource(resource);
     setFormData({
       title: resource.title,
       description: resource.description || '',
@@ -256,13 +264,13 @@ export default function ResourcesManagementPage() {
       download_link: resource.download_link || '',
       is_popular: resource.is_popular,
       is_new: resource.is_new,
-      image: null
-    })
-    setIsDialogOpen(true)
-  }
+      image: null,
+    });
+    setIsDialogOpen(true);
+  };
 
   const resetForm = () => {
-    setEditingResource(null)
+    setEditingResource(null);
     setFormData({
       title: '',
       description: '',
@@ -271,14 +279,14 @@ export default function ResourcesManagementPage() {
       download_link: '',
       is_popular: false,
       is_new: false,
-      image: null
-    })
-  }
+      image: null,
+    });
+  };
 
   const handleOpenDialog = () => {
-    resetForm()
-    setIsDialogOpen(true)
-  }
+    resetForm();
+    setIsDialogOpen(true);
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -288,7 +296,7 @@ export default function ResourcesManagementPage() {
           <p className="mt-4 text-lg">Chargement des ressources...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -557,5 +565,5 @@ export default function ResourcesManagementPage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 } 

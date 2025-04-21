@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/lib/auth'
-import { fetchAllProjects } from '@/lib/supabase'
-import { Project } from '@/lib/supabase'
-import { Card } from '@/components/ui/card'
-import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container'
-import { Settings, Users, ShoppingBag, FileText, BookOpen } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/auth';
+import { fetchAllProjects } from '@/lib/supabase';
+import { Project } from '@/lib/supabase';
+import { Card } from '@/components/ui/card';
+import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { Settings, Users, ShoppingBag, FileText, BookOpen } from 'lucide-react';
 
 // Étendre le type Project pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -29,70 +29,70 @@ type ProjectWithRelations = Project & {
 }
 
 export default function AdminDashboardPage() {
-  const [projects, setProjects] = useState<ProjectWithRelations[]>([])
-  const [filteredProjects, setFilteredProjects] = useState<ProjectWithRelations[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const router = useRouter()
-  const { user, isAdmin } = useAuth()
+  const [projects, setProjects] = useState<ProjectWithRelations[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<ProjectWithRelations[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const router = useRouter();
+  const { user, isAdmin } = useAuth();
 
   // Status labels and colors for UI
   const statusLabels: Record<string, { label: string, color: string }> = {
     pending: {
-      label: "En attente",
-      color: "bg-yellow-100 text-yellow-800"
+      label: 'En attente',
+      color: 'bg-yellow-100 text-yellow-800',
     },
     validated: {
-      label: "Validé",
-      color: "bg-blue-100 text-blue-800"
+      label: 'Validé',
+      color: 'bg-blue-100 text-blue-800',
     },
     in_progress: {
-      label: "En cours",
-      color: "bg-purple-100 text-purple-800"
+      label: 'En cours',
+      color: 'bg-purple-100 text-purple-800',
     },
     delivered: {
-      label: "Livré",
-      color: "bg-green-100 text-green-800"
+      label: 'Livré',
+      color: 'bg-green-100 text-green-800',
     },
     completed: {
-      label: "Terminé",
-      color: "bg-gray-100 text-gray-800"
+      label: 'Terminé',
+      color: 'bg-gray-100 text-gray-800',
     },
-  }
+  };
 
   useEffect(() => {
     // Redirect if not admin
     if (user && !isAdmin) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     if (user && isAdmin) {
-      loadProjects()
+      loadProjects();
     }
-  }, [user, isAdmin, router])
+  }, [user, isAdmin, router]);
 
   // Filter projects when status filter changes
   useEffect(() => {
     if (statusFilter === 'all') {
-      setFilteredProjects(projects)
+      setFilteredProjects(projects);
     } else {
-      setFilteredProjects(projects.filter(project => project.status === statusFilter))
+      setFilteredProjects(projects.filter(project => project.status === statusFilter));
     }
-  }, [statusFilter, projects])
+  }, [statusFilter, projects]);
 
   const loadProjects = async () => {
     try {
-      setIsLoading(true)
-      const projectData = await fetchAllProjects()
-      setProjects(projectData)
-      setFilteredProjects(projectData)
+      setIsLoading(true);
+      const projectData = await fetchAllProjects();
+      setProjects(projectData);
+      setFilteredProjects(projectData);
     } catch (error) {
-      console.error('Error loading projects:', error)
+      console.error('Error loading projects:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </PageContainer>
-    )
+    );
   }
 
   return (
@@ -262,5 +262,5 @@ export default function AdminDashboardPage() {
         </ContentCard>
       </PageSection>
     </PageContainer>
-  )
+  );
 } 

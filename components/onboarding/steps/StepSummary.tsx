@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Check, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Check, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 interface StepSummaryProps {
   data: any
@@ -21,15 +21,15 @@ interface SuggestedService {
 
 export default function StepSummary({ data, onComplete }: StepSummaryProps) {
   // Define suggested services based on needs
-  const suggestedServices: SuggestedService[] = []
+  const suggestedServices: SuggestedService[] = [];
   
   if (data.needsBranding) {
     suggestedServices.push({
       id: 'branding-pack',
       name: 'Pack Identité de marque',
       description: 'Logo, charte graphique et guide de style complet.',
-      icon: '🎨'
-    })
+      icon: '🎨',
+    });
   }
   
   if (data.needsWebsite) {
@@ -37,8 +37,8 @@ export default function StepSummary({ data, onComplete }: StepSummaryProps) {
       id: 'website-pack',
       name: 'Site Web Professionnel',
       description: 'Site responsive avec design personnalisé et optimisé SEO.',
-      icon: '🌐'
-    })
+      icon: '🌐',
+    });
   }
   
   if (data.needsMarketing) {
@@ -46,8 +46,8 @@ export default function StepSummary({ data, onComplete }: StepSummaryProps) {
       id: 'marketing-pack',
       name: 'Stratégie Marketing Digital',
       description: 'Plan marketing complet et supports pour réseaux sociaux.',
-      icon: '📣'
-    })
+      icon: '📣',
+    });
   }
   
   // If no specific needs were selected, suggest a starter pack
@@ -56,12 +56,12 @@ export default function StepSummary({ data, onComplete }: StepSummaryProps) {
       id: 'starter-pack',
       name: 'Pack Démarrage',
       description: 'L\'essentiel pour lancer votre présence en ligne.',
-      icon: '🚀'
-    })
+      icon: '🚀',
+    });
   }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
     // Ensure that all necessary data is included and formatted properly
     const finalData = {
@@ -81,12 +81,12 @@ export default function StepSummary({ data, onComplete }: StepSummaryProps) {
       // Additional fields with defaults
       goals: data.goals || 'Développer ma présence en ligne',
       communicationStyle: data.communicationStyle || 'email',
-      timeManagement: data.timeManagement || 'flexible'
-    }
+      timeManagement: data.timeManagement || 'flexible',
+    };
     
-    console.log("Submitting final onboarding data:", finalData);
-    onComplete(finalData)
-  }
+    console.log('Submitting final onboarding data:', finalData);
+    onComplete(finalData);
+  };
 
   return (
     <motion.div
@@ -223,7 +223,7 @@ export default function StepSummary({ data, onComplete }: StepSummaryProps) {
         </div>
       </form>
     </motion.div>
-  )
+  );
 }
 
 // Business sectors (copy from StepProfile for data display)
@@ -235,21 +235,21 @@ const sectors = [
   { id: 'education', name: 'Éducation', icon: '📚' },
   { id: 'manufacturing', name: 'Industrie', icon: '🏭' },
   { id: 'services', name: 'Services', icon: '🤝' },
-  { id: 'other', name: 'Autre', icon: '🔍' }
-]
+  { id: 'other', name: 'Autre', icon: '🔍' },
+];
 
 // Company sizes (copy from StepProfile for data display)
 const companySizes = [
   { id: 'solo', name: 'Indépendant' },
   { id: 'small', name: 'Petite équipe' },
   { id: 'medium', name: 'PME' },
-  { id: 'large', name: 'Grande entreprise' }
-]
+  { id: 'large', name: 'Grande entreprise' },
+];
 
 // Visual styles (copy from StepStyle for data display)
 const visualStyles = [
   { id: 'minimal', name: 'Minimaliste' },
   { id: 'bold', name: 'Audacieux' },
   { id: 'classic', name: 'Classique' },
-  { id: 'playful', name: 'Ludique' }
-] 
+  { id: 'playful', name: 'Ludique' },
+]; 

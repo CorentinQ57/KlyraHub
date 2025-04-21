@@ -1,5 +1,5 @@
-import React from "react";
-import { Check, X } from "lucide-react";
+import React from 'react';
+import { Check, X } from 'lucide-react';
 
 type ItemType = {
   title: string;
@@ -15,7 +15,7 @@ interface DocListProps {
   showIcons?: boolean;
 }
 
-export default function DocList({ items, className = "", showIcons = false }: DocListProps) {
+export default function DocList({ items, className = '', showIcons = false }: DocListProps) {
   return (
     <ul className={`space-y-3 ${className}`}>
       {items.map((item, index) => (
@@ -36,7 +36,7 @@ export default function DocList({ items, className = "", showIcons = false }: Do
             </div>
           )}
           <div>
-            <p className={`font-medium ${item.positive ? "text-green-700" : item.negative ? "text-red-700" : ""}`}>
+            <p className={`font-medium ${item.positive ? 'text-green-700' : item.negative ? 'text-red-700' : ''}`}>
               {item.title}
             </p>
             {item.description && (
