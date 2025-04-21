@@ -18,6 +18,7 @@ type ProjectWithRelations = Project & {
     title: string; 
     name?: string;
     category_id: number;
+    phases?: string[];
     category?: {
       id: string;
       name: string;
@@ -284,6 +285,26 @@ export default function ProjectPage({
     return 'Catégorie';
   };
 
+  // Fonction pour convertir les phases du service en tableau d'objets structurés
+  const getProjectPhases = (project: ProjectWithRelations) => {
+    // Si le service a des phases définies, les utiliser
+    if (project.services?.phases && Array.isArray(project.services.phases)) {
+      return project.services.phases.map(phase => ({
+        key: phase.toLowerCase().replace(/\s+/g, '_'),
+        label: phase
+      }));
+    }
+
+    // Phases par défaut si non définies dans le service
+    return [
+      { key: 'briefing', label: 'Briefing initial' },
+      { key: 'conception', label: 'Conception' },
+      { key: 'production', label: 'Production' },
+      { key: 'revision', label: 'Révisions' },
+      { key: 'finalisation', label: 'Finalisation' }
+    ];
+  };
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -371,11 +392,76 @@ export default function ProjectPage({
                     {new Date(project.created_at).toLocaleDateString()}
                   </p>
                 </div>
+                <div>
+                  <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Dernière mise à jour</h3>
+                  <p className="text-[16px] flex items-center">
+                    <Clock className="mr-1.5 h-4 w-4 text-[#64748B]" />
+                    {new Date(project.updated_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Phase actuelle</h3>
+                  <div className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    {project.current_phase || 'Démarrage'} 
+                  </div>
+                </div>
               </div>
               
               <div className="mt-6 pt-4 border-t border-[#E2E8F0]">
                 <h3 className="text-[14px] font-medium text-[#64748B] mb-2">Description</h3>
                 <p className="text-[14px]">{project.description || 'Aucune description disponible pour ce projet.'}</p>
+              </div>
+            </ContentCard>
+          </PageSection>
+
+          {/* Section des phases du projet */}
+          <PageSection 
+            title="Phases du projet" 
+            description="Le déroulement de votre projet étape par étape"
+          >
+            <ContentCard>
+              <div className="space-y-4">
+                {getProjectPhases(project).map((phase, index) => {
+                  const isCurrentPhase = project.current_phase === phase.key;
+                  const isPastPhase = getProjectPhases(project).findIndex(p => p.key === project.current_phase) > index;
+                  
+                  return (
+                    <div 
+                      key={phase.key}
+                      className={`relative flex items-start p-4 rounded-md border ${
+                        isCurrentPhase ? 'border-blue-300 bg-blue-50' : 
+                          isPastPhase ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                      }`}
+                    >
+                      <div className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full mr-3 
+                        ${isCurrentPhase ? 'bg-blue-500 text-white' : 
+                          isPastPhase ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}
+                      >
+                        {isPastPhase ? '✓' : index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className={`text-[16px] font-medium ${
+                          isCurrentPhase ? 'text-blue-700' : 
+                            isPastPhase ? 'text-green-700' : 'text-gray-700'
+                        }`}>
+                          {phase.label}
+                        </h4>
+                        <p className="text-[14px] text-gray-600 mt-1">
+                          {isCurrentPhase ? "Phase en cours" : 
+                            isPastPhase ? "Phase terminée" : "Phase à venir"}
+                        </p>
+                      </div>
+                      {isCurrentPhase && (
+                        <div className="absolute top-0 right-0 mt-2 mr-2">
+                          <span className="flex h-3 w-3">
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </ContentCard>
           </PageSection>

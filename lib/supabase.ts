@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createProjectUpdateNotification } from './notifications-service';
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
@@ -709,24 +710,48 @@ export async function getAllServices(): Promise<Service[]> {
  */
 export async function updateProject(projectId: string, updates: Partial<Project>) {
   try {
+    // Ajouter la date de mise à jour si non spécifiée
+    if (!updates.updated_at) {
+      updates.updated_at = new Date().toISOString();
+    }
+    
     const { data, error } = await supabase
       .from('projects')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updates)
       .eq('id', projectId)
       .select()
       .single();
-
+    
     if (error) {
       console.error('Error updating project:', error);
       return null;
     }
-
+    
+    // Créer une notification pour le client
+    if (data) {
+      // Déterminer le message de notification en fonction des changements
+      let title = 'Mise à jour du projet';
+      let message = 'Votre projet a été mis à jour.';
+      
+      if (updates.status) {
+        title = 'Statut du projet modifié';
+        message = `Le statut de votre projet est maintenant : ${updates.status}`;
+      } else if (updates.current_phase) {
+        title = 'Nouvelle phase du projet';
+        message = `Le projet passe à la phase : ${updates.current_phase}`;
+      }
+      
+      // Créer la notification
+      await createProjectUpdateNotification(
+        projectId,
+        title,
+        message
+      );
+    }
+    
     return data;
   } catch (error) {
-    console.error('Exception in updateProject:', error);
+    console.error('Error in updateProject:', error);
     return null;
   }
 }
@@ -1162,54 +1187,23 @@ export async function getUploadRequests(projectId: string): Promise<any[]> {
   }
 }
 
+/**
+ * Met à jour la phase actuelle d'un projet
+ */
 export async function updateProjectPhase(
   projectId: string,
   currentPhase: string
 ): Promise<boolean> {
   try {
-    console.log(`Updating project ${projectId} phase to "${currentPhase}"`);
+    // Mise à jour du projet
+    const updateResult = await updateProject(projectId, {
+      current_phase: currentPhase,
+      updated_at: new Date().toISOString()
+    });
     
-    // Vérifier si le projet existe
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('id, current_phase')
-      .eq('id', projectId)
-      .single();
-    
-    if (projectError) {
-      console.error('Error checking project:', projectError);
-      return false;
-    }
-    
-    if (!project) {
-      console.error(`Project with ID ${projectId} not found`);
-      return false;
-    }
-    
-    // Si la phase est déjà définie et identique, pas besoin de mettre à jour
-    if (project.current_phase === currentPhase) {
-      console.log('Project phase is already set to the requested value');
-      return true;
-    }
-    
-    // Mettre à jour la phase
-    const { error } = await supabase
-      .from('projects')
-      .update({
-        current_phase: currentPhase,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', projectId);
-
-    if (error) {
-      console.error('Error updating project phase:', error);
-      return false;
-    }
-
-    console.log('Project phase updated successfully');
-    return true;
+    return !!updateResult;
   } catch (error) {
-    console.error('Exception in updateProjectPhase:', error);
+    console.error('Error in updateProjectPhase:', error);
     return false;
   }
 }
