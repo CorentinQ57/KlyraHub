@@ -401,7 +401,7 @@ export default function ProjectPage({
                 </div>
                 <div>
                   <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Phase actuelle</h3>
-                  <div className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  <div className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
                     {project.current_phase || 'Démarrage'} 
                   </div>
                 </div>
@@ -429,12 +429,12 @@ export default function ProjectPage({
                     <div 
                       key={phase.key}
                       className={`relative flex items-start p-4 rounded-md border ${
-                        isCurrentPhase ? 'border-blue-300 bg-blue-50' : 
+                        isCurrentPhase ? 'border-blue-600 bg-blue-50' : 
                           isPastPhase ? 'border-green-200 bg-green-50' : 'border-gray-200'
                       }`}
                     >
                       <div className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full mr-3 
-                        ${isCurrentPhase ? 'bg-blue-500 text-white' : 
+                        ${isCurrentPhase ? 'bg-blue-600 text-white' : 
                           isPastPhase ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}
                       >
                         {isPastPhase ? '✓' : index + 1}
@@ -452,11 +452,12 @@ export default function ProjectPage({
                         </p>
                       </div>
                       {isCurrentPhase && (
-                        <div className="absolute top-0 right-0 mt-2 mr-2">
-                          <span className="flex h-3 w-3">
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <div className="absolute top-0 right-0 mt-2 mr-2 flex items-center bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                          <span className="flex h-2 w-2 mr-1">
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                           </span>
+                          Nous sommes ici
                         </div>
                       )}
                     </div>
@@ -474,7 +475,50 @@ export default function ProjectPage({
               <DepositSpaces projectId={project.id} />
             </ContentCard>
           </PageSection>
+        </div>
+        
+        {/* Colonne latérale - Livrables et statut */}
+        <div className="space-y-6">
+          <PageSection title="Livrables">
+            <ContentCard>
+              {deliverables.length > 0 ? (
+                <div className="space-y-3">
+                  {deliverables.map(deliverable => (
+                    <DeliverableItem key={deliverable.id} deliverable={deliverable} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <FileText className="mx-auto h-12 w-12 text-[#E2E8F0] mb-2" />
+                  <h3 className="text-[16px] font-medium mb-1">Aucun livrable</h3>
+                  <p className="text-[14px] text-[#64748B]">
+                    Les livrables seront ajoutés ici lorsqu'ils seront disponibles.
+                  </p>
+                </div>
+              )}
+            </ContentCard>
+          </PageSection>
           
+          <PageSection title="Avancement">
+            <ContentCard>
+              <div className="space-y-4">
+                <div className="relative pt-1">
+                  <div className="overflow-hidden h-2 text-xs flex rounded bg-[#E2E8F0]">
+                    <div
+                      style={{ width: getProgressPercentage(project.status) }}
+                      className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#467FF7]"
+                    ></div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  {renderProjectSteps(project.status)}
+                </div>
+              </div>
+            </ContentCard>
+          </PageSection>
+          
+          {/* Déplacé ici - Section des commentaires */}
           <PageSection 
             title="Commentaires" 
             description="Échanger avec l'équipe du projet"
@@ -518,48 +562,6 @@ export default function ProjectPage({
                     </div>
                   </div>
                 </form>
-              </div>
-            </ContentCard>
-          </PageSection>
-        </div>
-        
-        {/* Colonne latérale - Livrables et statut */}
-        <div className="space-y-6">
-          <PageSection title="Livrables">
-            <ContentCard>
-              {deliverables.length > 0 ? (
-                <div className="space-y-3">
-                  {deliverables.map(deliverable => (
-                    <DeliverableItem key={deliverable.id} deliverable={deliverable} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <FileText className="mx-auto h-12 w-12 text-[#E2E8F0] mb-2" />
-                  <h3 className="text-[16px] font-medium mb-1">Aucun livrable</h3>
-                  <p className="text-[14px] text-[#64748B]">
-                    Les livrables seront ajoutés ici lorsqu'ils seront disponibles.
-                  </p>
-                </div>
-              )}
-            </ContentCard>
-          </PageSection>
-          
-          <PageSection title="Avancement">
-            <ContentCard>
-              <div className="space-y-4">
-                <div className="relative pt-1">
-                  <div className="overflow-hidden h-2 text-xs flex rounded bg-[#E2E8F0]">
-                    <div
-                      style={{ width: getProgressPercentage(project.status) }}
-                      className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#467FF7]"
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  {renderProjectSteps(project.status)}
-                </div>
               </div>
             </ContentCard>
           </PageSection>

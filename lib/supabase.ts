@@ -467,7 +467,7 @@ export async function addComment(projectId: string, userId: string, content: str
     // Vérifier si le projet existe
     const { data: projectExists, error: projectError } = await supabase
       .from('projects')
-      .select('id')
+      .select('id, client_id, title')
       .eq('id', projectId)
       .single();
     
@@ -493,6 +493,36 @@ export async function addComment(projectId: string, userId: string, content: str
     if (error) {
       console.error('Error adding comment:', error);
       return null;
+    }
+
+    // Obtenir le nom de l'utilisateur qui commente
+    const { data: userData, error: userError } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', userId)
+      .single();
+
+    if (!userError && userData) {
+      // Créer une notification pour le client du projet si ce n'est pas lui qui commente
+      if (projectExists.client_id !== userId) {
+        const userName = userData.full_name || userData.email || 'Un utilisateur';
+        
+        try {
+          // Importer de manière dynamique pour éviter les dépendances circulaires
+          const { createNotification } = await import('./notifications-service');
+          
+          await createNotification(
+            projectExists.client_id,
+            'Nouveau commentaire',
+            `${userName} a commenté sur votre projet "${projectExists.title}"`,
+            'comment',
+            projectId
+          );
+        } catch (notifError) {
+          console.error('Error creating notification for comment:', notifError);
+          // On ne bloque pas l'ajout du commentaire si la notification échoue
+        }
+      }
     }
 
     console.log('Comment added successfully:', data);
@@ -991,6 +1021,18 @@ export async function addDeliverable(
   createdBy: string
 ): Promise<Deliverable | null> {
   try {
+    // Vérifier si le projet existe et récupérer les informations client
+    const { data: projectData, error: projectError } = await supabase
+      .from('projects')
+      .select('id, client_id, title')
+      .eq('id', projectId)
+      .single();
+    
+    if (projectError || !projectData) {
+      console.error('Project does not exist:', projectError);
+      return null;
+    }
+    
     // Création d'un objet conforme à la structure de la base de données
     const dbDeliverable = {
       project_id: projectId,
@@ -1009,6 +1051,34 @@ export async function addDeliverable(
     if (error) {
       console.error('Error adding deliverable:', error);
       return null;
+    }
+
+    // Créer une notification pour le client
+    try {
+      // Obtenir le nom de l'utilisateur qui a créé le livrable
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', createdBy)
+        .single();
+
+      // Importer de manière dynamique pour éviter les dépendances circulaires
+      const { createNotification } = await import('./notifications-service');
+      
+      const userName = userData && !userError 
+        ? (userData.full_name || userData.email || 'Un membre de l\'équipe') 
+        : 'Un membre de l\'équipe';
+      
+      await createNotification(
+        projectData.client_id,
+        'Nouveau livrable disponible',
+        `Un nouveau livrable "${name}" est disponible pour votre projet "${projectData.title}"`,
+        'deliverable',
+        projectId
+      );
+    } catch (notifError) {
+      console.error('Error creating notification for deliverable:', notifError);
+      // On ne bloque pas l'ajout du livrable si la notification échoue
     }
 
     // Retourner l'objet avec les propriétés mappées pour compatibilité
