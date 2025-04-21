@@ -50,10 +50,8 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         const modulesData = await getCourseModules(params.id);
         setModules(modulesData);
         
-        // Définir la première leçon comme sélectionnée par défaut
-        if (modulesData.length > 0 && modulesData[0].lessons.length > 0) {
-          setSelectedLesson(modulesData[0].lessons[0]);
-        }
+        // Ne pas sélectionner de leçon par défaut pour afficher la vidéo d'introduction
+        setSelectedLesson(null);
       } catch (error) {
         console.error('Erreur lors du chargement du cours:', error);
       } finally {
@@ -304,16 +302,16 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       <FileText className="h-20 w-20 text-gray-400" />
                     </div>
                   )
-                ) : course.video_url ? (
+                ) : course?.video_url ? (
                   <iframe 
                     className="w-full h-full border-0"
                     src={getEmbedUrl(course.video_url)}
-                    title={course.title}
+                    title="Introduction au cours"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                   />
-                ) : course.image_url ? (
+                ) : course?.image_url ? (
                   <>
                     <Image
                       src={course.image_url}
@@ -338,6 +336,22 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   </div>
                 )}
               </div>
+
+              {!selectedLesson && course?.video_url && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold">Introduction au cours</h2>
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <Clock className="h-4 w-4" />
+                      <span>5 min</span>
+                    </div>
+                  </div>
+                  
+                  <div className="prose max-w-none">
+                    <p>Bienvenue dans ce cours ! Cette vidéo d'introduction vous présente les objectifs et le contenu que nous allons aborder ensemble.</p>
+                  </div>
+                </div>
+              )}
 
               {selectedLesson && (
                 <div className="mt-6">
