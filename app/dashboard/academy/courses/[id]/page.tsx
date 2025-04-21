@@ -366,6 +366,42 @@ export default function CoursePage({ params }: { params: { id: string } }) {
               <div className="grid grid-cols-1 gap-8">
                 <ContentCard>
                   <h2 className="text-2xl font-bold mb-4">À propos de ce cours</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Durée totale</h3>
+                      <p className="font-medium">{formatTotalDuration()}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Leçons</h3>
+                      <p className="font-medium">{course.lessons} leçons</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Niveau</h3>
+                      <p className="font-medium">{course.level}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Catégorie</h3>
+                      <p className="font-medium">{course.category}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Dernière mise à jour</h3>
+                      <p className="font-medium">{new Date(course.updated_at).toLocaleDateString('fr-FR', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}</p>
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-3">
+                        <Award className="h-10 w-10 text-amber-500" />
+                        <div>
+                          <h3 className="font-bold">Certificat d'achèvement</h3>
+                          <p className="text-sm text-gray-500">Après avoir terminé le cours</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <p className="text-gray-700 mb-6">{course.description}</p>
                   
                   <h3 className="text-xl font-bold mb-3">Ce que vous apprendrez</h3>
@@ -452,88 +488,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                     </ul>
                   </CardContent>
                 </Card>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="bg-white shadow-sm">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-xl">Détails du cours</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Durée totale</h3>
-                          <p className="font-medium">{formatTotalDuration()}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Leçons</h3>
-                          <p className="font-medium">{course.lessons} leçons</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Niveau</h3>
-                          <p className="font-medium">{course.level}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Catégorie</h3>
-                          <p className="font-medium">{course.category}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Dernière mise à jour</h3>
-                          <p className="font-medium">{new Date(course.updated_at).toLocaleDateString('fr-FR', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6">
-                        <div className="flex items-center space-x-3 mb-4">
-                          <Award className="h-10 w-10 text-amber-500" />
-                          <div>
-                            <h3 className="font-bold">Certificat d'achèvement</h3>
-                            <p className="text-sm text-gray-500">Après avoir terminé le cours</p>
-                          </div>
-                        </div>
-                        <Button variant="outline" className="w-full" disabled={!user}>
-                          {user ? 'Voir le certificat' : 'Connectez-vous pour obtenir'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-white shadow-sm">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-xl">Commencer le cours</CardTitle>
-                      <CardDescription>Tous nos cours sont gratuits et accessibles à tous</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                      <ul className="space-y-2 mb-6">
-                        <li className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                          <span className="text-sm">{course.lessons} leçons</span>
-                        </li>
-                        <li className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                          <span className="text-sm">Accès libre au contenu</span>
-                        </li>
-                        <li className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                          <span className="text-sm">Ressources téléchargeables</span>
-                        </li>
-                      </ul>
-                      
-                      <Button className="w-full" onClick={() => {
-                        if (modules.length > 0 && modules[0].lessons.length > 0) {
-                          // Rediriger vers la première leçon
-                          window.location.href = `/dashboard/academy/lessons/${modules[0].lessons[0].id}`;
-                        } else {
-                          // Activer l'onglet leçon si pas de leçon disponible
-                          setActiveTab('lesson');
-                        }
-                      }}>Commencer le cours</Button>
-                    </CardContent>
-                  </Card>
-                </div>
               </div>
             </TabsContent>
             
