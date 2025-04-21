@@ -26,6 +26,7 @@ import {
   LogIn,
   BarChart2,
   GraduationCap,
+  Lock,
 } from 'lucide-react';
 
 // Interface pour les liens de navigation
@@ -146,7 +147,10 @@ export function SidebarNav() {
     {
       href: '/dashboard/academy',
       label: 'Academy',
-      icon: <GraduationCap className="h-5 w-5" />,
+      icon: <div className="relative">
+        <GraduationCap className="h-5 w-5" />
+        <Lock className="h-3 w-3 absolute -top-1 -right-1 text-blue-500" />
+      </div>,
     },
     {
       href: '/dashboard/docs',
