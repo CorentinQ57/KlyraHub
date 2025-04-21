@@ -19,6 +19,8 @@ import VideoWalkthrough from '@/components/VideoWalkthrough';
 import Image from 'next/image';
 import { AuroraBackground } from '@/components/ui/aurora-background';
 import { PageContainer, PageHeader, PageSection, ContentCard } from '@/components/ui/page-container';
+import { getUserNotifications, markNotificationAsRead } from '@/lib/notifications-service';
+import type { Notification as ServerNotification } from '@/lib/notifications-service';
 
 // Type étendu pour inclure les relations
 type ProjectWithRelations = Project & {
@@ -45,7 +47,7 @@ type Notification = {
   id: string
   title: string
   message: string
-  type: 'comment' | 'deliverable' | 'validation' | 'system'
+  type: 'comment' | 'deliverable' | 'validation' | 'system' | 'project_update'
   createdAt: Date
   read: boolean
 }
@@ -399,7 +401,7 @@ const StatsOverview = ({ stats }: { stats: ProjectStats }) => {
 };
 
 // Nouveau composant pour les notifications
-const NotificationsPanel = ({ notifications }: { notifications: Notification[] }) => {
+const NotificationsPanel = ({ notifications }: { notifications: ServerNotification[] }) => {
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader>
@@ -424,7 +426,7 @@ const NotificationsPanel = ({ notifications }: { notifications: Notification[] }
                 <h4 className="text-sm font-medium">{notif.title}</h4>
                 <p className="text-sm text-muted-foreground">{notif.message}</p>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(notif.createdAt).toLocaleDateString()}
+                  {new Date(notif.created_at).toLocaleDateString()}
                 </span>
               </div>
               {!notif.read && (
@@ -492,7 +494,8 @@ export default function DashboardPage() {
     activeProjects: 0,
     totalInvestment: 0,
   });
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<ServerNotification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
   
   // Fonction pour charger les projets
   const loadProjects = async () => {
@@ -733,28 +736,74 @@ export default function DashboardPage() {
   };
 
   // Charger les notifications
-  const loadNotifications = async () => {
-    // TODO: Implémenter la récupération des notifications depuis Supabase
-    // Pour l'instant, on utilise des données de test
-    setNotifications([
-      {
-        id: '1',
-        title: 'Nouveau commentaire',
-        message: 'L\'équipe a commenté sur votre projet',
-        type: 'comment',
-        createdAt: new Date(),
-        read: false,
-      },
-      // Ajouter d'autres notifications de test...
-    ]);
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!user) return;
+      
+      setLoadingNotifications(true);
+      try {
+        const notificationsData = await getUserNotifications(user.id, 10);
+        setNotifications(notificationsData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des notifications:', error);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+    
+    loadNotifications();
+  }, [user]);
+
+  // Marquer une notification comme lue
+  const handleNotificationClick = async (notificationId: string) => {
+    try {
+      // Mettre à jour l'interface d'abord pour une expérience plus réactive
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      );
+      
+      // Mettre à jour en base de données
+      await markNotificationAsRead(notificationId);
+    } catch (error) {
+      console.error('Erreur lors du marquage de la notification comme lue:', error);
+    }
   };
 
   useEffect(() => {
     if (projects.length > 0) {
       calculateStats(projects);
     }
-    loadNotifications();
   }, [projects]);
+
+  // Fonction pour obtenir la classe CSS pour l'icône d'une notification
+  const getNotificationIconClass = (type: string) => {
+    switch (type) {
+      case 'comment':
+        return 'bg-blue-100';
+      case 'deliverable':
+        return 'bg-green-100';
+      case 'validation':
+        return 'bg-yellow-100';
+      case 'project_update':
+        return 'bg-purple-100';
+      default:
+        return 'bg-gray-100';
+    }
+  };
+
+  // Fonction pour obtenir l'icône d'une notification
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'comment':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'deliverable':
+        return <Package className="h-4 w-4" />;
+      case 'validation':
+        return <CheckCircle className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
 
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true} className="relative">
@@ -872,30 +921,38 @@ export default function DashboardPage() {
                     <p className="text-[13px] text-[#64748B] mb-4">Vos dernières activités et mises à jour</p>
                     
                     <ScrollArea className="h-[300px] w-full pr-4">
-                      {notifications.map((notif) => (
-                        <div key={notif.id} className="flex items-start space-x-4 mb-4 p-3 rounded-lg hover:bg-[#F8FAFC]">
-                          <div className={`rounded-full p-2 ${
-                            notif.type === 'comment' ? 'bg-blue-100' :
-                              notif.type === 'deliverable' ? 'bg-green-100' :
-                                notif.type === 'validation' ? 'bg-yellow-100' : 'bg-gray-100'
-                          }`}>
-                            {notif.type === 'comment' ? <MessageSquare className="h-4 w-4" /> :
-                              notif.type === 'deliverable' ? <Package className="h-4 w-4" /> :
-                                notif.type === 'validation' ? <CheckCircle className="h-4 w-4" /> :
-                                  <Bell className="h-4 w-4" />}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="text-[14px] font-medium">{notif.title}</h4>
-                            <p className="text-[13px] text-[#64748B]">{notif.message}</p>
-                            <span className="text-xs text-[#64748B]">
-                              {new Date(notif.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          {!notif.read && (
-                            <div className="w-2 h-2 rounded-full bg-[#467FF7]" />
-                          )}
+                      {loadingNotifications ? (
+                        <div className="flex justify-center py-8">
+                          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-[#467FF7]"></div>
                         </div>
-                      ))}
+                      ) : notifications.length > 0 ? (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif.id} 
+                            className={`flex items-start space-x-4 mb-4 p-3 rounded-lg hover:bg-[#F8FAFC] cursor-pointer ${!notif.read ? 'bg-blue-50' : ''}`}
+                            onClick={() => handleNotificationClick(notif.id)}
+                          >
+                            <div className={`rounded-full p-2 ${getNotificationIconClass(notif.type)}`}>
+                              {getNotificationIcon(notif.type)}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-[14px] font-medium">{notif.title}</h4>
+                              <p className="text-[13px] text-[#64748B]">{notif.message}</p>
+                              <span className="text-xs text-[#64748B]">
+                                {new Date(notif.created_at).toLocaleDateString()} à {new Date(notif.created_at).toLocaleTimeString().slice(0, 5)}
+                              </span>
+                            </div>
+                            {!notif.read && (
+                              <div className="w-2 h-2 rounded-full bg-[#467FF7]" />
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-[#64748B]">
+                          <Bell className="mx-auto h-8 w-8 text-[#E2E8F0] mb-3" />
+                          <p>Aucune notification récente</p>
+                        </div>
+                      )}
                     </ScrollArea>
                   </ContentCard>
                 </div>
