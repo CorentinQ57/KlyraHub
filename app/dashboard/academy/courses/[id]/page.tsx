@@ -283,7 +283,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         </PageHeader>
 
         {/* En-tête du cours */}
-        <PageSection className="pb-0">
+        <PageSection>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="col-span-1 lg:col-span-2">
               <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video relative">
@@ -337,7 +337,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 )}
               </div>
 
-              {!selectedLesson && course?.video_url && (
+              {!selectedLesson && (
                 <div className="mt-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold">Introduction au cours</h2>
@@ -349,6 +349,21 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   
                   <div className="prose max-w-none">
                     <p>Bienvenue dans ce cours ! Cette vidéo d'introduction vous présente les objectifs et le contenu que nous allons aborder ensemble.</p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <Badge className={
+                      course.level === 'Débutant' ? 'bg-green-500' :
+                        course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
+                    }>
+                      {course.level}
+                    </Badge>
+                    <Badge variant="outline">{course.category}</Badge>
+                    {course.tags?.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="bg-gray-100">
+                        {tag}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               )}
@@ -392,34 +407,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   </div>
                 </div>
               )}
-
-              <div className="flex flex-wrap gap-2 mt-4 mb-6">
-                <Badge className={
-                  course.level === 'Débutant' ? 'bg-green-500' :
-                    course.level === 'Intermédiaire' ? 'bg-blue-500' : 'bg-purple-500'
-                }>
-                  {course.level}
-                </Badge>
-                <Badge variant="outline">{course.category}</Badge>
-                {course.tags?.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="bg-gray-100">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center">
-                    <Clock className="mr-1 h-4 w-4" />
-                    <span>{course.duration}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <BookOpen className="mr-1 h-4 w-4" />
-                    <span>{course.lessons} leçons</span>
-                  </div>
-                </div>
-              </div>
             </div>
             
             {/* Colonne de droite avec le contenu du cours */}
@@ -432,10 +419,6 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                       {modules.length} modules • {course.lessons} leçons • {formatTotalDuration()}
                     </p>
                   </div>
-                  
-                  <Button variant="ghost" size="sm">
-                    {modules.every(m => m.id === 'expanded') ? 'Réduire tout' : 'Développer tout'}
-                  </Button>
                 </div>
                 
                 <Accordion type="multiple" defaultValue={['module-0', 'introduction']} className="space-y-4">
