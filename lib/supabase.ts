@@ -399,13 +399,19 @@ export async function fetchProjectById(projectId: string, userId: string): Promi
       .from('projects')
       .select(`
         *,
-        service:services (
+        services:service_id (
           id,
           name,
           description,
           price,
           duration,
-          category_id
+          category_id,
+          phases,
+          category:categories (
+            id,
+            name,
+            image_url
+          )
         ),
         client:profiles!client_id (
           id,
@@ -1290,14 +1296,19 @@ export async function fetchProjectDetailsForAdmin(projectId: string): Promise<an
       .from('projects')
       .select(`
         *,
-        service:services (
+        services:service_id (
           id,
           name,
           description,
           price,
           duration,
           category_id,
-          phases
+          phases,
+          category:categories (
+            id,
+            name,
+            image_url
+          )
         ),
         client:profiles!client_id (
           id,
@@ -1321,8 +1332,8 @@ export async function fetchProjectDetailsForAdmin(projectId: string): Promise<an
     }
 
     // Ensure we have parsed phases from the service
-    if (data && data.service) {
-      data.service = formatServiceData(data.service);
+    if (data && data.services) {
+      data.services = formatServiceData(data.services);
     }
     
     // Récupérer les designers disponibles

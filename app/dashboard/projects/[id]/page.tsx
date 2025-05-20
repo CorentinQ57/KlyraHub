@@ -15,9 +15,12 @@ import { ArrowLeft, MessageSquare, FileText, ChevronRight, Clock, Settings, Down
 // Définition des types étendus
 type ProjectWithRelations = Project & {
   services?: { 
-    title: string; 
-    name?: string;
-    category_id: number;
+    id: string;
+    name: string;
+    description?: string;
+    category_id?: string;
+    price?: number;
+    duration?: number;
     phases?: string[];
     category?: {
       id: string;
@@ -26,7 +29,16 @@ type ProjectWithRelations = Project & {
       image_url?: string;
     } 
   } | null;
-  profiles?: { full_name: string | null; email: string | null } | null;
+  client?: { 
+    id: string;
+    full_name: string | null; 
+    email: string | null 
+  } | null;
+  designer?: { 
+    id: string;
+    full_name: string | null; 
+    email: string | null 
+  } | null;
   // Propriété ajoutée pour le débogage et le suivi de la phase normalisée
   normalized_phase?: string;
 }
@@ -299,15 +311,18 @@ export default function ProjectPage({
     }
     
     // Si le service a des phases définies, les utiliser
-    if (project.services?.phases && Array.isArray(project.services.phases)) {
-      console.log('Phases du service brutes:', project.services.phases);
+    if (project.services?.phases && Array.isArray(project.services.phases) && project.services.phases.length > 0) {
+      console.log('Phases du service trouvées:', project.services.phases);
       
       const phases = project.services.phases.map(phase => {
         // Normaliser la clé de la phase 
-        const key = phase.toLowerCase().replace(/\s+/g, '_');
+        const key = typeof phase === 'string' 
+          ? phase.toLowerCase().replace(/\s+/g, '_')
+          : 'phase';
+        
         return {
           key,
-          label: phase
+          label: typeof phase === 'string' ? phase : 'Phase'
         };
       });
       
@@ -319,7 +334,7 @@ export default function ProjectPage({
     const defaultPhases = [
       { key: 'briefing_initial', label: 'Briefing initial' },
       { key: 'conception', label: 'Conception' },
-      { key: 'production', label: 'Production' },
+      { key: 'design_et_developpement', label: 'Design et développement' },
       { key: 'revisions', label: 'Révisions' },
       { key: 'finalisation', label: 'Finalisation' }
     ];
@@ -396,11 +411,11 @@ export default function ProjectPage({
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Service</h3>
-                  <p className="text-[16px]">{project.services?.title || 'Non spécifié'}</p>
+                  <p className="text-[16px]">{project.services?.name || 'Non spécifié'}</p>
                 </div>
                 <div>
                   <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Client</h3>
-                  <p className="text-[16px]">{project.profiles?.full_name || project.profiles?.email || 'Non assigné'}</p>
+                  <p className="text-[16px]">{project.client?.full_name || project.client?.email || 'Non assigné'}</p>
                 </div>
                 <div>
                   <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Statut</h3>

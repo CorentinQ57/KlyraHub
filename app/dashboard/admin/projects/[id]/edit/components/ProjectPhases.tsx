@@ -27,13 +27,13 @@ export default function ProjectPhases({ project, onPhaseUpdated }: ProjectPhases
 
   useEffect(() => {
     // Définir les phases disponibles
-    if (project.service?.phases && Array.isArray(project.service.phases)) {
-      setPhases(project.service.phases);
+    if (project.services?.phases && Array.isArray(project.services.phases)) {
+      setPhases(project.services.phases);
     } else {
       // Phases par défaut
       setPhases(['Briefing', 'Conception', 'Développement', 'Tests et validation', 'Livraison']);
     }
-  }, [project.service?.phases]);
+  }, [project.services?.phases]);
 
   // Effet séparé pour définir la phase actuelle une fois que nous avons les phases
   useEffect(() => {
