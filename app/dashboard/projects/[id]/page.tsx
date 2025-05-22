@@ -93,6 +93,29 @@ const DeliverableItem = ({ deliverable }: { deliverable: Deliverable }) => {
   );
 };
 
+// Fonction pour obtenir le nom de la catégorie
+function getCategoryName(project: ProjectWithRelations): string {
+  // Cas 1: Accès via la structure correcte
+  if (project.services?.category?.name) {
+    return project.services.category.name;
+  }
+  // Cas 2: Utilisation des ID connus
+  if (project.services?.category_id) {
+    const categoryKey = String(project.services.category_id).toLowerCase();
+    return categoryKey === '1b041ce2-1f9b-466f-8aa4-b94fec7d94ab' ? 'Développement Web'
+      : categoryKey === 'ba8f9878-d327-4b2d-8be5-ae95df23e1a0' ? 'Branding'
+      : categoryKey === '7227a841-69e8-48bb-85fd-d65d49618245' ? 'UI UX Design'
+      : categoryKey === '53b49d36-18c7-467f-89fc-cd78331dc0d7' ? 'Social Media'
+      : 'Catégorie';
+  }
+  // Cas 3: Si on a le nom du service, l'utiliser comme fallback
+  if (project.services?.name) {
+    return project.services.name || 'Service';
+  }
+  // Cas par défaut
+  return 'Catégorie';
+}
+
 export default function ProjectPage({ 
   params, 
 }: { 
@@ -272,8 +295,6 @@ export default function ProjectPage({
       setIsCommenting(false);
     }
   };
-
-    // Fonction pour obtenir le nom de la catégorie  const getCategoryName = (project: ProjectWithRelations): string => {    // Cas 1: Accès via la structure correcte    if (project.services?.category?.name) {      return project.services.category.name;    }        // Cas 2: Utilisation des ID connus    if (project.services?.category_id) {      const categoryKey = String(project.services.category_id).toLowerCase();      return categoryKey === '1b041ce2-1f9b-466f-8aa4-b94fec7d94ab' ? 'Développement Web' :        categoryKey === 'ba8f9878-d327-4b2d-8be5-ae95df23e1a0' ? 'Branding' :          categoryKey === '7227a841-69e8-48bb-85fd-d65d49618245' ? 'UI UX Design' :            categoryKey === '53b49d36-18c7-467f-89fc-cd78331dc0d7' ? 'Social Media' :               'Catégorie';    }        // Cas 3: Si on a le nom du service, l'utiliser comme fallback    if (project.services?.name) {      return project.services.name || 'Service';    }        // Cas par défaut    return 'Catégorie';  };
 
   // Fonction pour convertir les phases du service en tableau d'objets structurés
   const getProjectPhases = (project: ProjectWithRelations) => {
