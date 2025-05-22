@@ -248,9 +248,7 @@ function NewsCard({
             </div>
             <div className="relative mt-3 aspect-[16/9] w-full shrink-0 overflow-hidden rounded border">
               {image && !hideContent ? (
-                <div className="h-full w-full bg-gradient-to-br from-[#E6EDFD] via-[#B8CBFC] to-[#7FA3F9] flex items-center justify-center">
-                  <span className="text-[#467FF7] text-sm font-medium opacity-70">{title}</span>
-                </div>
+                <div className="h-full w-full bg-gradient-to-br from-[#E6EDFD] via-[#B8CBFC] to-[#7FA3F9]"></div>
               ) : (
                 <div className="h-full w-full bg-gradient-to-br from-[#E6EDFD] via-[#B8CBFC] to-[#7FA3F9]"></div>
               )}
@@ -268,9 +266,7 @@ function NewsCard({
             </div>
             <div className="relative mt-3 aspect-[16/9] w-full shrink-0 overflow-hidden rounded border">
               {image && !hideContent ? (
-                <div className="h-full w-full bg-gradient-to-br from-[#E6EDFD] via-[#B8CBFC] to-[#7FA3F9] flex items-center justify-center">
-                  <span className="text-[#467FF7] text-sm font-medium opacity-70">{title}</span>
-                </div>
+                <div className="h-full w-full bg-gradient-to-br from-[#E6EDFD] via-[#B8CBFC] to-[#7FA3F9]"></div>
               ) : (
                 <div className="h-full w-full bg-gradient-to-br from-[#E6EDFD] via-[#B8CBFC] to-[#7FA3F9]"></div>
               )}

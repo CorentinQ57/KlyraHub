@@ -9,15 +9,17 @@ export default function AcademyLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Force le digicode à s'afficher en initialisant isAuthorized à false
   const [isAuthorized, setIsAuthorized] = useLocalStorage('academy-access', false);
+  
+  // Force l'affichage du digicode en définissant showDigicode à true
   const [showDigicode, setShowDigicode] = useState(true);
 
+  // Réinitialise l'autorisation à chaque visite
   useEffect(() => {
-    // Vérifier si l'utilisateur est déjà autorisé
-    if (isAuthorized) {
-      setShowDigicode(false);
-    }
-  }, [isAuthorized]);
+    // Définir isAuthorized à false pour forcer l'affichage du digicode
+    setIsAuthorized(false);
+  }, [setIsAuthorized]);
 
   const handleDigicodeSuccess = () => {
     setIsAuthorized(true);
