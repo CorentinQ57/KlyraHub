@@ -1271,77 +1271,7 @@ export async function updateProjectPhase(
   currentPhase: string
 ): Promise<boolean> {
   try {
-    // Récupérer le projet avec son service pour vérifier les phases disponibles
-    const { data, error: projectError } = await supabase
-      .from('projects')
-      .select(`
-        id,
-        service_id,
-        services:service_id (
-          id,
-          phases
-        )
-      `)
-      .eq('id', projectId)
-      .single();
-    
-    if (projectError || !data) {
-      console.error('Erreur lors de la récupération du projet:', projectError);
-      return false;
-    }
-    
-    // Définition du type pour les données de projet
-    interface ProjectWithServicePhases {
-      id: string;
-      service_id: string;
-      services: {
-        id: string;
-        phases: string | string[] | null;
-      };
-    }
-    
-    // Cast sécurisé des données
-    const project = data as unknown as ProjectWithServicePhases;
-    
-    // Formatage des phases du service
-    let servicePhasesValid = false;
-    
-    if (project.services && project.services.phases) {
-      let servicePhases: string[] = [];
-      
-      // Traiter les phases (peuvent être une chaîne JSON ou un tableau)
-      if (typeof project.services.phases === 'string') {
-        try {
-          servicePhases = JSON.parse(project.services.phases);
-        } catch (e) {
-          console.warn('Échec de parsing des phases, format non JSON:', e);
-          servicePhases = ['Briefing', 'Conception', 'Développement', 'Tests et validation', 'Livraison'];
-        }
-      } else if (Array.isArray(project.services.phases)) {
-        servicePhases = project.services.phases;
-      }
-      
-      // Vérifier si la phase fournie correspond à une des phases du service
-      // Nous utilisons une correspondance flexible
-      servicePhasesValid = servicePhases.some(phase => {
-        const normalizedPhase = phase.toLowerCase().replace(/\s+/g, '_');
-        const normalizedCurrentPhase = currentPhase.toLowerCase().replace(/\s+/g, '_');
-        
-        return normalizedPhase === normalizedCurrentPhase ||
-               normalizedPhase.includes(normalizedCurrentPhase) ||
-               normalizedCurrentPhase.includes(normalizedPhase);
-      });
-      
-      console.log(`Validation de la phase "${currentPhase}" pour le projet ${projectId}:`, 
-                 servicePhasesValid ? 'Phase valide' : 'Phase non reconnue');
-    }
-    
-    // Mise à jour du projet, même si la phase n'est pas reconnue (pour la flexibilité)
-    // mais on ajoute un log d'avertissement dans ce cas
-    if (!servicePhasesValid) {
-      console.warn(`Attention: La phase "${currentPhase}" ne correspond à aucune phase connue du service.`);
-    }
-    
+    // Mise à jour du projet
     const updateResult = await updateProject(projectId, {
       current_phase: currentPhase,
       updated_at: new Date().toISOString()
