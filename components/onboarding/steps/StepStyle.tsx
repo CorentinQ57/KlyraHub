@@ -5,12 +5,19 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Circle,
+  Palette,
+  Star,
+  Gamepad,
+  MessageSquare,
+  BookOpen,
+  Coffee,
+  Briefcase,
+  Clock,
+  Calendar,
+  Flag,
+  Zap
+} from 'lucide-react';
 import CardSelector from '@/components/onboarding/CardSelector';
 
 interface StepStyleProps {
@@ -22,41 +29,41 @@ const visualStyles = [
   {
     id: 'minimal',
     name: 'Minimaliste',
-    icon: '⚪',
+    icon: <Circle className="h-6 w-6" />,
     description: 'Épuré, moderne, efficace',
   },
   {
     id: 'bold',
     name: 'Audacieux',
-    icon: '🎨',
+    icon: <Palette className="h-6 w-6" />,
     description: 'Coloré, expressif, unique',
   },
   {
     id: 'classic',
     name: 'Classique',
-    icon: '✨',
+    icon: <Star className="h-6 w-6" />,
     description: 'Élégant, professionnel, intemporel',
   },
   {
     id: 'playful',
     name: 'Ludique',
-    icon: '🎮',
+    icon: <Gamepad className="h-6 w-6" />,
     description: 'Fun, dynamique, engageant',
   },
 ];
 
 const communicationStyles = [
-  { value: 'direct', label: 'Direct et concis' },
-  { value: 'detailed', label: 'Détaillé et explicatif' },
-  { value: 'casual', label: 'Décontracté et amical' },
-  { value: 'formal', label: 'Formel et professionnel' },
+  { id: 'direct', label: 'Direct et concis', icon: <MessageSquare className="h-6 w-6" />, description: 'Communication claire et directe' },
+  { id: 'detailed', label: 'Détaillé et explicatif', icon: <BookOpen className="h-6 w-6" />, description: 'Informations détaillées et explications' },
+  { id: 'casual', label: 'Décontracté et amical', icon: <Coffee className="h-6 w-6" />, description: 'Style convivial et informel' },
+  { id: 'formal', label: 'Formel et professionnel', icon: <Briefcase className="h-6 w-6" />, description: 'Communication structurée et professionnelle' },
 ];
 
 const timeManagementStyles = [
-  { value: 'flexible', label: 'Flexible et adaptable' },
-  { value: 'structured', label: 'Structuré et planifié' },
-  { value: 'deadline', label: 'Focalisé sur les deadlines' },
-  { value: 'proactive', label: 'Proactif et anticipatif' },
+  { id: 'flexible', label: 'Flexible et adaptable', icon: <Clock className="h-6 w-6" />, description: 'Capable de s\'adapter aux changements' },
+  { id: 'structured', label: 'Structuré et planifié', icon: <Calendar className="h-6 w-6" />, description: 'Organisation et planification en amont' },
+  { id: 'deadline', label: 'Focalisé sur les deadlines', icon: <Flag className="h-6 w-6" />, description: 'Respect des échéances avant tout' },
+  { id: 'proactive', label: 'Proactif et anticipatif', icon: <Zap className="h-6 w-6" />, description: 'Anticipe les besoins et agit en avance' },
 ];
 
 export default function StepStyle({ data, onComplete }: StepStyleProps) {
@@ -101,7 +108,7 @@ export default function StepStyle({ data, onComplete }: StepStyleProps) {
                 id={style.id}
                 title={style.name}
                 description={style.description}
-                icon={<span className="text-2xl">{style.icon}</span>}
+                icon={style.icon}
                 isSelected={(formData.visualPreferences as string[]).includes(style.id)}
                 onClick={() => toggleVisualStyle(style.id)}
               />
@@ -111,49 +118,41 @@ export default function StepStyle({ data, onComplete }: StepStyleProps) {
 
         <div className="space-y-6">
           <div>
-            <Label htmlFor="communication" className="text-lg mb-2 block">
+            <Label className="text-lg mb-4 block">
               Ton style de communication préféré
             </Label>
-            <Select
-              value={formData.communicationStyle}
-              onValueChange={(value) =>
-                setFormData({ ...formData, communicationStyle: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choisis ton style de communication" />
-              </SelectTrigger>
-              <SelectContent>
-                {communicationStyles.map((style) => (
-                  <SelectItem key={style.value} value={style.value}>
-                    {style.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-2 gap-4">
+              {communicationStyles.map((style) => (
+                <CardSelector
+                  key={style.id}
+                  id={style.id}
+                  title={style.label}
+                  description={style.description}
+                  icon={style.icon}
+                  isSelected={formData.communicationStyle === style.id}
+                  onClick={() => setFormData({ ...formData, communicationStyle: style.id })}
+                />
+              ))}
+            </div>
           </div>
 
           <div>
-            <Label htmlFor="timeManagement" className="text-lg mb-2 block">
+            <Label className="text-lg mb-4 block">
               Ta relation avec les délais
             </Label>
-            <Select
-              value={formData.timeManagement}
-              onValueChange={(value) =>
-                setFormData({ ...formData, timeManagement: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choisis ton approche des délais" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeManagementStyles.map((style) => (
-                  <SelectItem key={style.value} value={style.value}>
-                    {style.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-2 gap-4">
+              {timeManagementStyles.map((style) => (
+                <CardSelector
+                  key={style.id}
+                  id={style.id}
+                  title={style.label}
+                  description={style.description}
+                  icon={style.icon}
+                  isSelected={formData.timeManagement === style.id}
+                  onClick={() => setFormData({ ...formData, timeManagement: style.id })}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -162,7 +161,7 @@ export default function StepStyle({ data, onComplete }: StepStyleProps) {
           className="w-full"
           size="lg"
         >
-          Parfait ! 🎨
+          Parfait !
         </Button>
       </form>
     </motion.div>
