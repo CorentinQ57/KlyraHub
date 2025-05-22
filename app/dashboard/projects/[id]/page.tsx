@@ -308,11 +308,36 @@ export default function ProjectPage({
       console.log('Phase actuelle normalisée:', project.normalized_phase);
     }
     
-    // Si le service a des phases définies, les utiliser
-    if (project.services?.phases && Array.isArray(project.services.phases) && project.services.phases.length > 0) {
-      console.log('Phases du service trouvées:', project.services.phases);
+    // Extraire et normaliser les phases du service si elles existent
+    let servicePhasesArray: string[] = [];
+    
+    if (project.services?.phases) {
+      // Inspecter la structure des phases brutes
+      console.log('Phases du service (brut):', project.services.phases);
       
-      const phases = project.services.phases.map(phase => {
+      // Si phases est une chaîne JSON, essayer de la parser
+      if (typeof project.services.phases === 'string') {
+        try {
+          servicePhasesArray = JSON.parse(project.services.phases as string);
+          console.log('Phases du service (parsées depuis JSON):', servicePhasesArray);
+        } catch (e) {
+          console.error('Erreur de parsing des phases:', e);
+          // Si le parsing échoue, tenter de diviser la chaîne par virgules
+          servicePhasesArray = (project.services.phases as string).split(',').map((p: string) => p.trim());
+          console.log('Phases du service (divisées par virgules):', servicePhasesArray);
+        }
+      } else if (Array.isArray(project.services.phases)) {
+        // Si c'est déjà un tableau, l'utiliser directement
+        servicePhasesArray = project.services.phases;
+        console.log('Phases du service (déjà en tableau):', servicePhasesArray);
+      }
+    }
+    
+    // Si nous avons extrait des phases valides, les utiliser
+    if (servicePhasesArray && servicePhasesArray.length > 0) {
+      console.log('Phases du service trouvées:', servicePhasesArray);
+      
+      const phases = servicePhasesArray.map(phase => {
         // Normaliser la clé de la phase 
         const key = typeof phase === 'string' 
           ? phase.toLowerCase().replace(/\s+/g, '_')
