@@ -13,7 +13,7 @@ import {
   ShoppingBag, 
   Heart, 
   BookOpen, 
-  Factory2 as Factory, 
+  Factory, 
   Handshake, 
   Search,
   Palette,
