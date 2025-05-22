@@ -300,13 +300,6 @@ export default function ProjectPage({
   const getProjectPhases = (project: ProjectWithRelations) => {
     console.log('Phase actuelle brute:', project.current_phase);
     
-    // Normaliser la phase actuelle si elle existe
-    if (project.current_phase) {
-      // Stocker la phase actuelle normalisée pour la comparaison ultérieure
-      project.normalized_phase = project.current_phase.toLowerCase().replace(/\s+/g, '_');
-      console.log('Phase actuelle normalisée:', project.normalized_phase);
-    }
-    
     // Si le service a des phases définies, les utiliser
     if (project.services?.phases && Array.isArray(project.services.phases) && project.services.phases.length > 0) {
       console.log('Phases du service trouvées:', project.services.phases);
@@ -331,13 +324,52 @@ export default function ProjectPage({
     const defaultPhases = [
       { key: 'briefing_initial', label: 'Briefing initial' },
       { key: 'conception', label: 'Conception' },
-      { key: 'design_et_developpement', label: 'Design et développement' },
-      { key: 'revisions', label: 'Révisions' },
+      { key: 'design_et_développement', label: 'Design et développement' },
+      { key: 'révisions', label: 'Révisions' },
       { key: 'finalisation', label: 'Finalisation' }
     ];
     
     console.log('Utilisation des phases par défaut:', defaultPhases.map(p => p.key));
     return defaultPhases;
+  };
+
+  // Fonction pour déterminer si une phase est la phase actuelle
+  const isCurrentPhase = (phase: {key: string, label: string}, currentPhase?: string): boolean => {
+    if (!currentPhase) return false;
+    
+    const normalizedCurrentPhase = currentPhase.toLowerCase().replace(/\s+/g, '_');
+    const normalizedPhaseKey = phase.key.toLowerCase();
+    const normalizedPhaseLabel = phase.label.toLowerCase().replace(/\s+/g, '_');
+    
+    // Vérifier la correspondance exacte sur la clé ou le label
+    if (normalizedCurrentPhase === normalizedPhaseKey || normalizedCurrentPhase === normalizedPhaseLabel) {
+      return true;
+    }
+    
+    // Vérifier la correspondance partielle
+    if (normalizedCurrentPhase.includes(normalizedPhaseKey) || 
+        normalizedPhaseKey.includes(normalizedCurrentPhase) ||
+        normalizedCurrentPhase.includes(normalizedPhaseLabel) || 
+        normalizedPhaseLabel.includes(normalizedCurrentPhase)) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // Fonction pour déterminer si une phase est déjà passée
+  const isPastPhase = (phase: {key: string, label: string}, index: number, phases: {key: string, label: string}[], currentPhase?: string): boolean => {
+    if (!currentPhase) return false;
+    
+    // Trouver l'index de la phase actuelle
+    const currentPhaseIndex = phases.findIndex(p => isCurrentPhase(p, currentPhase));
+    
+    // Si on n'a pas trouvé la phase actuelle ou si cet index est avant la phase actuelle
+    if (currentPhaseIndex === -1 || index >= currentPhaseIndex) {
+      return false;
+    }
+    
+    return true;
   };
 
   if (isLoading) {
@@ -436,8 +468,18 @@ export default function ProjectPage({
                 </div>
                 <div>
                   <h3 className="text-[14px] font-medium text-[#64748B] mb-1">Phase actuelle</h3>
-                  <div className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-blue-600 text-white">
-                    {project.current_phase || 'Démarrage'} 
+                  <div className="flex items-center">
+                    <div className="inline-flex px-3 py-1.5 rounded-full text-xs font-medium bg-blue-600 text-white mr-2">
+                      {project.current_phase || 'Démarrage'}
+                    </div>
+                    <div className="text-[12px] text-blue-700">
+                      {(() => {
+                        const phases = getProjectPhases(project);
+                        const currentIndex = phases.findIndex(p => isCurrentPhase(p, project.current_phase));
+                        if (currentIndex === -1) return '';
+                        return `Étape ${currentIndex + 1} sur ${phases.length}`;
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -462,85 +504,130 @@ export default function ProjectPage({
                   <p>Phases disponibles: {getProjectPhases(project).map(p => `"${p.key}"`).join(', ')}</p>
                 </div>
               )}
-            
-              <div className="space-y-4">
-                {getProjectPhases(project).map((phase, index) => {
-                  const normalizedCurrentPhase = (project.current_phase || '').toLowerCase().replace(/\s+/g, '_');
-                  const normalizedPhaseKey = phase.key.toLowerCase().replace(/\s+/g, '_');
-                  
-                  // Vérifier si c'est la phase actuelle par correspondance exacte ou partielle
-                  let isCurrentPhase = normalizedCurrentPhase === normalizedPhaseKey;
-                  
-                  // Si pas de correspondance exacte, vérifier si le nom de la phase actuelle contient le nom de cette phase
-                  // ou si le label de cette phase est contenu dans la phase actuelle
-                  if (!isCurrentPhase && project.current_phase) {
-                    isCurrentPhase = project.current_phase.toLowerCase().includes(phase.label.toLowerCase()) ||
-                                     phase.label.toLowerCase().includes(project.current_phase.toLowerCase());
-                    
-                    // Log de débogage pour cette vérification spécifique
-                    console.log(`Vérification de correspondance pour "${phase.label}": 
-                                 Phase actuelle: "${project.current_phase}", 
-                                 Est inclus dans phase actuelle: ${project.current_phase.toLowerCase().includes(phase.label.toLowerCase())},
-                                 Phase actuelle est incluse dans le label: ${phase.label.toLowerCase().includes(project.current_phase.toLowerCase())}`);
-                  }
-                  
-                  // Déterminer l'index de la phase actuelle pour gérer les phases passées
-                  const currentPhaseIndex = getProjectPhases(project).findIndex(p => {
-                    const pKey = p.key.toLowerCase().replace(/\s+/g, '_');
-                    const pLabel = p.label.toLowerCase();
-                    const currentPhaseLower = (project.current_phase || '').toLowerCase();
-                    
-                    return pKey === normalizedCurrentPhase || 
-                           (project.current_phase && (currentPhaseLower.includes(pLabel) || pLabel.includes(currentPhaseLower)));
-                  });
-                  
-                  // Une phase est passée si son index est inférieur à celui de la phase actuelle
-                  const isPastPhase = currentPhaseIndex > -1 && index < currentPhaseIndex;
-                  
-                  // Ajouter un log de débogage pour cette phase spécifique
-                  console.log(`Phase ${phase.label} (${phase.key}): isCurrentPhase=${isCurrentPhase}, isPastPhase=${isPastPhase}, index=${index}, currentPhaseIndex=${currentPhaseIndex}`);
+              
+              {/* Timeline visuelle des phases */}
+              <div className="mb-6">
+                {(() => {
+                  const phases = getProjectPhases(project);
+                  const totalPhases = phases.length;
                   
                   return (
-                    <div 
-                      key={phase.key}
-                      className={`relative flex items-start p-4 rounded-md border-2 ${
-                        isCurrentPhase ? 'border-blue-600 bg-blue-50' : 
-                          isPastPhase ? 'border-green-200 bg-green-50' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className={`flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full mr-3 text-lg
-                        ${isCurrentPhase ? 'bg-blue-600 text-white font-bold' : 
-                          isPastPhase ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}
-                      >
-                        {isPastPhase ? '✓' : index + 1}
+                    <div className="relative">
+                      {/* Ligne de connexion entre les étapes */}
+                      <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200" />
+                      
+                      {/* Étapes de la timeline */}
+                      <div className="relative flex justify-between items-start">
+                        {phases.map((phase, index) => {
+                          const current = isCurrentPhase(phase, project.current_phase);
+                          const past = isPastPhase(phase, index, phases, project.current_phase);
+                          
+                          // Déterminer le statut pour le style
+                          let status: 'completed' | 'current' | 'upcoming' = "upcoming";
+                          if (current) status = "current";
+                          else if (past) status = "completed";
+                          
+                          // Classes en fonction du statut
+                          const circleClasses: Record<'completed' | 'current' | 'upcoming', string> = {
+                            completed: "bg-green-500 text-white border-green-500",
+                            current: "bg-blue-600 text-white border-blue-600 ring-4 ring-blue-100",
+                            upcoming: "bg-white text-gray-400 border-gray-300"
+                          };
+                          
+                          const labelClasses: Record<'completed' | 'current' | 'upcoming', string> = {
+                            completed: "text-green-700 font-medium",
+                            current: "text-blue-700 font-semibold",
+                            upcoming: "text-gray-500"
+                          };
+                          
+                          return (
+                            <div key={phase.key} className="flex flex-col items-center relative z-10" style={{width: `${100/totalPhases}%`}}>
+                              <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${circleClasses[status]}`}>
+                                {past ? "✓" : index + 1}
+                              </div>
+                              <div className="mt-2 text-center">
+                                <div className={`text-xs ${labelClasses[status]}`}>
+                                  {phase.label}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div className="flex-1">
-                        <h4 className={`text-[17px] font-medium ${
-                          isCurrentPhase ? 'text-blue-700' : 
-                            isPastPhase ? 'text-green-700' : 'text-gray-700'
-                        }`}>
-                          {phase.label}
-                        </h4>
-                        <p className={`text-[14px] mt-1 ${
-                          isCurrentPhase ? 'text-blue-600 font-medium' : 
-                            isPastPhase ? 'text-green-600' : 'text-gray-600'
-                        }`}>
-                          {isCurrentPhase ? "Phase en cours" : 
-                            isPastPhase ? "Phase terminée" : "Phase à venir"}
-                        </p>
-                      </div>
-                      {isCurrentPhase && (
-                        <div className="absolute top-0 right-0 mt-2 mr-2 flex items-center bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium shadow-sm">
-                          <span className="flex h-3 w-3 mr-1.5">
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                          </span>
-                          PHASE ACTUELLE
-                        </div>
-                      )}
+                      
+                      {/* Ligne de progression remplie */}
+                      <div className="absolute top-4 left-0 h-0.5 bg-blue-600 transition-all duration-500 ease-in-out" style={{
+                        width: (() => {
+                          const phases = getProjectPhases(project);
+                          const currentIndex = phases.findIndex(p => isCurrentPhase(p, project.current_phase));
+                          
+                          if (currentIndex === -1) return "0%";
+                          
+                          // Si c'est la première phase, progression à 10%
+                          if (currentIndex === 0) return "10%";
+                          
+                          // Si c'est la dernière phase, progression à 90%
+                          if (currentIndex === phases.length - 1) return "90%";
+                          
+                          // Sinon, calculer le pourcentage en fonction de l'index
+                          return `${(currentIndex / (phases.length - 1)) * 100}%`;
+                        })()
+                      }} />
                     </div>
                   );
-                })}
+                })()}
+              </div>
+            
+              <div className="space-y-4">
+                {(() => {
+                  const phases = getProjectPhases(project);
+                  
+                  return phases.map((phase, index) => {
+                    const current = isCurrentPhase(phase, project.current_phase);
+                    const past = isPastPhase(phase, index, phases, project.current_phase);
+                    
+                    return (
+                      <div 
+                        key={phase.key}
+                        className={`relative flex items-start p-4 rounded-md border-2 ${
+                          current ? 'border-blue-600 bg-blue-50' : 
+                            past ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                        }`}
+                      >
+                        <div className={`flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full mr-3 text-lg
+                          ${current ? 'bg-blue-600 text-white font-bold' : 
+                            past ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}
+                        >
+                          {past ? '✓' : index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className={`text-[17px] font-medium ${
+                            current ? 'text-blue-700' : 
+                              past ? 'text-green-700' : 'text-gray-700'
+                          }`}>
+                            {phase.label}
+                          </h4>
+                          <p className={`text-[14px] mt-1 ${
+                            current ? 'text-blue-600 font-medium' : 
+                              past ? 'text-green-600' : 'text-gray-600'
+                          }`}>
+                            {current ? "Phase en cours" : 
+                              past ? "Phase terminée" : "Phase à venir"}
+                          </p>
+                        </div>
+                        {current && (
+                          <div className="absolute top-0 right-0 mt-2 mr-2 flex items-center bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium shadow-sm">
+                            <span className="flex h-3 w-3 mr-1.5">
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                            </span>
+                            PHASE ACTUELLE
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </ContentCard>
           </PageSection>
