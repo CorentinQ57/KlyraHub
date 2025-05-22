@@ -127,7 +127,7 @@ export function SidebarNav() {
     {
       href: '/dashboard/projects/timeline',
       label: 'Timeline',
-      icon: <BarChart2 className="h-5 w-5" />,
+      icon: <div className="relative"><BarChart2 className="h-5 w-5" /><Lock className="h-3 w-3 absolute -top-1 -right-1 text-blue-500" /></div>,
     },
     {
       href: '/dashboard/profile',
@@ -155,7 +155,7 @@ export function SidebarNav() {
     {
       href: '/dashboard/docs',
       label: 'Documentation',
-      icon: <BookOpen className="h-5 w-5" />,
+      icon: <div className="relative"><BookOpen className="h-5 w-5" /><Lock className="h-3 w-3 absolute -top-1 -right-1 text-blue-500" /></div>,
     },
   ];
   

@@ -18,6 +18,8 @@ import {
   RefreshCw,
   BookOpen,
   LogIn,
+  BarChart2,
+  Lock,
 } from 'lucide-react';
 
 // Interface pour les liens de navigation
@@ -79,9 +81,14 @@ export function HeaderNav() {
       icon: <Store className="h-4 w-4 mr-1" />,
     },
     {
+      href: '/dashboard/projects/timeline',
+      label: 'Timeline',
+      icon: <div className="relative"><BarChart2 className="h-4 w-4 mr-1" /><Lock className="h-3 w-3 absolute -top-1 -right-1 text-blue-500" /></div>,
+    },
+    {
       href: '/dashboard/docs',
       label: 'Documentation',
-      icon: <BookOpen className="h-4 w-4 mr-1" />,
+      icon: <div className="relative"><BookOpen className="h-4 w-4 mr-1" /><Lock className="h-3 w-3 absolute -top-1 -right-1 text-blue-500" /></div>,
     },
   ];
   

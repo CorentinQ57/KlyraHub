@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DocsNav } from '@/components/docs/DocsNav';
 import { ChevronLeft, Menu, X } from 'lucide-react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { Digicode } from '@/components/ui/digicode';
 
 export default function DocsLayout({
   children,
@@ -16,6 +18,23 @@ export default function DocsLayout({
   const pathname = usePathname();
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useLocalStorage('docs-access', false);
+  const [showDigicode, setShowDigicode] = useState(true);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      setShowDigicode(false);
+    }
+  }, [isAuthorized]);
+
+  const handleDigicodeSuccess = () => {
+    setIsAuthorized(true);
+    setShowDigicode(false);
+  };
+
+  if (showDigicode) {
+    return <Digicode onSuccess={handleDigicodeSuccess} />;
+  }
 
   // Détecter si l'appareil est mobile
   useEffect(() => {

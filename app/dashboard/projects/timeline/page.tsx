@@ -30,6 +30,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { Digicode } from '@/components/ui/digicode';
 
 // Types
 type ProjectWithRelations = {
@@ -65,6 +67,8 @@ export default function ProjectTimeline() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Month);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [isAuthorized, setIsAuthorized] = useLocalStorage('timeline-access', false);
+  const [showDigicode, setShowDigicode] = useState(true);
 
   // Hooks
   const router = useRouter();
@@ -100,6 +104,12 @@ export default function ProjectTimeline() {
       loadProjects();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      setShowDigicode(false);
+    }
+  }, [isAuthorized]);
 
   // Effet pour filtrer et grouper les projets
   useEffect(() => {
@@ -337,6 +347,15 @@ export default function ProjectTimeline() {
     // Naviguer vers la page du projet
     router.push(`/dashboard/projects/${task.id}`);
   };
+
+  const handleDigicodeSuccess = () => {
+    setIsAuthorized(true);
+    setShowDigicode(false);
+  };
+
+  if (showDigicode) {
+    return <Digicode onSuccess={handleDigicodeSuccess} />;
+  }
 
   // Construire le contenu de la page
   return (
