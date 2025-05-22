@@ -7,6 +7,7 @@ import { AuroraBackground } from '@/components/ui/aurora-background';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
+import { useSessionPreservation } from '@/hooks/use-session-preservation';
 
 export default function OnboardingLayout({
   children,
@@ -132,6 +133,9 @@ export default function OnboardingLayout({
       setRedirectionChecked(true);
     }
   }, [user, isLoading, router, redirectionChecked, profileChecked, isOnboarded]);
+  
+  // Utiliser le hook de préservation de session
+  useSessionPreservation();
   
   return (
     <AuroraBackground intensity="subtle" showRadialGradient={true}>

@@ -93,7 +93,15 @@ export default function OnboardingPage() {
       // Force a reload of the auth state to get the updated user metadata
       await reloadAuthState();
       
-      console.log('Onboarding data saved successfully, updated user:', user);
+      // Attendre un court délai pour s'assurer que les données d'authentification sont bien mises à jour
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Vérifions que la session est toujours valide après le reloadAuthState
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      console.log('Onboarding completed, session check:', 
+        currentSession ? 'Valid session' : 'No session', 
+        'User:', user);
       
       // Afficher un toast de succès
       toast({
@@ -102,11 +110,38 @@ export default function OnboardingPage() {
         duration: 5000,
       });
       
-      // Ajouter un délai avant la redirection pour s'assurer que les données sont bien synchronisées
+      // S'assurer que les tokens sont correctement stockés dans le localStorage
+      if (!currentSession) {
+        console.warn('Session perdue après onboarding, tentative de récupération...');
+        
+        // Tenter de rafraîchir la session avant la redirection
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshData.session) {
+          console.error('Impossible de restaurer la session:', refreshError);
+          // Rediriger vers la page de connexion avec un message
+          toast({
+            title: 'Session expirée',
+            description: 'Veuillez vous reconnecter pour accéder à votre dashboard.',
+            variant: 'destructive',
+            duration: 5000,
+          });
+          
+          // Délai plus long pour permettre l'affichage du toast avant la redirection
+          setTimeout(() => {
+            router.push('/login?redirect=/dashboard&message=session_expired');
+          }, 1000);
+          return;
+        }
+        
+        console.log('Session récupérée avec succès');
+      }
+      
+      // Rediriger vers le dashboard avec un délai suffisant pour que les tokens soient bien enregistrés
       setTimeout(() => {
-        // Rediriger vers le dashboard
         router.push('/dashboard');
-      }, 500);
+      }, 800);
+      
     } catch (error) {
       console.error('Error saving onboarding data:', error);
       toast({

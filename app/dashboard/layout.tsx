@@ -7,6 +7,7 @@ import { SidebarNav } from '@/components/SidebarNav';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSessionPreservation } from '@/hooks/use-session-preservation';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -261,6 +262,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // MODIFIÉ: Afficher le contenu principal même si isLoading est encore true
   // Seules les routes nécessitant une authentification stricte doivent être retardées
   const shouldShowContent = contentReady || forceDisplay || isDocsRoute;
+  
+  // Utiliser le hook de préservation de session
+  useSessionPreservation();
   
   return (
     <>

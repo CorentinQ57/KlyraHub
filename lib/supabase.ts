@@ -1515,116 +1515,70 @@ function verifyTokenExpiration(): boolean {
 }
 
 /**
- * Nouvelle fonction pour rafraîchir la session et mettre à jour les tokens
+ * Rafraîchit la session utilisateur et s'assure que les tokens sont correctement stockés
  */
 async function refreshSession(): Promise<boolean> {
   try {
     console.log('🔄 Tentative de rafraîchissement de session...');
     
-    // Vérifier si nous sommes côté client
-    if (typeof window === 'undefined') {
-      console.log('⚠️ refreshSession appelé côté serveur, ignoré');
+    // Récupérer les tokens actuels
+    const accessToken = localStorage.getItem('sb-access-token');
+    const refreshToken = localStorage.getItem('sb-refresh-token');
+    
+    // Si aucun token disponible, impossible de rafraîchir
+    if (!accessToken && !refreshToken) {
+      console.log('❌ Aucun token disponible pour le rafraîchissement');
       return false;
     }
     
-    // Récupérer le refreshToken actuel
-    let refreshToken;
-    try {
-      refreshToken = localStorage.getItem('sb-refresh-token');
-    } catch (storageError) {
-      console.error('❌ Erreur d\'accès au localStorage:', storageError);
+    // Rafraîchir la session avec l'API Supabase
+    const { data, error } = await supabase.auth.refreshSession();
+    
+    if (error) {
+      console.error('❌ Erreur lors du rafraîchissement de la session:', error);
       return false;
     }
     
-    if (!refreshToken) {
-      console.log('❌ Pas de refresh token disponible pour le rafraîchissement');
+    if (!data.session) {
+      console.log('❌ Session non récupérée après rafraîchissement');
       return false;
     }
     
-    // Appeler l'API de rafraîchissement avec timeout augmenté
-    const refreshPromise = supabase.auth.refreshSession({ refresh_token: refreshToken });
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Refresh timeout')), 15000); // Augmenté à 15 secondes
-    });
+    // Extraire les nouveaux tokens
+    const newAccessToken = data.session.access_token;
+    const newRefreshToken = data.session.refresh_token;
     
-    try {
-      const { data, error } = await Promise.race([refreshPromise, timeoutPromise]) as any;
-      
-      if (error) {
-        console.error('❌ Erreur lors du rafraîchissement de la session:', error);
-        return false;
-      }
-      
-      if (!data?.session) {
-        console.log('❌ Aucune session retournée lors du rafraîchissement');
-        return false;
-      }
-      
-      console.log('✅ Session rafraîchie avec succès');
-      
-      // Mettre à jour les tokens dans le stockage de manière sécurisée
-      try {
-        // Mettre à jour les tokens dans le stockage
-        if (data.session.access_token) {
-          localStorage.setItem('sb-access-token', data.session.access_token);
-          // Mettre à jour les autres emplacements de stockage
-          localStorage.setItem('supabase.auth.token', data.session.access_token);
-          localStorage.setItem(`sb-${process.env.NEXT_PUBLIC_SUPABASE_URL}-auth-token`, data.session.access_token);
-          
-          try {
-            // Mettre à jour le cookie également
-            const secure = window.location.protocol === 'https:';
-            const domain = window.location.hostname;
-            const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
-            document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
-            document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
-          } catch (cookieError) {
-            console.warn('⚠️ Erreur lors de la mise à jour des cookies:', cookieError);
-            // Continue even if cookie update fails
-          }
-        }
-        
-        if (data.session.refresh_token) {
-          localStorage.setItem('sb-refresh-token', data.session.refresh_token);
-          
-          try {
-            // Mettre à jour le cookie également
-            const secure = window.location.protocol === 'https:';
-            const domain = window.location.hostname;
-            const oneWeek = 7 * 24 * 60 * 60; // 7 jours en secondes
-            document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}; Domain=${domain}`;
-            document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=${oneWeek}; SameSite=Lax${secure ? '; Secure' : ''}`;
-          } catch (cookieError) {
-            console.warn('⚠️ Erreur lors de la mise à jour des cookies:', cookieError);
-            // Continue even if cookie update fails
-          }
-        }
-        
-        localStorage.setItem('sb-token-last-refresh', Date.now().toString());
-      } catch (storageError) {
-        console.error('❌ Erreur lors de la mise à jour des tokens:', storageError);
-        // Continue despite storage errors, as the session was successfully refreshed
-      }
-      
-      // Dispatcher un événement pour informer l'application du rafraîchissement
-      try {
-        window.dispatchEvent(new CustomEvent('klyra:token-refreshed', {
-          detail: { timestamp: Date.now() },
-        }));
-      } catch (eventError) {
-        console.warn('⚠️ Erreur lors de la distribution de l\'événement:', eventError);
-        // Continue despite event dispatch error
-      }
-      
-      return true;
-    } catch (raceError: any) {
-      if (raceError.message === 'Refresh timeout') {
-        console.error('❌ Timeout lors du rafraîchissement de session (15s)');
-      } else {
-        console.error('❌ Erreur lors du rafraîchissement de session:', raceError);
-      }
+    if (!newAccessToken || !newRefreshToken) {
+      console.log('❌ Tokens manquants dans la session rafraîchie');
       return false;
     }
+    
+    // Stocker manuellement les tokens dans localStorage pour s'assurer qu'ils sont disponibles
+    localStorage.setItem('sb-access-token', newAccessToken);
+    localStorage.setItem('sb-refresh-token', newRefreshToken);
+    
+    // Stocker également dans le format spécifique à Supabase
+    const supabaseKey = `sb-${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/^https?:\/\//, '')}-auth-token`;
+    const tokenData = {
+      access_token: newAccessToken,
+      refresh_token: newRefreshToken,
+      expires_at: Math.floor(Date.now() / 1000) + 3600, // 1 heure par défaut
+      expires_in: 3600,
+      token_type: 'bearer',
+      user: data.session.user
+    };
+    
+    localStorage.setItem(supabaseKey, JSON.stringify(tokenData));
+    
+    // Vérifier que le token est bien stocké
+    const storedToken = localStorage.getItem('sb-access-token');
+    if (!storedToken) {
+      console.log('⚠️ Le token n\'a pas été correctement stocké');
+      return false;
+    }
+    
+    console.log('✅ Session rafraîchie avec succès et tokens stockés');
+    return true;
   } catch (error) {
     console.error('❌ Exception lors du rafraîchissement de la session:', error);
     return false;
