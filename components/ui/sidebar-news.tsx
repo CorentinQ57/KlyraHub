@@ -226,84 +226,29 @@ function NewsCard({
   return (
     <Card
       ref={ref}
-      className={cn(
-        'relative select-none gap-2 p-3 text-[0.8125rem]',
-        'translate-x-[calc(var(--dx)*1px)] rotate-[calc(var(--dx)*0.05deg)] opacity-[calc(1-max(var(--dx),-1*var(--dx))/var(--w)/2)]',
-        'transition-shadow data-[dragging=true]:shadow-md'
-      )}
       data-dragging={dragging}
+      className={cn(
+        'relative flex flex-col justify-between h-48 p-4 transition-shadow',
+        dragging && 'shadow-lg',
+        'overflow-hidden'
+      )}
+      style={{
+        '--dx': '0',
+        '--w': '100%',
+      } as React.CSSProperties}
       onPointerDown={onPointerDown}
-      onClick={onClick}
     >
-      <div className={cn(hideContent && 'invisible')}>
-        {href ? (
-          <Link href={href} className="block">
-            <div className="flex flex-col gap-1">
-              <span className="line-clamp-1 font-medium text-foreground">
-                {title}
-              </span>
-              <p className="line-clamp-2 h-10 leading-5 text-muted-foreground">
-                {description}
-              </p>
-            </div>
-            <div className="relative mt-3 aspect-[16/9] w-full shrink-0 overflow-hidden rounded border bg-muted">
-              {image && (
-                <Image
-                  src={image}
-                  alt=""
-                  fill
-                  sizes="10vw"
-                  className="rounded object-cover object-center"
-                  draggable={false}
-                />
-              )}
-            </div>
-          </Link>
-        ) : (
-          <>
-            <div className="flex flex-col gap-1">
-              <span className="line-clamp-1 font-medium text-foreground">
-                {title}
-              </span>
-              <p className="line-clamp-2 h-10 leading-5 text-muted-foreground">
-                {description}
-              </p>
-            </div>
-            <div className="relative mt-3 aspect-[16/9] w-full shrink-0 overflow-hidden rounded border bg-muted">
-              {image && (
-                <Image
-                  src={image}
-                  alt=""
-                  fill
-                  sizes="10vw"
-                  className="rounded object-cover object-center"
-                  draggable={false}
-                />
-              )}
-            </div>
-          </>
-        )}
-        <div
-          className={cn(
-            'h-0 overflow-hidden opacity-0 transition-[height,opacity] duration-200',
-            'sm:group-has-[*[data-dragging=true]]:h-7 sm:group-has-[*[data-dragging=true]]:opacity-100 sm:group-hover:group-data-[active=true]:h-7 sm:group-hover:group-data-[active=true]:opacity-100'
-          )}
-        >
-          <div className="flex items-center justify-between pt-3 text-xs">
-            <Link
-              href={href || '/dashboard'}
-              className="font-medium text-muted-foreground hover:text-foreground transition-colors duration-75"
-            >
-              En savoir plus
-            </Link>
-            <button
-              type="button"
-              onClick={dismiss}
-              className="text-muted-foreground hover:text-foreground transition-colors duration-75"
-            >
-              Ignorer
-            </button>
-          </div>
+      {/* Dégradé bleu pastel en fond */}
+      <div className="absolute inset-0 z-0 rounded-lg bg-gradient-to-br from-[#B8CBFC] via-[#E6EDFD] to-[#7FA3F9]" />
+      <div className="relative z-10 flex flex-col h-full justify-between">
+        <div>
+          <h3 className="font-semibold text-base mb-1 text-[#1A2B3C] truncate">{title}</h3>
+          <p className="text-sm text-[#4A5568] mb-2 truncate">{description}</p>
+        </div>
+        {/* Footer actions (ex: boutons) */}
+        <div className="flex justify-between items-end text-xs text-[#718096]">
+          {href && <Link href={href} className="font-medium hover:underline">En savoir plus</Link>}
+          {onDismiss && <button onClick={onDismiss} className="ml-auto text-xs text-[#718096] hover:text-[#467FF7]">Ignorer</button>}
         </div>
       </div>
     </Card>
