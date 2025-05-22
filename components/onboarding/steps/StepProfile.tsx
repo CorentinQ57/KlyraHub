@@ -4,7 +4,22 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Briefcase, Users, BarChart3 } from 'lucide-react';
+import { 
+  Briefcase, 
+  Users, 
+  BarChart3, 
+  Laptop, 
+  BanknoteIcon, 
+  ShoppingBag, 
+  Heart, 
+  BookOpen, 
+  Factory2 as Factory, 
+  Handshake, 
+  Search,
+  Palette,
+  Globe,
+  Megaphone
+} from 'lucide-react';
 import CardSelector from '@/components/onboarding/CardSelector';
 
 interface StepProfileProps {
@@ -14,14 +29,14 @@ interface StepProfileProps {
 
 // Business sectors
 const sectors = [
-  { id: 'tech', name: 'Tech & Startup', icon: '💻' },
-  { id: 'finance', name: 'Finance', icon: '💰' },
-  { id: 'retail', name: 'Retail & E-commerce', icon: '🛍️' },
-  { id: 'health', name: 'Santé', icon: '⚕️' },
-  { id: 'education', name: 'Éducation', icon: '📚' },
-  { id: 'manufacturing', name: 'Industrie', icon: '🏭' },
-  { id: 'services', name: 'Services', icon: '🤝' },
-  { id: 'other', name: 'Autre', icon: '🔍' },
+  { id: 'tech', name: 'Tech & Startup', icon: <Laptop className="h-6 w-6" /> },
+  { id: 'finance', name: 'Finance', icon: <BanknoteIcon className="h-6 w-6" /> },
+  { id: 'retail', name: 'Retail & E-commerce', icon: <ShoppingBag className="h-6 w-6" /> },
+  { id: 'health', name: 'Santé', icon: <Heart className="h-6 w-6" /> },
+  { id: 'education', name: 'Éducation', icon: <BookOpen className="h-6 w-6" /> },
+  { id: 'manufacturing', name: 'Industrie', icon: <Factory className="h-6 w-6" /> },
+  { id: 'services', name: 'Services', icon: <Handshake className="h-6 w-6" /> },
+  { id: 'other', name: 'Autre', icon: <Search className="h-6 w-6" /> },
 ];
 
 // Company sizes
@@ -34,9 +49,9 @@ const companySizes = [
 
 // Needs options
 const needsOptions = [
-  { id: 'needsBranding', name: 'Branding', icon: '🎨', description: 'Logo, identité visuelle' },
-  { id: 'needsWebsite', name: 'Site Web', icon: '🌐', description: 'Landing page, site vitrine' },
-  { id: 'needsMarketing', name: 'Marketing', icon: '📣', description: 'Stratégie, réseaux sociaux' },
+  { id: 'needsBranding', name: 'Branding', icon: <Palette className="h-6 w-6" />, description: 'Logo, identité visuelle' },
+  { id: 'needsWebsite', name: 'Site Web', icon: <Globe className="h-6 w-6" />, description: 'Landing page, site vitrine' },
+  { id: 'needsMarketing', name: 'Marketing', icon: <Megaphone className="h-6 w-6" />, description: 'Stratégie, réseaux sociaux' },
 ];
 
 export default function StepProfile({ data, onComplete }: StepProfileProps) {
@@ -89,7 +104,7 @@ export default function StepProfile({ data, onComplete }: StepProfileProps) {
                 key={sector.id}
                 id={sector.id}
                 title={sector.name}
-                icon={<span className="text-2xl">{sector.icon}</span>}
+                icon={<div className="p-3 rounded-full bg-primary/10 text-primary">{sector.icon}</div>}
                 isSelected={formData.sector === sector.id}
                 onClick={() => selectSector(sector.id)}
               />
@@ -123,7 +138,7 @@ export default function StepProfile({ data, onComplete }: StepProfileProps) {
                 id={need.id}
                 title={need.name}
                 description={need.description}
-                icon={<span className="text-2xl">{need.icon}</span>}
+                icon={<div className="p-3 rounded-full bg-primary/10 text-primary">{need.icon}</div>}
                 isSelected={formData[need.id as keyof typeof formData] as boolean}
                 onClick={() => toggleNeed(need.id)}
               />
@@ -136,7 +151,7 @@ export default function StepProfile({ data, onComplete }: StepProfileProps) {
           className="w-full"
           size="lg"
         >
-          Parfait ! Continue 🚶‍♂️
+          Parfait ! Continue
         </Button>
       </form>
     </motion.div>
